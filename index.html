@@ -376,41 +376,35 @@
 
     const KEY_MAP = { '1':0, '2':1, '3':2, '4':3, '5':4, '6':5, 'q':0, 'a':0, 'w':1, 'z':1, 'e':2, 'r':3 };
 
-// --- MOTEUR AUDIO HYBRIDE : PIANO RÉEL + FALLBACK RHODES & SFX DOUX ---
+// --- MOTEUR AUDIO V3 : SALAMANDER GRAND PIANO + SFX DOUX ---
     const Audio = {
         ctx: null,
         master: null,
         reverb: null,
-        samples: {}, // Stockage des vrais sons
-        sampleMap: { // URLs des MP3 (Piano Acoustique Yamaha C5)
-            36: 'https://gleitz.github.io/midi-js-soundfonts/MusyngKite/acoustic_grand_piano-mp3/36.mp3', // C2
-            40: 'https://gleitz.github.io/midi-js-soundfonts/MusyngKite/acoustic_grand_piano-mp3/40.mp3',
-            43: 'https://gleitz.github.io/midi-js-soundfonts/MusyngKite/acoustic_grand_piano-mp3/43.mp3',
-            48: 'https://gleitz.github.io/midi-js-soundfonts/MusyngKite/acoustic_grand_piano-mp3/48.mp3', // C3
-            52: 'https://gleitz.github.io/midi-js-soundfonts/MusyngKite/acoustic_grand_piano-mp3/52.mp3', 
-            55: 'https://gleitz.github.io/midi-js-soundfonts/MusyngKite/acoustic_grand_piano-mp3/55.mp3',
-            60: 'https://gleitz.github.io/midi-js-soundfonts/MusyngKite/acoustic_grand_piano-mp3/60.mp3', // C4 (Do central)
-            64: 'https://gleitz.github.io/midi-js-soundfonts/MusyngKite/acoustic_grand_piano-mp3/64.mp3',
-            67: 'https://gleitz.github.io/midi-js-soundfonts/MusyngKite/acoustic_grand_piano-mp3/67.mp3',
-            72: 'https://gleitz.github.io/midi-js-soundfonts/MusyngKite/acoustic_grand_piano-mp3/72.mp3', // C5
-            76: 'https://gleitz.github.io/midi-js-soundfonts/MusyngKite/acoustic_grand_piano-mp3/76.mp3',
-            79: 'https://gleitz.github.io/midi-js-soundfonts/MusyngKite/acoustic_grand_piano-mp3/79.mp3',
-            84: 'https://gleitz.github.io/midi-js-soundfonts/MusyngKite/acoustic_grand_piano-mp3/84.mp3'  // C6
+        samples: {}, 
+        // Source : Salamander Grand Piano (Haute Qualité) via Tone.js
+        baseUrl: 'https://tonejs.github.io/audio/salamander/',
+        sampleMap: {
+            36: 'C2.mp3', 39: 'Ds2.mp3', 42: 'Fs2.mp3', 45: 'A2.mp3',
+            48: 'C3.mp3', 51: 'Ds3.mp3', 54: 'Fs3.mp3', 57: 'A3.mp3',
+            60: 'C4.mp3', 63: 'Ds4.mp3', 66: 'Fs4.mp3', 69: 'A4.mp3',
+            72: 'C5.mp3', 75: 'Ds5.mp3', 78: 'Fs5.mp3', 81: 'A5.mp3',
+            84: 'C6.mp3'
         },
-        
+
         init() {
             if (this.ctx) return;
             const AC = window.AudioContext || window.webkitAudioContext;
             this.ctx = new AC();
             
             this.master = this.ctx.createGain();
-            this.master.gain.value = 1.0;
+            this.master.gain.value = 1.0; // Volume idéal pour ce piano
 
-            // Reverb
+            // Reverb légère (Concert Hall)
             this.reverb = this.ctx.createConvolver();
             this.reverb.buffer = this.createReverbImpulse(2.0);
             const revGain = this.ctx.createGain();
-            revGain.gain.value = 0.25; 
+            revGain.gain.value = 0.3; 
 
             this.master.connect(this.ctx.destination);
             this.master.connect(this.reverb);
@@ -418,7 +412,6 @@
             revGain.connect(this.ctx.destination);
 
             this.loop();
-            // On lance le chargement du vrai piano en tâche de fond
             this.loadSamples();
         },
 
@@ -428,7 +421,7 @@
             const impulse = this.ctx.createBuffer(2, length, rate);
             const L = impulse.getChannelData(0), R = impulse.getChannelData(1);
             for (let i = 0; i < length; i++) {
-                const decay = Math.pow(1 - i / length, 2.5); 
+                const decay = Math.pow(1 - i / length, 3); // Décroissance plus naturelle
                 L[i] = (Math.random() * 2 - 1) * decay;
                 R[i] = (Math.random() * 2 - 1) * decay;
             }
@@ -436,44 +429,43 @@
         },
 
         async loadSamples() {
-            UI.msg("Chargement...", "correction");
+            UI.msg("Chargement Piano...", "correction");
             const promises = Object.keys(this.sampleMap).map(async (midi) => {
                 try {
-                    const response = await fetch(this.sampleMap[midi]);
+                    const response = await fetch(this.baseUrl + this.sampleMap[midi]);
                     if(!response.ok) throw new Error('Network');
                     const buff = await response.arrayBuffer();
                     this.samples[midi] = await this.ctx.decodeAudioData(buff);
-                } catch (e) { 
-                    // Echec silencieux, on utilisera le synthé
-                }
+                } catch (e) { /* Fallback silencieux */ }
             });
+            
             await Promise.all(promises);
             
-            if(Object.keys(this.samples).length > 0) {
-                UI.msg("Piano Acoustique", "correct");
+            if(Object.keys(this.samples).length > 5) {
+                UI.msg("Piano Activé", "correct");
             } else {
-                UI.msg("Mode Piano Élec.", "warning"); // Indique que le vrai piano n'a pas chargé
+                // Message pour prévenir l'utilisateur local
+                UI.msg("Mode Secours (Local)", "warning");
+                console.log("Echec chargement MP3: Probablement bloqué par CORS (file://). Hébergez le fichier.");
             }
-            setTimeout(() => UI.msg("Prêt ?"), 1500);
+            setTimeout(() => UI.msg("Prêt ?"), 2000);
         },
 
         playNote(midi, time, velocity = 0.5) {
             if (!this.ctx) return;
 
-            // --- STRATÉGIE HYBRIDE ---
-            // 1. Si on a des samples chargés, on les utilise (Vrai Piano)
+            // Choix : Piano Réel ou Synthé Secours
             const available = Object.keys(this.samples).map(Number).sort((a,b)=>a-b);
             
             if (available.length > 0) {
                 this.playSampledNote(midi, time, velocity, available);
             } else {
-                // 2. Sinon, on utilise le Synthé (Rhodes)
                 this.playSynthNote(midi, time, velocity);
             }
         },
 
         playSampledNote(midi, time, velocity, available) {
-            // Algorithme "Nearest Neighbor" pour le pitch shifting
+            // Trouver le sample le plus proche
             let closest = available[0], minDiff = Math.abs(midi - closest);
             for (let n of available) {
                 const diff = Math.abs(midi - n);
@@ -482,44 +474,46 @@
 
             const src = this.ctx.createBufferSource();
             src.buffer = this.samples[closest];
+            // Pitch shifting haute qualité
             src.playbackRate.value = Math.pow(2, (midi - closest) / 12);
             
             const g = this.ctx.createGain();
             g.gain.setValueAtTime(0, time);
-            g.gain.linearRampToValueAtTime(velocity * 1.2, time + 0.01); // Boost léger pour le piano acoustique
-            g.gain.exponentialRampToValueAtTime(0.001, time + 2.5);
+            // Attaque très rapide mais pas instantanée (anti-clic)
+            g.gain.linearRampToValueAtTime(velocity, time + 0.01); 
+            g.gain.exponentialRampToValueAtTime(0.001, time + 4.0); // Long sustain naturel
             
             src.connect(g); g.connect(this.master);
             src.start(time);
         },
 
         playSynthNote(midi, time, velocity) {
-            // Le son "Rhodes" doux (synthèse)
+            // Le son "Rhodes" (Secours)
             const freq = 440 * Math.pow(2, (midi - 69) / 12);
             const osc = this.ctx.createOscillator(); osc.type = 'triangle'; osc.frequency.value = freq;
             const mod = this.ctx.createOscillator(); mod.type = 'sine'; mod.frequency.value = freq * 2;
             const modGain = this.ctx.createGain();
             modGain.gain.setValueAtTime(velocity * 50, time); 
-            modGain.gain.exponentialRampToValueAtTime(0.1, time + 1.0);
+            modGain.gain.exponentialRampToValueAtTime(0.1, time + 0.5);
             mod.connect(modGain); modGain.connect(osc.frequency);
             
             const env = this.ctx.createGain();
             env.gain.setValueAtTime(0, time);
-            env.gain.linearRampToValueAtTime(velocity * 0.6, time + 0.03);
-            env.gain.exponentialRampToValueAtTime(0.01, time + 3.0);
+            env.gain.linearRampToValueAtTime(velocity * 0.5, time + 0.02);
+            env.gain.exponentialRampToValueAtTime(0.01, time + 2.0);
             
             osc.connect(env); env.connect(this.master);
-            osc.start(time); osc.stop(time + 3.5); mod.start(time); mod.stop(time + 3.5);
+            osc.start(time); osc.stop(time + 2.5); mod.start(time); mod.stop(time + 2.5);
         },
 
-        // Petit synthé très simple juste pour les bruitages
-        playSfxTone(f, t, type='sine', dur=0.5) {
-            const o = this.ctx.createOscillator(); o.type = type; o.frequency.value = f;
+        // Générateur de sons purs (Sine wave) pour les bruitages doux
+        playPureTone(f, t, dur=0.5) {
+            const o = this.ctx.createOscillator(); o.type = 'sine'; o.frequency.value = f;
             const g = this.ctx.createGain();
             g.gain.setValueAtTime(0, t);
-            g.gain.linearRampToValueAtTime(0.15, t + 0.05);
+            g.gain.linearRampToValueAtTime(0.1, t + 0.05); // Volume faible (0.1)
             g.gain.exponentialRampToValueAtTime(0.001, t + dur);
-            o.connect(g); g.connect(this.ctx.destination);
+            o.connect(g); g.connect(this.ctx.destination); // Pas de reverb pour garder la clarté
             o.start(t); o.stop(t + dur + 0.1);
         },
 
@@ -530,8 +524,8 @@
             const now = this.ctx.currentTime;
             notes.forEach((n, i) => {
                 const humanize = arp ? 0 : Math.random() * 0.04; 
-                const t = now + (arp ? i * 0.15 : humanize);
-                const vel = Math.max(0.4, 0.8 - (n / 140)); 
+                const t = now + (arp ? i * 0.12 : humanize); // Arpège légèrement ralenti
+                const vel = Math.max(0.4, 0.85 - (n / 140)); // Vélocité ajustée
                 this.playNote(n, t, vel);
             });
         },
@@ -539,16 +533,19 @@
         sfx(k) {
             if(!this.ctx) return;
             const now = this.ctx.currentTime;
-            // SONS DE VICTOIRE DOUX (HARPE/CLOCHETTES)
+            
+            // VICTOIRE : Arpège "Magique" très doux (C Maj9)
             if (k === 'win') {
-                [523, 659, 783, 1046].forEach((f, i) => this.playSfxTone(f, now + i * 0.08, 'sine', 0.6));
+                [523, 659, 783, 987].forEach((f, i) => this.playPureTone(f, now + i * 0.1, 0.8));
             }
+            // DEFAITE : Son "Bulle" grave, non agressif
             else if (k === 'lose') {
-                this.playSfxTone(140, now, 'triangle', 0.4);
-                this.playSfxTone(100, now + 0.1, 'triangle', 0.4);
+                this.playPureTone(180, now, 0.3);
+                this.playPureTone(130, now + 0.15, 0.4);
             }
+            // LEVEL UP : Scintillement rapide
             else if (k === 'lvl') {
-                [523, 587, 659, 740, 830, 932, 1046].forEach((f,i) => this.playSfxTone(f, now + i * 0.05, 'sine', 0.8));
+                [523, 659, 783, 1046, 1318, 1568].forEach((f,i) => this.playPureTone(f, now + i * 0.06, 0.6));
             }
         },
 
@@ -560,10 +557,10 @@
                 if(!this.ctx) return;
                 if (cvs.width !== cvs.clientWidth) { cvs.width = cvs.clientWidth; cvs.height = cvs.clientHeight; }
                 c.clearRect(0,0,cvs.width,cvs.height);
-                if(Math.random() > 0.9) { // Visualisation simple et légère
-                    c.fillStyle = `rgba(99, 102, 241, ${Math.random()*0.3})`;
+                if(Math.random() > 0.92) { 
+                    c.fillStyle = `rgba(99, 102, 241, ${Math.random()*0.2})`;
                     const w = Math.random() * cvs.width; const x = Math.random() * cvs.width;
-                    c.fillRect(x, 0, w/5, cvs.height);
+                    c.fillRect(x, 0, w/4, cvs.height);
                 }
             };
             draw();
@@ -925,4 +922,5 @@
 </script>
 </body>
 </html>
+
 
