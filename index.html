@@ -376,34 +376,50 @@
 
     const KEY_MAP = { '1':0, '2':1, '3':2, '4':3, '5':4, '6':5, 'q':0, 'a':0, 'w':1, 'z':1, 'e':2, 'r':3 };
 
-// --- MOTEUR AUDIO : PIANO ÉLECTRIQUE DOUX & SFX APAISÉS ---
+// --- MOTEUR AUDIO HYBRIDE : PIANO RÉEL + FALLBACK RHODES & SFX DOUX ---
     const Audio = {
         ctx: null,
         master: null,
         reverb: null,
+        samples: {}, // Stockage des vrais sons
+        sampleMap: { // URLs des MP3 (Piano Acoustique Yamaha C5)
+            36: 'https://gleitz.github.io/midi-js-soundfonts/MusyngKite/acoustic_grand_piano-mp3/36.mp3', // C2
+            40: 'https://gleitz.github.io/midi-js-soundfonts/MusyngKite/acoustic_grand_piano-mp3/40.mp3',
+            43: 'https://gleitz.github.io/midi-js-soundfonts/MusyngKite/acoustic_grand_piano-mp3/43.mp3',
+            48: 'https://gleitz.github.io/midi-js-soundfonts/MusyngKite/acoustic_grand_piano-mp3/48.mp3', // C3
+            52: 'https://gleitz.github.io/midi-js-soundfonts/MusyngKite/acoustic_grand_piano-mp3/52.mp3', 
+            55: 'https://gleitz.github.io/midi-js-soundfonts/MusyngKite/acoustic_grand_piano-mp3/55.mp3',
+            60: 'https://gleitz.github.io/midi-js-soundfonts/MusyngKite/acoustic_grand_piano-mp3/60.mp3', // C4 (Do central)
+            64: 'https://gleitz.github.io/midi-js-soundfonts/MusyngKite/acoustic_grand_piano-mp3/64.mp3',
+            67: 'https://gleitz.github.io/midi-js-soundfonts/MusyngKite/acoustic_grand_piano-mp3/67.mp3',
+            72: 'https://gleitz.github.io/midi-js-soundfonts/MusyngKite/acoustic_grand_piano-mp3/72.mp3', // C5
+            76: 'https://gleitz.github.io/midi-js-soundfonts/MusyngKite/acoustic_grand_piano-mp3/76.mp3',
+            79: 'https://gleitz.github.io/midi-js-soundfonts/MusyngKite/acoustic_grand_piano-mp3/79.mp3',
+            84: 'https://gleitz.github.io/midi-js-soundfonts/MusyngKite/acoustic_grand_piano-mp3/84.mp3'  // C6
+        },
         
         init() {
             if (this.ctx) return;
             const AC = window.AudioContext || window.webkitAudioContext;
             this.ctx = new AC();
             
-            // Volume général baissé pour éviter la saturation
             this.master = this.ctx.createGain();
-            this.master.gain.value = 0.8;
+            this.master.gain.value = 1.0;
 
-            // Réverbération "Atmosphérique"
+            // Reverb
             this.reverb = this.ctx.createConvolver();
-            this.reverb.buffer = this.createReverbImpulse(2.0); // 2 secondes de résonance
+            this.reverb.buffer = this.createReverbImpulse(2.0);
             const revGain = this.ctx.createGain();
-            revGain.gain.value = 0.25; // Réverb présente mais pas noyée
+            revGain.gain.value = 0.25; 
 
             this.master.connect(this.ctx.destination);
             this.master.connect(this.reverb);
             this.reverb.connect(revGain);
             revGain.connect(this.ctx.destination);
 
-            this.loop(); // Visuel
-            UI.msg("Audio Prêt", "correct");
+            this.loop();
+            // On lance le chargement du vrai piano en tâche de fond
+            this.loadSamples();
         },
 
         createReverbImpulse(duration) {
@@ -419,56 +435,91 @@
             return impulse;
         },
 
-        // Convertit Note MIDI -> Fréquence Hz
-        mToF(m) { return 440 * Math.pow(2, (m - 69) / 12); },
-
-        // PIANO ÉLECTRIQUE (Style Rhodes/Wurlitzer) - Synthèse FM Douce
-        playNote(midi, time, velocity = 0.5) {
-            if (!this.ctx) return;
-            const t = time;
-            const freq = this.mToF(midi);
-
-            // 1. Oscillateur Principal (Le son de base) - Onde Triangle (plus douce que Sine)
-            const osc = this.ctx.createOscillator();
-            osc.type = 'triangle';
-            osc.frequency.value = freq;
-
-            // 2. Modulateur (Pour le côté "métallique" mais subtil)
-            const mod = this.ctx.createOscillator();
-            mod.type = 'sine';
-            mod.frequency.value = freq * 2; // Octave au dessus
-
-            const modGain = this.ctx.createGain();
-            // On module moins fort pour que ce soit moins agressif
-            modGain.gain.setValueAtTime(velocity * 100, t); 
-            modGain.gain.exponentialRampToValueAtTime(0.1, t + 1.0);
-
-            mod.connect(modGain);
-            modGain.connect(osc.frequency);
-
-            // 3. Enveloppe de volume (Attaque douce, longue traîne)
-            const env = this.ctx.createGain();
-            env.gain.setValueAtTime(0, t);
-            env.gain.linearRampToValueAtTime(velocity * 0.5, t + 0.03); // Attaque un peu plus lente (30ms)
-            env.gain.exponentialRampToValueAtTime(0.01, t + 3.0); // Long sustain
-
-            osc.connect(env);
-            env.connect(this.master);
-
-            osc.start(t); osc.stop(t + 3.5);
-            mod.start(t); mod.stop(t + 3.5);
+        async loadSamples() {
+            UI.msg("Chargement...", "correction");
+            const promises = Object.keys(this.sampleMap).map(async (midi) => {
+                try {
+                    const response = await fetch(this.sampleMap[midi]);
+                    if(!response.ok) throw new Error('Network');
+                    const buff = await response.arrayBuffer();
+                    this.samples[midi] = await this.ctx.decodeAudioData(buff);
+                } catch (e) { 
+                    // Echec silencieux, on utilisera le synthé
+                }
+            });
+            await Promise.all(promises);
+            
+            if(Object.keys(this.samples).length > 0) {
+                UI.msg("Piano Acoustique", "correct");
+            } else {
+                UI.msg("Mode Piano Élec.", "warning"); // Indique que le vrai piano n'a pas chargé
+            }
+            setTimeout(() => UI.msg("Prêt ?"), 1500);
         },
 
-        // SYNTHÉ POUR BRUITAGES (Douceur extrême)
+        playNote(midi, time, velocity = 0.5) {
+            if (!this.ctx) return;
+
+            // --- STRATÉGIE HYBRIDE ---
+            // 1. Si on a des samples chargés, on les utilise (Vrai Piano)
+            const available = Object.keys(this.samples).map(Number).sort((a,b)=>a-b);
+            
+            if (available.length > 0) {
+                this.playSampledNote(midi, time, velocity, available);
+            } else {
+                // 2. Sinon, on utilise le Synthé (Rhodes)
+                this.playSynthNote(midi, time, velocity);
+            }
+        },
+
+        playSampledNote(midi, time, velocity, available) {
+            // Algorithme "Nearest Neighbor" pour le pitch shifting
+            let closest = available[0], minDiff = Math.abs(midi - closest);
+            for (let n of available) {
+                const diff = Math.abs(midi - n);
+                if (diff < minDiff) { minDiff = diff; closest = n; }
+            }
+
+            const src = this.ctx.createBufferSource();
+            src.buffer = this.samples[closest];
+            src.playbackRate.value = Math.pow(2, (midi - closest) / 12);
+            
+            const g = this.ctx.createGain();
+            g.gain.setValueAtTime(0, time);
+            g.gain.linearRampToValueAtTime(velocity * 1.2, time + 0.01); // Boost léger pour le piano acoustique
+            g.gain.exponentialRampToValueAtTime(0.001, time + 2.5);
+            
+            src.connect(g); g.connect(this.master);
+            src.start(time);
+        },
+
+        playSynthNote(midi, time, velocity) {
+            // Le son "Rhodes" doux (synthèse)
+            const freq = 440 * Math.pow(2, (midi - 69) / 12);
+            const osc = this.ctx.createOscillator(); osc.type = 'triangle'; osc.frequency.value = freq;
+            const mod = this.ctx.createOscillator(); mod.type = 'sine'; mod.frequency.value = freq * 2;
+            const modGain = this.ctx.createGain();
+            modGain.gain.setValueAtTime(velocity * 50, time); 
+            modGain.gain.exponentialRampToValueAtTime(0.1, time + 1.0);
+            mod.connect(modGain); modGain.connect(osc.frequency);
+            
+            const env = this.ctx.createGain();
+            env.gain.setValueAtTime(0, time);
+            env.gain.linearRampToValueAtTime(velocity * 0.6, time + 0.03);
+            env.gain.exponentialRampToValueAtTime(0.01, time + 3.0);
+            
+            osc.connect(env); env.connect(this.master);
+            osc.start(time); osc.stop(time + 3.5); mod.start(time); mod.stop(time + 3.5);
+        },
+
+        // Petit synthé très simple juste pour les bruitages
         playSfxTone(f, t, type='sine', dur=0.5) {
-            const o = this.ctx.createOscillator(); o.type = type;
-            o.frequency.value = f;
+            const o = this.ctx.createOscillator(); o.type = type; o.frequency.value = f;
             const g = this.ctx.createGain();
             g.gain.setValueAtTime(0, t);
-            g.gain.linearRampToValueAtTime(0.15, t + 0.05); // Volume max très bas (0.15)
+            g.gain.linearRampToValueAtTime(0.15, t + 0.05);
             g.gain.exponentialRampToValueAtTime(0.001, t + dur);
-            
-            o.connect(g); g.connect(this.ctx.destination); // Pas de reverb pour les SFX courts
+            o.connect(g); g.connect(this.ctx.destination);
             o.start(t); o.stop(t + dur + 0.1);
         },
 
@@ -478,10 +529,8 @@
 
             const now = this.ctx.currentTime;
             notes.forEach((n, i) => {
-                // Humanisation : léger décalage naturel
                 const humanize = arp ? 0 : Math.random() * 0.04; 
-                const t = now + (arp ? i * 0.15 : humanize); // Arpège un peu plus lent (0.15s)
-                // Les notes aiguës un peu moins fortes
+                const t = now + (arp ? i * 0.15 : humanize);
                 const vel = Math.max(0.4, 0.8 - (n / 140)); 
                 this.playNote(n, t, vel);
             });
@@ -490,27 +539,36 @@
         sfx(k) {
             if(!this.ctx) return;
             const now = this.ctx.currentTime;
-            
+            // SONS DE VICTOIRE DOUX (HARPE/CLOCHETTES)
             if (k === 'win') {
-                // Arpège Majeur, onde Sine (pure), doux
-                // Do Mi Sol Do
-                [523, 659, 783, 1046].forEach((f, i) => {
-                    this.playSfxTone(f, now + i * 0.08, 'sine', 0.6);
-                });
+                [523, 659, 783, 1046].forEach((f, i) => this.playSfxTone(f, now + i * 0.08, 'sine', 0.6));
             }
             else if (k === 'lose') {
-                // Petit son sourd et bas, pas agressif
-                this.playSfxTone(150, now, 'triangle', 0.4);
-                this.playSfxTone(110, now + 0.1, 'triangle', 0.4);
+                this.playSfxTone(140, now, 'triangle', 0.4);
+                this.playSfxTone(100, now + 0.1, 'triangle', 0.4);
             }
             else if (k === 'lvl') {
-                // "Magical glissando", très rapide, onde Sine
-                // Gamme par tons pour un effet "rêve"
-                [523, 587, 659, 740, 830, 932, 1046].forEach((f,i) => {
-                    this.playSfxTone(f, now + i * 0.05, 'sine', 0.8);
-                });
+                [523, 587, 659, 740, 830, 932, 1046].forEach((f,i) => this.playSfxTone(f, now + i * 0.05, 'sine', 0.8));
             }
         },
+
+        loop() {
+            const cvs = document.getElementById('visualizer'); 
+            const c = cvs.getContext('2d');
+            const draw = () => {
+                requestAnimationFrame(draw);
+                if(!this.ctx) return;
+                if (cvs.width !== cvs.clientWidth) { cvs.width = cvs.clientWidth; cvs.height = cvs.clientHeight; }
+                c.clearRect(0,0,cvs.width,cvs.height);
+                if(Math.random() > 0.9) { // Visualisation simple et légère
+                    c.fillStyle = `rgba(99, 102, 241, ${Math.random()*0.3})`;
+                    const w = Math.random() * cvs.width; const x = Math.random() * cvs.width;
+                    c.fillRect(x, 0, w/5, cvs.height);
+                }
+            };
+            draw();
+        }
+    };
 
         loop() {
             const cvs = document.getElementById('visualizer'); 
@@ -867,3 +925,4 @@
 </script>
 </body>
 </html>
+
