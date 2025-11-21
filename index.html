@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Harmonist Academy - Ultimate Edition</title>
+    <title>Harmonist Academy</title>
     <style>
         :root {
             --bg: #0f172a;
@@ -34,13 +34,53 @@
             display: flex; justify-content: center;
         }
 
+        /* --- ECRAN D'ACCUEIL (NOUVEAU) --- */
+        .start-screen {
+            position: fixed; inset: 0; z-index: 2000;
+            background: var(--bg);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            transition: opacity 0.4s ease-in-out, visibility 0.4s;
+        }
+        .start-screen.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+
+        .hero-title {
+            font-size: 2rem; font-weight: 900; 
+            background: linear-gradient(135deg, #fff 0%, var(--text-dim) 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            margin-bottom: 10px; letter-spacing: -1px;
+        }
+        .hero-rank {
+            display: flex; align-items: center; gap: 10px;
+            background: var(--panel); border: 1px solid var(--panel-border);
+            padding: 10px 20px; border-radius: 50px; margin-bottom: 40px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        .mode-cards { display: flex; gap: 20px; width: 100%; max-width: 500px; padding: 0 20px; }
+        .mode-card {
+            flex: 1; background: var(--panel); border: 1px solid var(--panel-border);
+            border-radius: 20px; padding: 20px; text-align: center; cursor: pointer;
+            transition: transform 0.2s, border-color 0.2s;
+            display: flex; flex-direction: column; align-items: center; gap: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+        .mode-card:active { transform: scale(0.96); }
+        .mode-card h3 { margin: 0; font-size: 1.2rem; }
+        .mode-card p { margin: 0; font-size: 0.8rem; color: var(--text-dim); line-height: 1.3; }
+        .mode-card .icon { font-size: 2.5rem; margin-bottom: 5px; }
+        
+        .mode-zen:hover { border-color: var(--primary); box-shadow: 0 0 20px var(--primary-glow); }
+        .mode-chrono:hover { border-color: var(--warning); box-shadow: 0 0 20px rgba(245, 158, 11, 0.3); }
+
         /* LAYOUT PRINCIPAL */
         .app-container {
             width: 100%; max-width: 1200px; height: 100%;
             display: flex; flex-direction: column;
             padding: 10px; gap: 10px;
             position: relative;
+            opacity: 0; transition: opacity 0.5s ease-in-out; /* Masqué par défaut */
         }
+        .app-container.visible { opacity: 1; }
 
         /* HEADER */
         header {
@@ -72,16 +112,15 @@
         .stat-lbl { font-size: 0.5rem; text-transform: uppercase; color: var(--text-dim); letter-spacing: 0.5px; margin-bottom: 2px;}
         .trophy { color: var(--gold); border-color: rgba(251, 191, 36, 0.2); }
         
-        /* Animation Feu pour Série */
         .streak-fire { color: #ef4444; text-shadow: 0 0 10px #ef4444; animation: pulseFire 1s infinite; }
         @keyframes pulseFire { 0%{transform:scale(1);} 50%{transform:scale(1.1);} 100%{transform:scale(1);} }
 
         .header-actions { display: flex; gap: 5px; padding-left: 10px; border-left: 1px solid var(--panel-border); }
         .icon-btn {
             background: transparent; border: none; font-size: 1.3rem; cursor: pointer;
-            padding: 5px; border-radius: 8px; transition: background 0.2s; opacity: 0.8;
+            padding: 5px; border-radius: 8px; transition: background 0.2s; opacity: 0.8; color: var(--text-dim);
         }
-        .icon-btn:hover { background: rgba(255,255,255,0.1); opacity: 1; }
+        .icon-btn:hover { background: rgba(255,255,255,0.1); opacity: 1; color: white; }
 
         /* TOOLS BAR */
         .tools-bar { 
@@ -89,14 +128,10 @@
             padding: 0 5px;
         }
         
-        .mode-selector { background: var(--panel); padding: 3px; border-radius: 20px; display: flex; border: 1px solid var(--panel-border); }
-        .mode-opt { 
-            padding: 6px 14px; border-radius: 16px; font-size: 0.75rem; font-weight: 700; color: var(--text-dim); cursor: pointer; transition: 0.2s; 
-        }
-        .mode-opt.active { background: var(--primary); color: white; box-shadow: 0 2px 10px rgba(99, 102, 241, 0.3); }
+        /* Plus de sélecteur ici, c'est nettoyé ! */
 
         .vis-container {
-            flex: 1; margin: 0 15px; height: 36px; background: rgba(0,0,0,0.2); 
+            flex: 1; margin-right: 15px; height: 36px; background: rgba(0,0,0,0.2); 
             border-radius: 10px; position: relative; overflow: hidden; border: 1px solid var(--panel-border);
             display: flex; align-items: center; justify-content: center;
         }
@@ -115,11 +150,7 @@
 
         /* GAME BOARD */
         .game-area {
-            flex: 1; 
-            display: grid; 
-            grid-template-columns: 1.5fr 1fr; 
-            gap: 10px;
-            min-height: 0; 
+            flex: 1; display: grid; grid-template-columns: 1.5fr 1fr; gap: 10px; min-height: 0; 
         }
         
         @media (max-width: 768px) {
@@ -127,6 +158,7 @@
             .header-left { gap: 6px; flex: 1; }
             .rank-text { display: none; } 
             .header-right { flex: 0 0 auto; }
+            .mode-cards { flex-direction: column; gap: 10px; }
         }
 
         .panel {
@@ -139,15 +171,10 @@
             display: flex; justify-content: space-between;
         }
 
-        .pad-grid {
-            display: grid; gap: 8px; flex: 1; 
-        }
+        .pad-grid { display: grid; gap: 8px; flex: 1; }
         .grid-c { grid-template-columns: repeat(2, 1fr); }
         .grid-i { grid-template-columns: repeat(2, 1fr); }
-        
-        @media (min-width: 769px) {
-            .grid-c { grid-template-columns: repeat(3, 1fr); } 
-        }
+        @media (min-width: 769px) { .grid-c { grid-template-columns: repeat(3, 1fr); } }
 
         /* BOUTONS ACCORDS */
         .pad {
@@ -170,7 +197,6 @@
         }
         .pad.wrong { border-color: var(--error); color: var(--error); opacity: 0.4; }
         .pad.correction { border-color: var(--gold); color: var(--gold); }
-
         .pad-main { font-size: 1.1rem; font-weight: 800; font-family: monospace; }
         .pad-sub { font-size: 0.65rem; opacity: 0.6; margin-top: 2px; }
 
@@ -181,17 +207,13 @@
             display: flex; gap: 8px; height: 65px; flex-shrink: 0;
             box-shadow: 0 -5px 20px rgba(0,0,0,0.2);
         }
-
         .cmd-btn {
             border: none; border-radius: 12px; cursor: pointer; font-weight: 700; font-family: var(--font);
             transition: transform 0.1s; display: flex; flex-direction: column; align-items: center; justify-content: center;
         }
         .cmd-btn:active { transform: scale(0.95); }
         .cmd-btn:disabled { opacity: 0.4; filter: grayscale(1); cursor: not-allowed; }
-
-        .btn-listen { 
-            flex: 1; background: #334155; color: white; font-size: 0.8rem; border: 1px solid rgba(255,255,255,0.1);
-        }
+        .btn-listen { flex: 1; background: #334155; color: white; font-size: 0.8rem; border: 1px solid rgba(255,255,255,0.1); }
         .btn-action {
             flex: 2; background: var(--success); color: white; font-size: 1.1rem;
             box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); text-transform: uppercase; letter-spacing: 1px;
@@ -206,7 +228,6 @@
         
         .toggle-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
         .toggle-row:last-child { border: none; }
-        
         .toggle-switch { position: relative; width: 40px; height: 22px; }
         .toggle-switch input { opacity: 0; width: 0; height: 0; }
         .slider { position: absolute; cursor: pointer; inset: 0; background: #334155; transition: .3s; border-radius: 22px; }
@@ -219,14 +240,37 @@
         @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
         @keyframes fadeIn { from{opacity:0} to{opacity:1} }
         .confetti-canvas { position: fixed; top:0; left:0; width:100%; height:100%; pointer-events: none; z-index: 90; }
-
     </style>
 </head>
 <body>
 
 <canvas class="confetti-canvas" id="confetti"></canvas>
 
-<div class="app-container">
+<div id="startScreen" class="start-screen">
+    <div class="hero-title">Harmonist Academy</div>
+    <div class="hero-rank">
+        <span style="font-size:1.5rem;" id="startRankIcon">📄</span>
+        <div>
+            <div style="font-size:0.8rem; color:var(--text-dim); font-weight:700;">NIVEAU <span id="startLvl">1</span></div>
+            <div style="font-weight:800; color:var(--gold);" id="startRank">...</div>
+        </div>
+    </div>
+    <div class="mode-cards">
+        <div class="mode-card mode-zen" onclick="App.launch('zen')">
+            <div class="icon">🧘</div>
+            <div style="color:var(--primary); font-weight:800;">ZEN</div>
+            <p>Entraînement sans pression. Prenez votre temps pour écouter.</p>
+        </div>
+        <div class="mode-card mode-chrono" onclick="App.launch('chrono')">
+            <div class="icon">⚡</div>
+            <div style="color:var(--warning); font-weight:800;">CHRONO</div>
+            <p>Vous avez 60 secondes. 3 vies. Battez votre record.</p>
+        </div>
+    </div>
+    <div style="margin-top:30px; color:var(--text-dim); font-size:0.8rem; opacity:0.5;">v4.2 - GitHub Edition</div>
+</div>
+
+<div class="app-container" id="mainApp">
     <header>
         <div class="header-left">
             <div class="rank-icon" id="rankIcon">📄</div>
@@ -239,10 +283,6 @@
         
         <div class="header-right">
             <div class="stats-cluster">
-                <div class="stat-badge">
-                    <span class="stat-lbl">Précision</span>
-                    <span class="stat-val" id="precisionVal">0%</span>
-                </div>
                 <div class="stat-badge trophy">
                     <span class="stat-lbl">Record</span>
                     <span class="stat-val" id="highScoreVal">0</span>
@@ -253,6 +293,7 @@
                 </div>
             </div>
             <div class="header-actions">
+                <button class="icon-btn" onclick="App.home()">🏠</button>
                 <button class="icon-btn" onclick="UI.openModal('statsModal')">📊</button>
                 <button class="icon-btn" onclick="UI.openModal('settingsModal')">⚙️</button>
             </div>
@@ -260,10 +301,6 @@
     </header>
 
     <div class="tools-bar">
-        <div class="mode-selector">
-            <div class="mode-opt active" id="modeZen" onclick="App.setMode('zen')">🧘 Zen</div>
-            <div class="mode-opt" id="modeChrono" onclick="App.setMode('chrono')">⚡ Chrono</div>
-        </div>
         <div class="vis-container">
             <canvas id="visualizer"></canvas>
             <div class="feedback-msg" id="statusText">Prêt ?</div>
@@ -332,8 +369,8 @@
         <h2 style="margin:10px 0;">Temps Écoulé !</h2>
         <div style="font-size:3.5rem; font-weight:900; color:var(--gold); line-height:1;" id="endScore">0</div>
         <div style="margin-top:20px;">
-            <button class="cmd-btn btn-action next" style="width:100%; padding:15px;" onclick="App.setMode('chrono')">Rejouer</button>
-            <button class="cmd-btn btn-listen" style="width:100%; margin-top:10px; padding:15px;" onclick="App.setMode('zen'); UI.closeModals()">Mode Zen</button>
+            <button class="cmd-btn btn-action next" style="width:100%; padding:15px;" onclick="App.setMode('chrono'); UI.closeModals()">Rejouer</button>
+            <button class="cmd-btn btn-listen" style="width:100%; margin-top:10px; padding:15px;" onclick="App.home()">Menu Principal</button>
         </div>
     </div>
 </div>
@@ -366,11 +403,11 @@
             { id: 3, name: '2', sub: '3ème', corr: '2' }
         ],
         ranks: [
-            {t:"Tourneur de pages enthousiaste",i:"📄"}, {t:"Auditeur curieux",i:"👂"}, {t:"Observateur attentif",i:"👀"},
+            {t:"Tourneur de pages",i:"📄"}, {t:"Auditeur curieux",i:"👂"}, {t:"Observateur attentif",i:"👀"},
             {t:"Mélomane motivé",i:"🎧"}, {t:"Déchiffreur du dimanche",i:"👓"}, {t:"Explorateur de tonalités",i:"🧭"},
-            {t:"Solfégiste amateur",i:"✏️"}, {t:"Oreille relative naissante",i:"🌱"}, {t:"Apprenti harmoniste",i:"🎒"},
+            {t:"Solfégiste amateur",i:"✏️"}, {t:"Oreille naissante",i:"🌱"}, {t:"Apprenti harmoniste",i:"🎒"},
             {t:"Coloriste harmonique",i:"🎨"}, {t:"Artisan de l’harmonie",i:"🎻"}, {t:"Chef de pupitre",i:"🎻"},
-            {t:"Disciple de Rameau",i:"📚"}, {t:"Solfégiste confirmé",i:"🎓"}, {t:"Spécialiste de l’oreille relative",i:"⚡"},
+            {t:"Disciple de Rameau",i:"📚"}, {t:"Solfégiste confirmé",i:"🎓"}, {t:"Spécialiste de l’oreille",i:"⚡"},
             {t:"Harmoniste aguerri",i:"🏹"}, {t:"Improvisateur inspiré",i:"🎹"}, {t:"Maître de chapelle",i:"⛪"},
             {t:"Favori d’Euterpe",i:"✨"}, {t:"Réincarnation de Bach",i:"👑"}
         ]
@@ -378,20 +415,15 @@
 
     const KEY_MAP = { '1':0, '2':1, '3':2, '4':3, '5':4, '6':5, 'q':0, 'a':0, 'w':1, 'z':1, 'e':2, 'r':3 };
 
-    // --- MOTEUR AUDIO HYBRIDE (PIANO + RHODES) ---
+    // --- MOTEUR AUDIO (GITHUB COMPATIBLE) ---
     const Audio = {
-        ctx: null,
-        master: null,
-        reverb: null,
-        samples: {},
-        // Source : Salamander Grand Piano (Haute Qualité) via Tone.js
+        ctx: null, master: null, reverb: null, samples: {},
         baseUrl: 'https://tonejs.github.io/audio/salamander/',
         sampleMap: {
             36: 'C2.mp3', 39: 'Ds2.mp3', 42: 'Fs2.mp3', 45: 'A2.mp3',
             48: 'C3.mp3', 51: 'Ds3.mp3', 54: 'Fs3.mp3', 57: 'A3.mp3',
             60: 'C4.mp3', 63: 'Ds4.mp3', 66: 'Fs4.mp3', 69: 'A4.mp3',
-            72: 'C5.mp3', 75: 'Ds5.mp3', 78: 'Fs5.mp3', 81: 'A5.mp3',
-            84: 'C6.mp3'
+            72: 'C5.mp3', 75: 'Ds5.mp3', 78: 'Fs5.mp3', 81: 'A5.mp3', 84: 'C6.mp3'
         },
         fallbackMode: false,
 
@@ -399,21 +431,18 @@
             if (this.ctx) return;
             const AC = window.AudioContext || window.webkitAudioContext;
             this.ctx = new AC();
-            
             this.master = this.ctx.createGain();
             this.master.gain.value = 1.0;
 
-            // Reverb légère (Concert Hall)
             this.reverb = this.ctx.createConvolver();
             this.reverb.buffer = this.createReverbImpulse(2.0);
             const revGain = this.ctx.createGain();
             revGain.gain.value = 0.3; 
-
-            this.master.connect(this.ctx.destination);
             this.master.connect(this.reverb);
             this.reverb.connect(revGain);
             revGain.connect(this.ctx.destination);
 
+            this.master.connect(this.ctx.destination);
             this.loop();
             this.loadSamples();
         },
@@ -436,59 +465,41 @@
             const promises = Object.keys(this.sampleMap).map(async (midi) => {
                 try {
                     const response = await fetch(this.baseUrl + this.sampleMap[midi]);
-                    if(!response.ok) throw new Error('Network');
+                    if(!response.ok) throw new Error('Err');
                     const buff = await response.arrayBuffer();
                     this.samples[midi] = await this.ctx.decodeAudioData(buff);
-                } catch (e) { /* Fallback silencieux */ }
+                } catch (e) { /* Silent */ }
             });
-            
             await Promise.all(promises);
-            
-            if(Object.keys(this.samples).length > 5) {
-                UI.msg("Piano Activé", "correct");
-            } else {
-                // Message pour prévenir l'utilisateur local
-                this.fallbackMode = true;
-                UI.msg("Mode Secours (Local)", "warning");
-            }
-            setTimeout(() => UI.msg("Prêt ?"), 2000);
+            if(Object.keys(this.samples).length < 5) this.fallbackMode = true;
+            else UI.msg("Piano Actif", "correct");
         },
 
         playNote(midi, time, velocity = 0.5) {
             if (!this.ctx) return;
-            if (this.fallbackMode) {
-                this.playSynthNote(midi, time, velocity);
-            } else {
-                this.playSampledNote(midi, time, velocity);
-            }
+            if (this.fallbackMode) this.playSynthNote(midi, time, velocity);
+            else this.playSampledNote(midi, time, velocity);
         },
 
         playSampledNote(midi, time, velocity) {
-            // Trouver le sample le plus proche
             const available = Object.keys(this.samples).map(Number).sort((a,b)=>a-b);
             let closest = available[0], minDiff = Math.abs(midi - closest);
             for (let n of available) {
                 const diff = Math.abs(midi - n);
                 if (diff < minDiff) { minDiff = diff; closest = n; }
             }
-
             const src = this.ctx.createBufferSource();
             src.buffer = this.samples[closest];
-            // Pitch shifting haute qualité
             src.playbackRate.value = Math.pow(2, (midi - closest) / 12);
-            
             const g = this.ctx.createGain();
             g.gain.setValueAtTime(0, time);
-            // Attaque très rapide mais pas instantanée (anti-clic)
             g.gain.linearRampToValueAtTime(velocity, time + 0.01); 
-            g.gain.exponentialRampToValueAtTime(0.001, time + 4.0); // Long sustain naturel
-            
+            g.gain.exponentialRampToValueAtTime(0.001, time + 4.0);
             src.connect(g); g.connect(this.master);
             src.start(time);
         },
 
         playSynthNote(midi, time, velocity) {
-            // Le son "Rhodes" (Secours)
             const freq = 440 * Math.pow(2, (midi - 69) / 12);
             const osc = this.ctx.createOscillator(); osc.type = 'triangle'; osc.frequency.value = freq;
             const mod = this.ctx.createOscillator(); mod.type = 'sine'; mod.frequency.value = freq * 2;
@@ -496,36 +507,31 @@
             modGain.gain.setValueAtTime(velocity * 50, time); 
             modGain.gain.exponentialRampToValueAtTime(0.1, time + 0.5);
             mod.connect(modGain); modGain.connect(osc.frequency);
-            
             const env = this.ctx.createGain();
             env.gain.setValueAtTime(0, time);
             env.gain.linearRampToValueAtTime(velocity * 0.5, time + 0.02);
             env.gain.exponentialRampToValueAtTime(0.01, time + 2.0);
-            
             osc.connect(env); env.connect(this.master);
             osc.start(time); osc.stop(time + 2.5); mod.start(time); mod.stop(time + 2.5);
         },
 
-        // Générateur de sons purs (Sine wave) pour les bruitages doux
         playPureTone(f, t, dur=0.5) {
             const o = this.ctx.createOscillator(); o.type = 'sine'; o.frequency.value = f;
             const g = this.ctx.createGain();
             g.gain.setValueAtTime(0, t);
-            g.gain.linearRampToValueAtTime(0.1, t + 0.05); // Volume faible (0.1)
+            g.gain.linearRampToValueAtTime(0.1, t + 0.05);
             g.gain.exponentialRampToValueAtTime(0.001, t + dur);
-            o.connect(g); g.connect(this.ctx.destination); // Pas de reverb pour garder la clarté
+            o.connect(g); g.connect(this.ctx.destination);
             o.start(t); o.stop(t + dur + 0.1);
         },
 
         chord(notes, arp = false) {
             if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
-            if (!this.ctx) this.init();
-
             const now = this.ctx.currentTime;
             notes.forEach((n, i) => {
                 const humanize = arp ? 0 : Math.random() * 0.04; 
-                const t = now + (arp ? i * 0.12 : humanize); // Arpège légèrement ralenti
-                const vel = Math.max(0.4, 0.85 - (n / 140)); // Vélocité ajustée
+                const t = now + (arp ? i * 0.12 : humanize);
+                const vel = Math.max(0.4, 0.85 - (n / 140));
                 this.playNote(n, t, vel);
             });
         },
@@ -533,25 +539,13 @@
         sfx(k) {
             if(!this.ctx) return;
             const now = this.ctx.currentTime;
-            
-            // VICTOIRE : Arpège "Magique" très doux (C Maj9)
-            if (k === 'win') {
-                [523, 659, 783, 987].forEach((f, i) => this.playPureTone(f, now + i * 0.1, 0.8));
-            }
-            // DEFAITE : Son "Bulle" grave, non agressif
-            else if (k === 'lose') {
-                this.playPureTone(180, now, 0.3);
-                this.playPureTone(130, now + 0.15, 0.4);
-            }
-            // LEVEL UP : Scintillement rapide
-            else if (k === 'lvl') {
-                [523, 659, 783, 1046, 1318, 1568].forEach((f,i) => this.playPureTone(f, now + i * 0.06, 0.6));
-            }
+            if (k === 'win') [523, 659, 783, 987].forEach((f, i) => this.playPureTone(f, now + i * 0.1, 0.8));
+            else if (k === 'lose') { this.playPureTone(180, now, 0.3); this.playPureTone(130, now + 0.15, 0.4); }
+            else if (k === 'lvl') [523, 659, 783, 1046, 1318, 1568].forEach((f,i) => this.playPureTone(f, now + i * 0.06, 0.6));
         },
 
         loop() {
-            const cvs = document.getElementById('visualizer'); 
-            const c = cvs.getContext('2d');
+            const cvs = document.getElementById('visualizer'); const c = cvs.getContext('2d');
             const draw = () => {
                 requestAnimationFrame(draw);
                 if(!this.ctx) return;
@@ -578,25 +572,46 @@
         timerRef: null,
 
         init() {
-            // NOUVELLE CLE DE SAUVEGARDE POUR FORCER LE RESET
             const s = JSON.parse(localStorage.getItem('harmonist_v4_final') || '{}');
-            
-            // FUSION INTELLIGENTE : On ne charge que si XP existe, sinon on garde les defaults
             if(s.xp !== undefined) { 
                 this.data = { ...this.data, ...s };
-                // Sécurité : si les settings sont vides dans la sauvegarde, on remet les défauts
                 if(!this.data.settings || !this.data.settings.activeC) {
                     this.data.settings = { activeC: DB.chords.map(c=>c.id), activeI: DB.invs.map(i=>i.id) };
                 }
             }
-            
-            // Initialisation des stats manquantes si nécessaire
             DB.chords.forEach(c=>{ if(!this.data.stats.c[c.id]) this.data.stats.c[c.id]={ok:0, tot:0}; });
             DB.invs.forEach(i=>{ if(!this.data.stats.i[i.id]) this.data.stats.i[i.id]={ok:0, tot:0}; });
             
+            this.updateStartScreen();
             this.calcGlobalStats();
-            UI.renderBoard(); 
-            UI.updateHeader();
+            UI.renderBoard(); UI.updateHeader();
+        },
+
+        updateStartScreen() {
+            const d = this.data;
+            const r = DB.ranks[Math.min(d.lvl-1, DB.ranks.length-1)];
+            document.getElementById('startRankIcon').innerText = r.i;
+            document.getElementById('startLvl').innerText = d.lvl;
+            document.getElementById('startRank').innerText = r.t;
+        },
+
+        // NOUVELLE FONCTION DE LANCEMENT
+        launch(mode) {
+            Audio.init(); // Démarre l'audio sur clic utilisateur (obligatoire)
+            
+            // Transition
+            document.getElementById('startScreen').classList.add('hidden');
+            document.getElementById('mainApp').classList.add('visible');
+            
+            this.setMode(mode);
+        },
+
+        home() {
+            if(this.timerRef) { clearInterval(this.timerRef); this.timerRef = null; }
+            this.updateStartScreen();
+            document.getElementById('mainApp').classList.remove('visible');
+            document.getElementById('startScreen').classList.remove('hidden');
+            UI.closeModals();
         },
 
         calcGlobalStats() {
@@ -606,10 +621,7 @@
         },
 
         setMode(m) {
-            Audio.init();
             this.session.mode = m;
-            document.getElementById('modeZen').className = m==='zen'?'mode-opt active':'mode-opt';
-            document.getElementById('modeChrono').className = m==='chrono'?'mode-opt active':'mode-opt';
             document.getElementById('chronoDisplay').style.display = m==='chrono'?'block':'none';
             this.resetRound(true);
             this.playNew();
@@ -643,7 +655,6 @@
         },
 
         playNew() {
-            Audio.init();
             if(this.session.mode === 'chrono' && !this.timerRef && !this.session.chord) {
                 this.timerRef = setInterval(() => {
                     this.session.time--;
@@ -658,12 +669,10 @@
 
             const ac = DB.chords.filter(c => this.data.settings.activeC.includes(c.id));
             const ai = DB.invs.filter(i => this.data.settings.activeI.includes(i.id));
-            // Sécurité : Si config vide, on remet tout
             if(!ac.length || !ai.length) {
                 this.data.settings.activeC = DB.chords.map(c=>c.id);
                 this.data.settings.activeI = DB.invs.map(i=>i.id);
-                this.playNew();
-                return;
+                this.playNew(); return;
             }
 
             const type = ac[Math.floor(Math.random()*ac.length)];
@@ -856,8 +865,6 @@
             document.getElementById('streakVal').innerText = App.session.streak;
             document.getElementById('streakVal').className = App.session.streak > 4 ? 'stat-val streak-fire' : 'stat-val';
             document.getElementById('highScoreVal').innerText = d.bestChrono;
-            const pct = App.session.globalTot ? Math.round((App.session.globalOk / App.session.globalTot) * 100) : 0;
-            document.getElementById('precisionVal').innerText = pct + '%';
         },
 
         updateChrono() {
