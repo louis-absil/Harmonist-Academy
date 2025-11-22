@@ -29,12 +29,11 @@
             color: var(--text);
             font-family: var(--font);
             margin: 0; padding: 0;
-            /* Utilisation de dvh pour gérer les barres d'adresses mobiles */
             height: 100dvh; 
             width: 100vw;
             overflow: hidden;
             display: flex; justify-content: center;
-            overscroll-behavior: none; /* Empêche le rebond sur iOS */
+            overscroll-behavior: none; 
         }
 
         /* LAYOUT PRINCIPAL */
@@ -43,33 +42,37 @@
             height: 100%;
             display: flex; flex-direction: column;
             padding: 10px; 
-            /* Espacement dynamique selon la taille */
             gap: 8px; 
             position: relative;
-            /* Gestion de la "safe area" pour iPhone X et suivants */
             padding-bottom: env(safe-area-inset-bottom, 10px);
         }
 
-        /* HEADER - Ne rétrécit jamais */
+        /* HEADER */
         header {
             display: flex; justify-content: space-between; align-items: center;
             padding: 8px 12px; background: var(--panel); border-radius: var(--radius);
             border: 1px solid var(--panel-border); 
-            flex-shrink: 0; /* IMPORTANT: Le header ne s'écrase pas */
+            flex-shrink: 0; 
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
             gap: 10px;
             min-height: 50px;
         }
+        
+        /* HEADER GAUCHE (RANG) */
         .header-left { display: flex; align-items: center; gap: 10px; overflow: hidden; }
         .rank-icon { font-size: 1.5rem; flex-shrink: 0; }
+        
+        /* Conteneur du texte : flex pour s'adapter */
         .rank-text { display: flex; flex-direction: column; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        
         .rank-title { font-weight: 800; color: var(--gold); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; }
         .lvl-pill { font-size: 0.7rem; color: var(--text-dim); background: rgba(0,0,0,0.2); padding: 1px 6px; border-radius: 4px; align-self: flex-start; margin-bottom: 2px; }
         
         .xp-container { position: absolute; bottom: 0; left: 0; width: 100%; height: 3px; background: rgba(0,0,0,0.3); }
         .xp-fill { height: 100%; background: linear-gradient(90deg, var(--primary), var(--accent)); width: 0%; transition: width 0.5s ease-out; }
 
-        .header-right { display: flex; align-items: center; gap: 12px; }
+        /* HEADER DROITE (STATS + BOUTONS) */
+        .header-right { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
 
         .stats-cluster { display: flex; gap: 6px; align-items: center; }
         .stat-badge { 
@@ -92,12 +95,12 @@
         }
         .icon-btn:hover { background: rgba(255,255,255,0.1); opacity: 1; }
 
-        /* TOOLS BAR - Ne rétrécit pas */
+        /* TOOLS BAR */
         .tools-bar { 
             display: flex; justify-content: space-between; align-items: center; 
             flex-shrink: 0; 
             padding: 0 5px;
-            height: 40px; /* Hauteur fixe pour stabilité */
+            height: 40px; 
         }
         
         .mode-selector { background: var(--panel); padding: 3px; border-radius: 20px; display: flex; border: 1px solid var(--panel-border); }
@@ -124,14 +127,13 @@
         }
         .lives { font-size: 0.8rem; margin-left: 5px; opacity: 0.8; }
 
-        /* GAME BOARD - C'est la zone qui doit s'adapter */
+        /* GAME BOARD */
         .game-area {
-            flex: 1; /* Prend toute la place restante */
-            min-height: 0; /* Permet au conteneur de rétrécir en dessous du contenu */
+            flex: 1; 
+            min-height: 0; 
             display: grid; 
             grid-template-columns: 1.5fr 1fr; 
             gap: 10px;
-            /* Si l'écran est vraiment trop petit, on autorise le scroll UNIQUEMENT dans cette zone */
             overflow-y: auto; 
         }
         
@@ -139,17 +141,14 @@
             background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--radius);
             padding: 8px; display: flex; flex-direction: column;
             box-shadow: inset 0 0 20px rgba(0,0,0,0.2); transition: opacity 0.3s;
-            height: 100%; /* Remplit la grille */
+            height: 100%; 
         }
         .panel-label { 
             font-size: 0.65rem; text-transform: uppercase; color: var(--text-dim); font-weight: 800; letter-spacing: 1px; margin-bottom: 6px; 
             display: flex; justify-content: space-between; flex-shrink: 0;
         }
 
-        .pad-grid {
-            display: grid; gap: 6px; flex: 1; 
-            min-height: 0; /* Important pour l'imbrication */
-        }
+        .pad-grid { display: grid; gap: 6px; flex: 1; min-height: 0; }
         .grid-c { grid-template-columns: repeat(2, 1fr); grid-auto-rows: 1fr; }
         .grid-i { grid-template-columns: repeat(2, 1fr); grid-auto-rows: 1fr; }
         
@@ -160,7 +159,7 @@
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
             height: 100%; width: 100%;
-            min-height: 40px; /* Taille minimum tactile */
+            min-height: 40px; 
         }
         .pad:active { transform: scale(0.96); }
         .pad:hover { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.1); }
@@ -179,13 +178,13 @@
         .pad-main { font-size: 1rem; font-weight: 800; font-family: monospace; }
         .pad-sub { font-size: 0.6rem; opacity: 0.6; margin-top: 0px; }
 
-        /* COMMAND BAR - Ne rétrécit jamais */
+        /* COMMAND BAR */
         .command-deck {
             background: var(--panel); padding: 6px; border-radius: 16px;
             border: 1px solid var(--panel-border);
             display: flex; gap: 6px; 
-            height: 60px; /* Hauteur fixe optimisée */
-            flex-shrink: 0; /* Vital : empêche la disparition des boutons */
+            height: 60px; 
+            flex-shrink: 0; 
             box-shadow: 0 -5px 20px rgba(0,0,0,0.2);
             z-index: 10;
         }
@@ -234,21 +233,33 @@
         }
 
         @media (max-width: 768px) {
-            /* Basculement en colonne pour la zone de jeu, mais avec flex intelligent */
             .game-area { 
                 grid-template-columns: 1fr; 
                 grid-template-rows: 1.5fr 1fr; 
             }
-            /* GESTION DU HEADER SUR MOBILE (MODIFIÉE) */
-            .header-left { gap: 5px; flex: 1; min-width: 0; } /* min-width:0 permet au texte de rétrécir */
-            .header-right { flex: 0 0 auto; }
             
-            /* On affiche le rang, mais on cache la pillule "Niveau X" pour gagner de la place */
-            .rank-text { display: flex; min-width: 0; margin-right: 5px; } 
+            /* -------------------------------------------
+               CORRECTION MOBILE : PRIORITE AU TITRE RANG 
+               ------------------------------------------- */
+            
+            /* 1. On donne toute la place flexible au bloc de gauche (titre) */
+            .header-left { 
+                flex: 1; 
+                min-width: 0; /* Permet au texte de rétrécir sans casser le flex */
+                gap: 8px;
+            }
+            
+            /* 2. On affiche le bloc texte, mais on cache la pilule "Niveau X" pour gagner de la place verticale/horizontale */
+            .rank-text { display: flex; min-width: 0; } 
             .lvl-pill { display: none; } 
-            .rank-title { font-size: 0.75rem; } /* Un peu plus petit pour être sûr que ça rentre */
 
-            /* Texte plus petit sur les pads */
+            /* 3. CRUCIAL: On cache les STATS sur mobile pour laisser la place au texte long */
+            .stats-cluster { display: none; }
+            
+            /* 4. Ajustement de la taille du titre */
+            .rank-title { font-size: 0.8rem; } 
+
+            /* Ajustements pads */
             .pad-main { font-size: 0.9rem; }
             .pad-sub { font-size: 0.5rem; }
         }
