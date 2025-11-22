@@ -239,11 +239,15 @@
                 grid-template-columns: 1fr; 
                 grid-template-rows: 1.5fr 1fr; 
             }
-            /* On cache les éléments non essentiels du header si manque de place */
-            .rank-text { display: none; } 
-            .header-left { gap: 5px; flex: 1; }
+            /* GESTION DU HEADER SUR MOBILE (MODIFIÉE) */
+            .header-left { gap: 5px; flex: 1; min-width: 0; } /* min-width:0 permet au texte de rétrécir */
             .header-right { flex: 0 0 auto; }
             
+            /* On affiche le rang, mais on cache la pillule "Niveau X" pour gagner de la place */
+            .rank-text { display: flex; min-width: 0; margin-right: 5px; } 
+            .lvl-pill { display: none; } 
+            .rank-title { font-size: 0.75rem; } /* Un peu plus petit pour être sûr que ça rentre */
+
             /* Texte plus petit sur les pads */
             .pad-main { font-size: 0.9rem; }
             .pad-sub { font-size: 0.5rem; }
@@ -409,13 +413,13 @@
             { id: 3, name: '2', sub: '3ème', corr: '2' }
         ],
         ranks: [
-            {t:"Tourneur de pages enthousiaste",i:"📄"}, {t:"Auditeur curieux",i:"👂"}, {t:"Observateur attentif",i:"👀"},
-            {t:"Mélomane motivé",i:"🎧"}, {t:"Déchiffreur du dimanche",i:"👓"}, {t:"Explorateur de tonalités",i:"🧭"},
-            {t:"Solfégiste amateur",i:"✏️"}, {t:"Oreille relative naissante",i:"🌱"}, {t:"Apprenti harmoniste",i:"🎒"},
-            {t:"Coloriste harmonique",i:"🎨"}, {t:"Artisan de l’harmonie",i:"🎻"}, {t:"Chef de pupitre",i:"🎻"},
-            {t:"Disciple de Rameau",i:"📚"}, {t:"Solfégiste confirmé",i:"🎓"}, {t:"Spécialiste de l’oreille relative",i:"⚡"},
-            {t:"Harmoniste aguerri",i:"🏹"}, {t:"Improvisateur inspiré",i:"🎹"}, {t:"Maître de chapelle",i:"⛪"},
-            {t:"Favori d’Euterpe",i:"✨"}, {t:"Réincarnation de Bach",i:"👑"}
+            {t:"Tourneur de pages enthousiaste",i:"📄"}, {t:"Régisseur distrait",i:"🔦"}, {t:"Déchiffreur du dimanche",i:"👓"},
+            {t:"Spécialiste des cordes à vide",i:"🎻"}, {t:"Harmoniste en herbe",i:"🌱"}, {t:"Explorateur de Tonalités",i:"🧭"},
+            {t:"Adepte des mouvements contraires",i:"↔️"}, {t:"Amateur de résolutions heureuses",i:"😌"}, {t:"Expert du Retard",i:"⏳"},
+            {t:"Premier Prix de Solfège",i:"🥇"}, {t:"Chef de pupitre",i:"🎼"}, {t:"Supersoliste",i:"🌟"},
+            {t:"Disciple de Rameau",i:"📖"}, {t:"Architecte des Modulations",i:"🏗️"}, {t:"Chef d'orchestre inspiré",i:"🥢"},
+            {t:"Virtuose de l’oreille relative",i:"👂"}, {t:"Explorateur du chromatisme",i:"🌈"}, {t:"Théoricien Post-Tonal",i:"🌌"},
+            {t:"Maître des Fonctions harmoniques",i:"🔮"}, {t:"Réincarnation de Bach",i:"👑"}
         ]
     };
 
