@@ -187,7 +187,7 @@
         input:checked + .slider { background: var(--primary); }
         input:checked + .slider:before { transform: translateX(18px); }
 
-        /* COACH BUBBLE (NOUVEAU) */
+        /* COACH BUBBLE */
         .coach-box { margin-bottom: 20px; display: flex; flex-direction: column; align-items: center; }
         .coach-avatar { font-size: 2.5rem; margin-bottom: 10px; animation: pop 1s infinite alternate; }
         .coach-bubble {
@@ -382,7 +382,7 @@
 </div>
 
 <script>
-    // --- BIBLIOTHEQUE DE PHRASES (V4) ---
+    // --- BIBLIOTHEQUE DE PHRASES (V5 - Corrigée avec noms explicites) ---
     const COACH_DB = {
         start: [
             "Entraîne-toi encore un peu, j'ai besoin de plus de données pour analyser ton oreille.",
@@ -392,32 +392,32 @@
             maj7: [
                 {t:"Théorie", m:"Le **M7M (Maj7)** te résiste ? Cherche la *Sensible* (la 7ème note) qui veut monter d'un demi-ton vers la Tonique."},
                 {t:"Image", m:"Le **M7M (Maj7)** c'est la couleur caractéristique du Jazz : stable, lumineuse, avec une nostalgie planante."},
-                {t:"Astuce", m:"Arpège les notes dans ta tête : c'est le début de la chanson *'Mr. Sandman'* (1-3-5-7)."}
+                {t:"Astuce", m:"Pour le **M7M (Maj7)**, arpège les notes dans ta tête : c'est le début de la chanson *'Mr. Sandman'* (1-3-5-7)."}
             ],
             min7: [
-                {t:"Théorie", m:"C'est souvent le **IIe degré** d'une gamme majeure. Imagine que ce **m7m (min7)** amène une cadence parfaite (II - V - I)."},
+                {t:"Théorie", m:"Le **m7m (min7)** est souvent le **IIe degré** d'une gamme majeure. Imagine qu'il amène une cadence parfaite (II - V - I)."},
                 {t:"Image", m:"Le **m7m (min7)** est une couleur douce et contemplative. Contrairement aux autres, il a très peu de tension interne."},
-                {t:"Astuce", m:"Il sonne mineur, mais sans le frottement étrange du **mM7** ni la noirceur du **Ø**."}
+                {t:"Astuce", m:"Le **m7m (min7)** sonne mineur, mais sans le frottement étrange du **mM7** ni la noirceur du **Ø**."}
             ],
             dom7: [
                 {t:"Théorie", m:"La présence du **Triton** (3 tons) dans le **M7m (Dom7)** crée une forte tension qui appelle une résolution."},
                 {t:"Image", m:"Le **M7m (Dom7)** est dynamique, 'en mouvement'. Il ne peut pas rester là, il doit aller quelque part."},
-                {t:"Astuce", m:"Concentre-toi sur ce sentiment d'instabilité. L'accord est 'en suspens' et tire fortement vers l'accord suivant."}
+                {t:"Astuce", m:"Sur le **M7m (Dom7)**, concentre-toi sur ce sentiment d'instabilité. L'accord est 'en suspens' et tire fortement vers la fin."}
             ],
             hdim7: [
-                {t:"Théorie", m:"C'est le **IIe degré** de la gamme mineure. Comme le **m7m**, mais avec une quinte bémol qui rajoute de la dissonance."},
+                {t:"Théorie", m:"Le **Ø (m7b5)** est le **IIe degré** de la gamme mineure. Comme le **m7m**, mais avec une quinte bémol qui rajoute de la dissonance."},
                 {t:"Image", m:"Le **Ø (m7b5)** est plus sombre que le mineur 7, mais moins dramatique que le diminué complet."},
-                {t:"Astuce", m:"C'est l'accord pivot des cadences en mode mineur (II - V - i). Il prépare généralement une Dominante."}
+                {t:"Astuce", m:"Le **Ø (m7b5)** est l'accord pivot des cadences en mode mineur (II - V - i). Il prépare généralement une Dominante."}
             ],
             dim7: [
                 {t:"Théorie", m:"Le **dim7** est composé uniquement de **tierces mineures** empilées. C'est un enchevêtrement de deux tritons !"},
                 {t:"Image", m:"Le **dim7** c'est l'accord de l'angoisse ou du 'Jumpscare' au cinéma. Une tension extrême sans direction précise."},
-                {t:"Astuce", m:"C'est un caméléon : chaque note peut devenir la sensible d'une nouvelle tonalité. Il peut aller n'importe où."}
+                {t:"Astuce", m:"Le **dim7** est un caméléon : chaque note peut devenir la sensible d'une nouvelle tonalité. Il peut aller n'importe où."}
             ],
             minmaj7: [
                 {t:"Théorie", m:"Le **mM7 (minMaj7)** est le plus dissonant des six. Très utilisé comme 'couleur' et tension statique au XXème siècle."},
-                {t:"Image", m:"C'est l'accord du mystère, type *James Bond* ou film noir. Une base mineure triste avec une note finale perçante."},
-                {t:"Astuce", m:"Dans les renversements, repère le frottement très dur (seconde mineure) entre la 7ème majeure et la Tonique."}
+                {t:"Image", m:"Le **mM7 (minMaj7)** est l'accord du mystère, type *James Bond* ou film noir. Une base mineure triste avec une note finale perçante."},
+                {t:"Astuce", m:"Pour le **mM7 (minMaj7)**, repère le frottement très dur (seconde mineure) entre la 7ème majeure et la Tonique."}
             ]
         },
         bass: [
@@ -577,7 +577,7 @@
             return ratioC * iMult;
         },
 
-        // ALGORITHME DU COACH CORRIGÉ (V1.1.4)
+        // ALGORITHME DU COACH
         analyzeCoach() {
             const tot = this.session.globalTot;
             const ok = this.session.globalOk;
@@ -598,7 +598,7 @@
                 return { t: tip.t, m: tip.m };
             }
 
-            // 3. Talon d'Achille RENVERSEMENTS (Strict)
+            // 3. Talon d'Achille RENVERSEMENTS
             for(let iid in this.data.stats.i) {
                 const s = this.data.stats.i[iid];
                 if(s.tot > 5 && (s.ok/s.tot) < 0.45) {
@@ -612,7 +612,7 @@
             for(let iid in this.data.stats.i) { totI += this.data.stats.i[iid].tot; accI += this.data.stats.i[iid].ok; }
             const ratioI = totI ? (accI/totI) : 0;
 
-            // 4. Syndrome de la Basse (Écart Global)
+            // 4. Syndrome de la Basse
             if(totI > 5 && accC > 0.60 && ratioI < 0.50) {
                 return { t: "Renversements", m: COACH_DB.bass[Math.floor(Math.random()*COACH_DB.bass.length)] };
             }
@@ -620,7 +620,7 @@
             // 5. En Feu
             if(this.session.streak > 5) return { t: "En Feu 🔥", m: COACH_DB.boost[Math.floor(Math.random()*COACH_DB.boost.length)] };
 
-            // 6. Maîtrise (Tout > 75%)
+            // 6. Maîtrise
             if(accC > 0.75 && ratioI > 0.70) {
                 return { t: "Expert", m: COACH_DB.master[Math.floor(Math.random()*COACH_DB.master.length)] };
             }
@@ -790,7 +790,6 @@
         // MODIF UI STATS : Avec parser Markdown -> HTML
         renderStats() {
             const advice = App.analyzeCoach();
-            // Conversion des astérisques en gras (**) et italique (*)
             let msg = advice.m;
             msg = msg.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
             msg = msg.replace(/\*(.*?)\*/g, '<em>$1</em>');
