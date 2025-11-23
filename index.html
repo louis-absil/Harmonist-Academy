@@ -382,7 +382,7 @@
 </div>
 
 <script>
-    // --- BIBLIOTHEQUE DE PHRASES (V6) ---
+    // --- BIBLIOTHEQUE DE PHRASES (V7 - Nettoyée et Validée) ---
     const COACH_DB = {
         start: [
             "Entraîne-toi encore un peu, j'ai besoin de plus de données pour analyser ton oreille.",
@@ -420,13 +420,10 @@
                 {t:"Astuce", m:"Pour le **mM7 (minMaj7)**, repère le frottement très dur (seconde mineure) entre la 7ème majeure et la Tonique."}
             ]
         },
-        bass: [ 
+        bass: [ // REVENU AUX 3 PHRASES VALIDÉES
             "Ton oreille capte bien la couleur, mais néglige la fondation. Chante la note la plus grave (la Basse) pour t'orienter.",
             "Pour les renversements, cherche l'intervalle de **Seconde** (notes voisines). Sa position t'indique la réponse.",
-            "La Seconde est en haut ? C'est un **65**. Au milieu ? Un **43**. En bas ? Un **2**. Aucune seconde ? C'est l'état fondamental (**7**).",
-            "L'état fondamental (**7**) est 'posé' et stable. Les renversements semblent 'en lévitation' ou instables. Ressens-tu ce poids ?",
-            "Pour repérer le **2ème renversement (43)**, écoute l'intervalle de **Quarte** (4 notes d'écart) entre la basse et la fondamentale.",
-            "L'astuce ultime pour les renversements : Chante la note la plus basse à voix haute. C'est la seule façon d'être sûr."
+            "La Seconde est en haut ? C'est un **65**. Au milieu ? Un **43**. En bas ? Un **2**. Aucune seconde ? C'est l'état fondamental (**7**)."
         ],
         boost: [
             "Tu es particulièrement affûté aujourd'hui ! Profite de cet élan pour battre ton record.",
@@ -580,7 +577,7 @@
             return ratioC * iMult;
         },
 
-        // ALGORITHME DU COACH (V1.3 : Le Grand Sac)
+        // ALGORITHME DU COACH (V1.3 : Le Grand Sac + Nettoyage phrases)
         analyzeCoach() {
             const tot = this.session.globalTot;
             const ok = this.session.globalOk;
@@ -588,14 +585,13 @@
             // 1. Cold Start
             if(tot < 15) return { t: "Débutant", m: COACH_DB.start[Math.floor(Math.random()*COACH_DB.start.length)] };
 
-            // 2. Collecte de TOUS les conseils pertinents (Le Grand Sac)
+            // 2. Collecte de TOUS les conseils pertinents
             let allPossibleTips = [];
 
             // A. Collecte Accords Faibles
             for(let cid in this.data.stats.c) {
                 const s = this.data.stats.c[cid];
                 if(s.tot > 5 && (s.ok/s.tot) < 0.45) {
-                    // On ajoute les 3 phrases de cet accord dans le sac
                     COACH_DB.weakness[cid].forEach(phrase => allPossibleTips.push({t: phrase.t, m: phrase.m}));
                 }
             }
@@ -612,7 +608,7 @@
             const ratioI = totI ? (accI/totI) : 0;
             
             if(bassIssue || (totI > 5 && accC > 0.60 && ratioI < 0.50)) {
-                // On ajoute les 6 phrases de renversement dans le sac
+                // On ajoute les phrases de renversement validées
                 COACH_DB.bass.forEach(phrase => allPossibleTips.push({t: "Renversements", m: phrase}));
             }
 
