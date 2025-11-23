@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Harmonist Academy - V1.1.1</title>
+    <title>Harmonist Academy - V1.1.2 (Coach)</title>
     <style>
         :root {
             --bg: #0f172a;
@@ -58,22 +58,15 @@
             min-height: 50px;
         }
         
-        /* HEADER GAUCHE (RANG) */
         .header-left { display: flex; align-items: center; gap: 10px; overflow: hidden; }
         .rank-icon { font-size: 1.5rem; flex-shrink: 0; }
-        
-        /* Conteneur du texte : flex pour s'adapter */
         .rank-text { display: flex; flex-direction: column; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        
         .rank-title { font-weight: 800; color: var(--gold); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; }
         .lvl-pill { font-size: 0.7rem; color: var(--text-dim); background: rgba(0,0,0,0.2); padding: 1px 6px; border-radius: 4px; align-self: flex-start; margin-bottom: 2px; }
-        
         .xp-container { position: absolute; bottom: 0; left: 0; width: 100%; height: 3px; background: rgba(0,0,0,0.3); }
         .xp-fill { height: 100%; background: linear-gradient(90deg, var(--primary), var(--accent)); width: 0%; transition: width 0.5s ease-out; }
 
-        /* HEADER DROITE (STATS + BOUTONS) */
         .header-right { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
-
         .stats-cluster { display: flex; gap: 6px; align-items: center; }
         .stat-badge { 
             background: rgba(0,0,0,0.3); border: 1px solid var(--panel-border); 
@@ -84,7 +77,6 @@
         .stat-val { font-weight: 800; font-size: 0.85rem; color: white; }
         .stat-lbl { font-size: 0.45rem; text-transform: uppercase; color: var(--text-dim); letter-spacing: 0.5px; margin-bottom: 2px;}
         .trophy { color: var(--gold); border-color: rgba(251, 191, 36, 0.2); }
-        
         .streak-fire { color: #ef4444; text-shadow: 0 0 10px #ef4444; animation: pulseFire 1s infinite; }
         @keyframes pulseFire { 0%{transform:scale(1);} 50%{transform:scale(1.1);} 100%{transform:scale(1);} }
 
@@ -98,15 +90,10 @@
         /* TOOLS BAR */
         .tools-bar { 
             display: flex; justify-content: space-between; align-items: center; 
-            flex-shrink: 0; 
-            padding: 0 5px;
-            height: 40px; 
+            flex-shrink: 0; padding: 0 5px; height: 40px; 
         }
-        
         .mode-selector { background: var(--panel); padding: 3px; border-radius: 20px; display: flex; border: 1px solid var(--panel-border); }
-        .mode-opt { 
-            padding: 4px 10px; border-radius: 16px; font-size: 0.7rem; font-weight: 700; color: var(--text-dim); cursor: pointer; transition: 0.2s; 
-        }
+        .mode-opt { padding: 4px 10px; border-radius: 16px; font-size: 0.7rem; font-weight: 700; color: var(--text-dim); cursor: pointer; transition: 0.2s; }
         .mode-opt.active { background: var(--primary); color: white; box-shadow: 0 2px 10px rgba(99, 102, 241, 0.3); }
 
         .vis-container {
@@ -119,7 +106,6 @@
         .feedback-msg.correct { color: var(--success); animation: pop 0.2s; }
         .feedback-msg.wrong { color: var(--error); animation: shake 0.3s; }
         .feedback-msg.warning { color: var(--warning); }
-
         .timer-badge { 
             font-variant-numeric: tabular-nums; background: var(--primary); color: white; 
             padding: 4px 10px; border-radius: 8px; font-weight: 800; font-size: 0.9rem;
@@ -129,41 +115,30 @@
 
         /* GAME BOARD */
         .game-area {
-            flex: 1; 
-            min-height: 0; 
-            display: grid; 
-            grid-template-columns: 1.5fr 1fr; 
-            gap: 10px;
-            overflow-y: auto; 
+            flex: 1; min-height: 0; display: grid; grid-template-columns: 1.5fr 1fr; gap: 10px; overflow-y: auto; 
         }
-        
         .panel {
             background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--radius);
             padding: 8px; display: flex; flex-direction: column;
-            box-shadow: inset 0 0 20px rgba(0,0,0,0.2); transition: opacity 0.3s;
-            height: 100%; 
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.2); transition: opacity 0.3s; height: 100%; 
         }
         .panel-label { 
             font-size: 0.65rem; text-transform: uppercase; color: var(--text-dim); font-weight: 800; letter-spacing: 1px; margin-bottom: 6px; 
             display: flex; justify-content: space-between; flex-shrink: 0;
         }
-
         .pad-grid { display: grid; gap: 6px; flex: 1; min-height: 0; }
         .grid-c { grid-template-columns: repeat(2, 1fr); grid-auto-rows: 1fr; }
         .grid-i { grid-template-columns: repeat(2, 1fr); grid-auto-rows: 1fr; }
         
-        /* BOUTONS ACCORDS */
         .pad {
             background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05);
             border-radius: 10px; cursor: pointer; position: relative;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-            height: 100%; width: 100%;
-            min-height: 40px; 
+            height: 100%; width: 100%; min-height: 40px; 
         }
         .pad:active { transform: scale(0.96); }
         .pad:hover { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.1); }
-        
         .pad.selected { 
             background: rgba(99, 102, 241, 0.15); border-color: var(--primary); 
             box-shadow: 0 0 15px rgba(99, 102, 241, 0.2), inset 0 0 10px rgba(99, 102, 241, 0.1);
@@ -174,7 +149,6 @@
         }
         .pad.wrong { border-color: var(--error); color: var(--error); opacity: 0.4; }
         .pad.correction { border-color: var(--gold); color: var(--gold); }
-
         .pad-main { font-size: 1rem; font-weight: 800; font-family: monospace; }
         .pad-sub { font-size: 0.6rem; opacity: 0.6; margin-top: 0px; }
 
@@ -182,23 +156,16 @@
         .command-deck {
             background: var(--panel); padding: 6px; border-radius: 16px;
             border: 1px solid var(--panel-border);
-            display: flex; gap: 6px; 
-            height: 60px; 
-            flex-shrink: 0; 
-            box-shadow: 0 -5px 20px rgba(0,0,0,0.2);
-            z-index: 10;
+            display: flex; gap: 6px; height: 60px; flex-shrink: 0; 
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.2); z-index: 10;
         }
-
         .cmd-btn {
             border: none; border-radius: 12px; cursor: pointer; font-weight: 700; font-family: var(--font);
             transition: transform 0.1s; display: flex; flex-direction: column; align-items: center; justify-content: center;
         }
         .cmd-btn:active { transform: scale(0.95); }
         .cmd-btn:disabled { opacity: 0.4; filter: grayscale(1); cursor: not-allowed; }
-
-        .btn-listen { 
-            flex: 1; background: #334155; color: white; font-size: 0.7rem; border: 1px solid rgba(255,255,255,0.1);
-        }
+        .btn-listen { flex: 1; background: #334155; color: white; font-size: 0.7rem; border: 1px solid rgba(255,255,255,0.1); }
         .btn-action {
             flex: 2; background: var(--success); color: white; font-size: 1rem;
             box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); text-transform: uppercase; letter-spacing: 1px;
@@ -213,7 +180,6 @@
         
         .toggle-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
         .toggle-row:last-child { border: none; }
-        
         .toggle-switch { position: relative; width: 40px; height: 22px; }
         .toggle-switch input { opacity: 0; width: 0; height: 0; }
         .slider { position: absolute; cursor: pointer; inset: 0; background: #334155; transition: .3s; border-radius: 22px; }
@@ -221,8 +187,25 @@
         input:checked + .slider { background: var(--primary); }
         input:checked + .slider:before { transform: translateX(18px); }
 
+        /* COACH BUBBLE (NOUVEAU) */
+        .coach-box { margin-bottom: 20px; display: flex; flex-direction: column; align-items: center; }
+        .coach-avatar { font-size: 2.5rem; margin-bottom: 10px; animation: pop 1s infinite alternate; }
+        .coach-bubble {
+            background: #334155; color: white; padding: 15px; border-radius: 16px;
+            position: relative; font-size: 0.9rem; line-height: 1.4; border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3); max-width: 100%;
+        }
+        .coach-bubble:after {
+            content: ''; position: absolute; top: -8px; left: 50%; transform: translateX(-50%);
+            border-width: 0 8px 8px; border-style: solid; border-color: #334155 transparent; display: block; width: 0;
+        }
+        .coach-tag {
+            display: inline-block; background: var(--primary); color: white; padding: 2px 6px; 
+            border-radius: 4px; font-size: 0.6rem; font-weight: 800; text-transform: uppercase; margin-bottom: 5px;
+        }
+
         /* ANIMATIONS */
-        @keyframes pop { 0% { transform: scale(0.8); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
+        @keyframes pop { 0% { transform: scale(0.9); } 100% { transform: scale(1.1); } }
         @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
         @keyframes fadeIn { from{opacity:0} to{opacity:1} }
         .confetti-canvas { position: fixed; top:0; left:0; width:100%; height:100%; pointer-events: none; z-index: 90; }
@@ -380,7 +363,8 @@
             <h2 style="margin:0;">Statistiques</h2>
             <span style="cursor:pointer; font-size:1.5rem;" onclick="UI.closeModals()">✕</span>
         </div>
-        <div id="statsContent" style="max-height:60vh; overflow-y:auto;"></div>
+        <div class="coach-box" id="coachDisplay"></div>
+        <div id="statsContent" style="max-height:50vh; overflow-y:auto;"></div>
     </div>
 </div>
 
@@ -397,6 +381,61 @@
 </div>
 
 <script>
+    // --- BIBLIOTHEQUE DE PHRASES (V4) ---
+    const COACH_DB = {
+        start: [
+            "Entraîne-toi encore un peu, j'ai besoin de plus de données pour analyser ton oreille.",
+            "Je t'observe... Enchaîne quelques accords pour que je puisse établir ton profil."
+        ],
+        weakness: {
+            maj7: [
+                {t:"Théorie", m:"Le **M7M (Maj7)** te résiste ? Cherche la *Sensible* (la 7ème note) qui veut monter d'un demi-ton vers la Tonique."},
+                {t:"Image", m:"Le **M7M (Maj7)** c'est la couleur caractéristique du Jazz : stable, lumineuse, avec une nostalgie planante."},
+                {t:"Astuce", m:"Arpège les notes dans ta tête : c'est le début de la chanson *'Mr. Sandman'* (1-3-5-7)."}
+            ],
+            min7: [
+                {t:"Théorie", m:"C'est souvent le **IIe degré** d'une gamme majeure. Imagine que ce **m7m (min7)** amène une cadence parfaite (II - V - I)."},
+                {t:"Image", m:"Le **m7m (min7)** est une couleur douce et contemplative. Contrairement aux autres, il a très peu de tension interne."},
+                {t:"Astuce", m:"Il sonne mineur, mais sans le frottement étrange du **mM7** ni la noirceur du **Ø**."}
+            ],
+            dom7: [
+                {t:"Théorie", m:"La présence du **Triton** (3 tons) dans le **M7m (Dom7)** crée une forte tension qui appelle une résolution."},
+                {t:"Image", m:"Le **M7m (Dom7)** est dynamique, 'en mouvement'. Il ne peut pas rester là, il doit aller quelque part."},
+                {t:"Astuce", m:"Concentre-toi sur ce sentiment d'instabilité. L'accord est 'en suspens' et tire fortement vers l'accord suivant."}
+            ],
+            hdim7: [
+                {t:"Théorie", m:"C'est le **IIe degré** de la gamme mineure. Comme le **m7m**, mais avec une quinte bémol qui rajoute de la dissonance."},
+                {t:"Image", m:"Le **Ø (m7b5)** est plus sombre que le mineur 7, mais moins dramatique que le diminué complet."},
+                {t:"Astuce", m:"C'est l'accord pivot des cadences en mode mineur (II - V - i). Il prépare généralement une Dominante."}
+            ],
+            dim7: [
+                {t:"Théorie", m:"Le **dim7** est composé uniquement de **tierces mineures** empilées. C'est un enchevêtrement de deux tritons !"},
+                {t:"Image", m:"Le **dim7** c'est l'accord de l'angoisse ou du 'Jumpscare' au cinéma. Une tension extrême sans direction précise."},
+                {t:"Astuce", m:"C'est un caméléon : chaque note peut devenir la sensible d'une nouvelle tonalité. Il peut aller n'importe où."}
+            ],
+            minmaj7: [
+                {t:"Théorie", m:"Le **mM7 (minMaj7)** est le plus dissonant des six. Très utilisé comme 'couleur' et tension statique au XXème siècle."},
+                {t:"Image", m:"C'est l'accord du mystère, type *James Bond* ou film noir. Une base mineure triste avec une note finale perçante."},
+                {t:"Astuce", m:"Dans les renversements, repère le frottement très dur (seconde mineure) entre la 7ème majeure et la Tonique."}
+            ]
+        },
+        bass: [
+            "Ton oreille capte bien la couleur, mais néglige la fondation. Chante la note la plus grave (la Basse) pour t'orienter.",
+            "Cherche l'intervalle de **Seconde** (notes voisines). Sa position t'indique le renversement.",
+            "La Seconde est en haut ? C'est un **65**. Au milieu ? Un **43**. En bas ? Un **2**. Aucune seconde ? C'est l'état fondamental (**7**)."
+        ],
+        boost: [
+            "Tu es particulièrement affûté aujourd'hui ! Profite de cet élan pour battre ton record.",
+            "Belle remontée ! Tu es en train de corriger tes lacunes à vitesse grand V.",
+            "Tu es 'dans la zone'. Fais confiance à ton intuition, elle est juste."
+        ],
+        master: [
+            "Ton niveau est solide. Essaie maintenant de répondre plus vite, sans réfléchir, à l'instinct.",
+            "C'est presque trop facile ? Tente de faire une série de 20 sans aucune erreur.",
+            "Excellent. Pour le défi ultime, active le mode 'Éclaté' dans les paramètres si ce n'est pas déjà fait."
+        ]
+    };
+
     const DB = {
         chords: [
             { id: 'maj7', name: 'M7M', sub: 'Maj7', iv: [0,4,7,11] },
@@ -527,18 +566,73 @@
         calcXPMultiplier() {
             const activeC = this.data.settings.activeC.length;
             const activeI = this.data.settings.activeI.length;
-
-            // MODIF V1.1.1 : Tolérance Zéro pour l'anti-jeu (1 accord + 1 renversement = 0 XP)
             if (activeC === 1 && activeI === 1) return 0;
-            if (activeC === 1) return 0.05; // 5% si on doit deviner le renversement
-
+            if (activeC === 1) return 0.05; 
             const ratioC = activeC / 6;
             let iMult = 0.75;
             if (activeI === 2) iMult = 0.85;
             if (activeI === 3) iMult = 0.92;
             if (activeI === 4) iMult = 1.0;
-
             return ratioC * iMult;
+        },
+
+     // MODIF V1.1.3 : ALGORITHME DU COACH CORRIGÉ (Prise en compte stricte des Renversements)
+        analyzeCoach() {
+            const tot = this.session.globalTot;
+            const ok = this.session.globalOk;
+            
+            // 1. Cold Start
+            if(tot < 15) return { t: "Débutant", m: COACH_DB.start[Math.floor(Math.random()*COACH_DB.start.length)] };
+
+            // 2. Dynamique Positive (Session en feu) - Uniquement si on n'a pas de grosses lacunes
+            // On vérifie d'abord qu'il n'y a pas d'urgence avant de féliciter
+            
+            // 3. Talon d'Achille ACCORDS (Chord < 45%)
+            let weaks = [];
+            for(let cid in this.data.stats.c) {
+                const s = this.data.stats.c[cid];
+                if(s.tot > 5 && (s.ok/s.tot) < 0.45) weaks.push(cid);
+            }
+            if(weaks.length > 0) {
+                const target = weaks[Math.floor(Math.random()*weaks.length)];
+                const tips = COACH_DB.weakness[target];
+                const tip = tips[Math.floor(Math.random()*tips.length)];
+                return { t: tip.t, m: tip.m };
+            }
+
+            // 4. Talon d'Achille RENVERSEMENTS (NOUVEAU : Check spécifique)
+            // Si UN SEUL renversement est < 45%, on alerte sur la basse.
+            for(let iid in this.data.stats.i) {
+                const s = this.data.stats.i[iid];
+                // On ignore l'état fondamental (0) car c'est facile, on surveille 1, 2, 3
+                if(s.tot > 5 && (s.ok/s.tot) < 0.45) {
+                    return { t: "Renversements", m: COACH_DB.bass[Math.floor(Math.random()*COACH_DB.bass.length)] };
+                }
+            }
+
+            // Calculs des moyennes
+            const accC = ok/tot; // Moyenne Accords
+            let accI = 0, totI = 0;
+            for(let iid in this.data.stats.i) { totI += this.data.stats.i[iid].tot; accI += this.data.stats.i[iid].ok; }
+            const ratioI = totI ? (accI/totI) : 0; // Moyenne Renversements
+
+            // 5. Syndrome de la Basse (Écart Global)
+            // Si Accords > 60% MAIS Renversements < 50% (Seuil remonté pour être plus strict)
+            if(totI > 5 && accC > 0.60 && ratioI < 0.50) {
+                return { t: "Renversements", m: COACH_DB.bass[Math.floor(Math.random()*COACH_DB.bass.length)] };
+            }
+
+            // 6. En Feu (Si pas de lacunes détectées au-dessus)
+            if(this.session.streak > 5) return { t: "En Feu 🔥", m: COACH_DB.boost[Math.floor(Math.random()*COACH_DB.boost.length)] };
+
+            // 7. Maîtrise (Tout > 75%)
+            // CORRECTION : On exige Accords > 75% ET Renversements > 70%
+            if(accC > 0.75 && ratioI > 0.70) {
+                return { t: "Expert", m: COACH_DB.master[Math.floor(Math.random()*COACH_DB.master.length)] };
+            }
+
+            // Fallback
+            return { t: "Conseil", m: "Tu as des bases solides. Pour passer un cap, essaie de faire des séries de 10 sans aucune erreur." };
         },
 
         setMode(m) {
@@ -629,10 +723,8 @@
                 let basePts = 50;
                 if(document.getElementById('toggleOpen').checked) basePts = 75;
                 if(this.session.hint) basePts = 20;
-                
                 const multiplier = this.calcXPMultiplier();
                 let finalXP = Math.round(basePts * multiplier);
-                
                 const bonus = this.session.hint ? 0 : (this.session.streak * 10);
                 this.session.score += (finalXP + bonus);
                 if(!this.session.hint) this.session.streak++;
@@ -701,7 +793,29 @@
         openModal(id) { if(id==='settingsModal') UI.renderSettings(); if(id==='statsModal') UI.renderStats(); const el = document.getElementById(id); if(el) { el.classList.add('open'); UI.closeModals = () => document.querySelectorAll('.modal-overlay').forEach(m=>m.classList.remove('open')); } },
         closeModals() { document.querySelectorAll('.modal-overlay').forEach(m=>m.classList.remove('open')); },
         renderSettings() { const gen = (arr, type, dest) => { document.getElementById(dest).innerHTML = arr.map(x => { const act = (type==='c'?App.data.settings.activeC:App.data.settings.activeI).includes(x.id); return `<div class="toggle-row" onclick="App.toggleSetting('${type}', ${typeof x.id==='string'?"'"+x.id+"'":x.id})"><span>${x.name||x.corr}</span><div class="toggle-switch"><div class="slider" style="background:${act?'var(--primary)':'#334155'}"></div></div></div>`; }).join(''); }; gen(DB.chords, 'c', 'settingsChords'); gen(DB.invs, 'i', 'settingsInvs'); },
-        renderStats() { const html = (arr, cat) => arr.map(x => { const s = App.data.stats[cat][x.id] || {ok:0, tot:0}; const p = s.tot?Math.round((s.ok/s.tot)*100):0; const col = p>=80?'var(--success)':p>=50?'var(--warning)':'var(--error)'; return `<div style="margin-bottom:10px;"><div style="display:flex;justify-content:space-between;font-size:0.8rem;"><span>${x.name||x.corr}</span><span>${p}%</span></div><div style="height:6px;background:rgba(255,255,255,0.1);border-radius:3px;overflow:hidden;margin-top:2px;"><div style="width:${p}%;height:100%;background:${s.tot?col:'transparent'}"></div></div></div>`; }).join(''); document.getElementById('statsContent').innerHTML = "<h4>Accords</h4>"+html(DB.chords,'c')+"<br><h4>Renversements</h4>"+html(DB.invs,'i'); }
+        
+        // MODIF UI STATS : INJECTION DU COACH
+        renderStats() {
+            // 1. Générer le conseil du coach
+            const advice = App.analyzeCoach();
+            const coachHTML = `
+                <div class="coach-avatar">🧠</div>
+                <div class="coach-bubble">
+                    <span class="coach-tag">${advice.t}</span><br>
+                    ${advice.m}
+                </div>
+            `;
+            document.getElementById('coachDisplay').innerHTML = coachHTML;
+
+            // 2. Générer les stats classiques
+            const html = (arr, cat) => arr.map(x => {
+                const s = App.data.stats[cat][x.id] || {ok:0, tot:0};
+                const p = s.tot?Math.round((s.ok/s.tot)*100):0;
+                const col = p>=80?'var(--success)':p>=50?'var(--warning)':'var(--error)';
+                return `<div style="margin-bottom:10px;"><div style="display:flex;justify-content:space-between;font-size:0.8rem;"><span>${x.name||x.corr}</span><span>${p}%</span></div><div style="height:6px;background:rgba(255,255,255,0.1);border-radius:3px;overflow:hidden;margin-top:2px;"><div style="width:${p}%;height:100%;background:${s.tot?col:'transparent'}"></div></div></div>`;
+            }).join('');
+            document.getElementById('statsContent').innerHTML = "<h4>Accords</h4>"+html(DB.chords,'c')+"<br><h4>Renversements</h4>"+html(DB.invs,'i');
+        }
     };
 
     document.addEventListener('keydown', e => {
