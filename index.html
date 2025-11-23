@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Harmonist Academy - Ultimate Edition</title>
+    <title>Harmonist Academy - V1.1.1</title>
     <style>
         :root {
             --bg: #0f172a;
@@ -227,44 +227,39 @@
         @keyframes fadeIn { from{opacity:0} to{opacity:1} }
         .confetti-canvas { position: fixed; top:0; left:0; width:100%; height:100%; pointer-events: none; z-index: 90; }
 
-        /* --- MEDIA QUERIES POUR MOBILE --- */
-        @media (min-width: 769px) {
-            .grid-c { grid-template-columns: repeat(3, 1fr); } 
+        /* HUD DE LEVEL UP */
+        .level-hud {
+            position: fixed; inset: 0; pointer-events: none; z-index: 200;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            opacity: 0; transform: scale(0.8); transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            text-align: center;
         }
+        .level-hud.active { opacity: 1; transform: scale(1); }
+        .level-hud h1 { 
+            font-size: 3rem; margin: 0; color: white; 
+            text-shadow: 0 0 30px rgba(251, 191, 36, 0.8), 0 4px 10px black; 
+            line-height: 1.2;
+        }
+        .level-hud p { 
+            font-size: 1.2rem; margin: 0; color: var(--gold); font-weight: 800; text-transform: uppercase; letter-spacing: 2px; 
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+        }
+
+        /* --- MEDIA QUERIES --- */
+        @media (min-width: 769px) { .grid-c { grid-template-columns: repeat(3, 1fr); } }
 
         @media (max-width: 768px) {
-            .game-area { 
-                grid-template-columns: 1fr; 
-                grid-template-rows: 1.5fr 1fr; 
-            }
-            
-            /* -------------------------------------------
-               CORRECTION MOBILE : PRIORITE AU TITRE RANG 
-               ------------------------------------------- */
-            
-            /* 1. On donne toute la place flexible au bloc de gauche (titre) */
-            .header-left { 
-                flex: 1; 
-                min-width: 0; /* Permet au texte de rétrécir sans casser le flex */
-                gap: 8px;
-            }
-            
-            /* 2. On affiche le bloc texte, mais on cache la pilule "Niveau X" pour gagner de la place verticale/horizontale */
+            .game-area { grid-template-columns: 1fr; grid-template-rows: 1.5fr 1fr; }
+            .header-left { flex: 1; min-width: 0; gap: 8px; }
             .rank-text { display: flex; min-width: 0; } 
             .lvl-pill { display: none; } 
-
-            /* 3. CRUCIAL: On cache les STATS sur mobile pour laisser la place au texte long */
             .stats-cluster { display: none; }
-            
-            /* 4. Ajustement de la taille du titre */
             .rank-title { font-size: 0.8rem; } 
-
-            /* Ajustements pads */
             .pad-main { font-size: 0.9rem; }
             .pad-sub { font-size: 0.5rem; }
+            .level-hud h1 { font-size: 2rem; }
         }
 
-        /* Très petits écrans (iPhone SE, etc.) */
         @media (max-height: 700px) {
             .app-container { gap: 5px; padding: 5px; }
             header { padding: 4px 8px; min-height: 40px; }
@@ -277,12 +272,17 @@
             .btn-action { font-size: 0.9rem; }
             .panel-label { margin-bottom: 4px; }
         }
-
     </style>
 </head>
 <body>
 
 <canvas class="confetti-canvas" id="confetti"></canvas>
+
+<div class="level-hud" id="levelOverlay">
+    <div style="font-size:4rem;">🎉</div>
+    <p>Niveau Supérieur !</p>
+    <h1 id="lvlOverlayName">...</h1>
+</div>
 
 <div class="app-container">
     <header>
@@ -396,18 +396,7 @@
     </div>
 </div>
 
-<div class="modal-overlay" id="modalLevelUp">
-    <div class="modal" style="border-color:var(--gold);">
-        <div style="font-size:4rem;">🎉</div>
-        <h2 style="color:var(--gold); margin:0;">NIVEAU SUPÉRIEUR !</h2>
-        <p>Vous êtes maintenant</p>
-        <h1 id="newRankName" style="color:white; margin:15px 0;">...</h1>
-        <button class="cmd-btn btn-action next" style="width:100%; padding:12px;" onclick="UI.closeModals()">Continuer</button>
-    </div>
-</div>
-
 <script>
-    // --- DONNEES THEORIQUES ---
     const DB = {
         chords: [
             { id: 'maj7', name: 'M7M', sub: 'Maj7', iv: [0,4,7,11] },
@@ -436,59 +425,27 @@
 
     const KEY_MAP = { '1':0, '2':1, '3':2, '4':3, '5':4, '6':5, 'q':0, 'a':0, 'w':1, 'z':1, 'e':2, 'r':3 };
 
-    // --- MOTEUR AUDIO HYBRIDE (PIANO + RHODES) ---
     const Audio = {
-        ctx: null,
-        master: null,
-        reverb: null,
-        samples: {},
-        // Source : Salamander Grand Piano (Haute Qualité) via Tone.js
+        ctx: null, master: null, reverb: null, samples: {},
         baseUrl: 'https://tonejs.github.io/audio/salamander/',
-        sampleMap: {
-            36: 'C2.mp3', 39: 'Ds2.mp3', 42: 'Fs2.mp3', 45: 'A2.mp3',
-            48: 'C3.mp3', 51: 'Ds3.mp3', 54: 'Fs3.mp3', 57: 'A3.mp3',
-            60: 'C4.mp3', 63: 'Ds4.mp3', 66: 'Fs4.mp3', 69: 'A4.mp3',
-            72: 'C5.mp3', 75: 'Ds5.mp3', 78: 'Fs5.mp3', 81: 'A5.mp3',
-            84: 'C6.mp3'
-        },
+        sampleMap: { 36: 'C2.mp3', 39: 'Ds2.mp3', 42: 'Fs2.mp3', 45: 'A2.mp3', 48: 'C3.mp3', 51: 'Ds3.mp3', 54: 'Fs3.mp3', 57: 'A3.mp3', 60: 'C4.mp3', 63: 'Ds4.mp3', 66: 'Fs4.mp3', 69: 'A4.mp3', 72: 'C5.mp3', 75: 'Ds5.mp3', 78: 'Fs5.mp3', 81: 'A5.mp3', 84: 'C6.mp3' },
         fallbackMode: false,
 
         init() {
             if (this.ctx) return;
             const AC = window.AudioContext || window.webkitAudioContext;
             this.ctx = new AC();
-            
-            this.master = this.ctx.createGain();
-            this.master.gain.value = 1.0;
-
-            // Reverb légère (Concert Hall)
-            this.reverb = this.ctx.createConvolver();
-            this.reverb.buffer = this.createReverbImpulse(2.0);
-            const revGain = this.ctx.createGain();
-            revGain.gain.value = 0.3; 
-
-            this.master.connect(this.ctx.destination);
-            this.master.connect(this.reverb);
-            this.reverb.connect(revGain);
-            revGain.connect(this.ctx.destination);
-
-            this.loop();
-            this.loadSamples();
+            this.master = this.ctx.createGain(); this.master.gain.value = 1.0;
+            this.reverb = this.ctx.createConvolver(); this.reverb.buffer = this.createReverbImpulse(2.0);
+            const revGain = this.ctx.createGain(); revGain.gain.value = 0.3;
+            this.master.connect(this.ctx.destination); this.master.connect(this.reverb); this.reverb.connect(revGain); revGain.connect(this.ctx.destination);
+            this.loop(); this.loadSamples();
         },
-
         createReverbImpulse(duration) {
-            const rate = this.ctx.sampleRate;
-            const length = rate * duration;
-            const impulse = this.ctx.createBuffer(2, length, rate);
-            const L = impulse.getChannelData(0), R = impulse.getChannelData(1);
-            for (let i = 0; i < length; i++) {
-                const decay = Math.pow(1 - i / length, 3); 
-                L[i] = (Math.random() * 2 - 1) * decay;
-                R[i] = (Math.random() * 2 - 1) * decay;
-            }
+            const rate = this.ctx.sampleRate, length = rate * duration, impulse = this.ctx.createBuffer(2, length, rate), L = impulse.getChannelData(0), R = impulse.getChannelData(1);
+            for (let i = 0; i < length; i++) { const decay = Math.pow(1 - i / length, 3); L[i] = (Math.random() * 2 - 1) * decay; R[i] = (Math.random() * 2 - 1) * decay; }
             return impulse;
         },
-
         async loadSamples() {
             UI.msg("Chargement Piano...", "correction");
             const promises = Object.keys(this.sampleMap).map(async (midi) => {
@@ -497,188 +454,106 @@
                     if(!response.ok) throw new Error('Network');
                     const buff = await response.arrayBuffer();
                     this.samples[midi] = await this.ctx.decodeAudioData(buff);
-                } catch (e) { /* Fallback silencieux */ }
+                } catch (e) { }
             });
-            
             await Promise.all(promises);
-            
-            if(Object.keys(this.samples).length > 5) {
-                UI.msg("Piano Activé", "correct");
-            } else {
-                // Message pour prévenir l'utilisateur local
-                this.fallbackMode = true;
-                UI.msg("Mode Secours (Local)", "warning");
-            }
+            if(Object.keys(this.samples).length > 5) UI.msg("Piano Activé", "correct");
+            else { this.fallbackMode = true; UI.msg("Mode Secours (Local)", "warning"); }
             setTimeout(() => UI.msg("Prêt ?"), 2000);
         },
-
         playNote(midi, time, velocity = 0.5) {
             if (!this.ctx) return;
-            if (this.fallbackMode) {
-                this.playSynthNote(midi, time, velocity);
-            } else {
-                this.playSampledNote(midi, time, velocity);
-            }
+            if (this.fallbackMode) this.playSynthNote(midi, time, velocity); else this.playSampledNote(midi, time, velocity);
         },
-
         playSampledNote(midi, time, velocity) {
-            // Trouver le sample le plus proche
             const available = Object.keys(this.samples).map(Number).sort((a,b)=>a-b);
             let closest = available[0], minDiff = Math.abs(midi - closest);
-            for (let n of available) {
-                const diff = Math.abs(midi - n);
-                if (diff < minDiff) { minDiff = diff; closest = n; }
-            }
-
-            const src = this.ctx.createBufferSource();
-            src.buffer = this.samples[closest];
-            // Pitch shifting haute qualité
-            src.playbackRate.value = Math.pow(2, (midi - closest) / 12);
-            
-            const g = this.ctx.createGain();
-            g.gain.setValueAtTime(0, time);
-            // Attaque très rapide mais pas instantanée (anti-clic)
-            g.gain.linearRampToValueAtTime(velocity, time + 0.01); 
-            g.gain.exponentialRampToValueAtTime(0.001, time + 4.0); // Long sustain naturel
-            
-            src.connect(g); g.connect(this.master);
-            src.start(time);
+            for (let n of available) { const diff = Math.abs(midi - n); if (diff < minDiff) { minDiff = diff; closest = n; } }
+            const src = this.ctx.createBufferSource(); src.buffer = this.samples[closest]; src.playbackRate.value = Math.pow(2, (midi - closest) / 12);
+            const g = this.ctx.createGain(); g.gain.setValueAtTime(0, time); g.gain.linearRampToValueAtTime(velocity, time + 0.01); g.gain.exponentialRampToValueAtTime(0.001, time + 4.0);
+            src.connect(g); g.connect(this.master); src.start(time);
         },
-
         playSynthNote(midi, time, velocity) {
-            // Le son "Rhodes" (Secours)
             const freq = 440 * Math.pow(2, (midi - 69) / 12);
             const osc = this.ctx.createOscillator(); osc.type = 'triangle'; osc.frequency.value = freq;
             const mod = this.ctx.createOscillator(); mod.type = 'sine'; mod.frequency.value = freq * 2;
-            const modGain = this.ctx.createGain();
-            modGain.gain.setValueAtTime(velocity * 50, time); 
-            modGain.gain.exponentialRampToValueAtTime(0.1, time + 0.5);
+            const modGain = this.ctx.createGain(); modGain.gain.setValueAtTime(velocity * 50, time); modGain.gain.exponentialRampToValueAtTime(0.1, time + 0.5);
             mod.connect(modGain); modGain.connect(osc.frequency);
-            
-            const env = this.ctx.createGain();
-            env.gain.setValueAtTime(0, time);
-            env.gain.linearRampToValueAtTime(velocity * 0.5, time + 0.02);
-            env.gain.exponentialRampToValueAtTime(0.01, time + 2.0);
-            
-            osc.connect(env); env.connect(this.master);
-            osc.start(time); osc.stop(time + 2.5); mod.start(time); mod.stop(time + 2.5);
+            const env = this.ctx.createGain(); env.gain.setValueAtTime(0, time); env.gain.linearRampToValueAtTime(velocity * 0.5, time + 0.02); env.gain.exponentialRampToValueAtTime(0.01, time + 2.0);
+            osc.connect(env); env.connect(this.master); osc.start(time); osc.stop(time + 2.5); mod.start(time); mod.stop(time + 2.5);
         },
-
-        // Générateur de sons purs (Sine wave) pour les bruitages doux
         playPureTone(f, t, dur=0.5) {
             const o = this.ctx.createOscillator(); o.type = 'sine'; o.frequency.value = f;
-            const g = this.ctx.createGain();
-            g.gain.setValueAtTime(0, t);
-            g.gain.linearRampToValueAtTime(0.1, t + 0.05); // Volume faible (0.1)
-            g.gain.exponentialRampToValueAtTime(0.001, t + dur);
-            o.connect(g); g.connect(this.ctx.destination); // Pas de reverb pour garder la clarté
-            o.start(t); o.stop(t + dur + 0.1);
+            const g = this.ctx.createGain(); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.1, t + 0.05); g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+            o.connect(g); g.connect(this.ctx.destination); o.start(t); o.stop(t + dur + 0.1);
         },
-
         chord(notes, arp = false) {
-            if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
-            if (!this.ctx) this.init();
-
+            if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume(); if (!this.ctx) this.init();
             const now = this.ctx.currentTime;
-            notes.forEach((n, i) => {
-                const humanize = arp ? 0 : Math.random() * 0.04; 
-                const t = now + (arp ? i * 0.12 : humanize); // Arpège légèrement ralenti
-                const vel = Math.max(0.4, 0.85 - (n / 140)); // Vélocité ajustée
-                this.playNote(n, t, vel);
-            });
+            notes.forEach((n, i) => { const humanize = arp ? 0 : Math.random() * 0.04; const t = now + (arp ? i * 0.12 : humanize); const vel = Math.max(0.4, 0.85 - (n / 140)); this.playNote(n, t, vel); });
         },
-
         sfx(k) {
-            if(!this.ctx) return;
-            const now = this.ctx.currentTime;
-            
-            // VICTOIRE : Arpège "Magique" très doux (C Maj9)
-            if (k === 'win') {
-                [523, 659, 783, 987].forEach((f, i) => this.playPureTone(f, now + i * 0.1, 0.8));
-            }
-            // DEFAITE : Son "Bulle" grave, non agressif
-            else if (k === 'lose') {
-                this.playPureTone(180, now, 0.3);
-                this.playPureTone(130, now + 0.15, 0.4);
-            }
-            // LEVEL UP : Scintillement rapide
-            else if (k === 'lvl') {
-                [523, 659, 783, 1046, 1318, 1568].forEach((f,i) => this.playPureTone(f, now + i * 0.06, 0.6));
-            }
+            if(!this.ctx) return; const now = this.ctx.currentTime;
+            if (k === 'win') [523, 659, 783, 987].forEach((f, i) => this.playPureTone(f, now + i * 0.1, 0.8));
+            else if (k === 'lose') { this.playPureTone(180, now, 0.3); this.playPureTone(130, now + 0.15, 0.4); }
+            else if (k === 'lvl') [523, 659, 783, 1046, 1318, 1568].forEach((f,i) => this.playPureTone(f, now + i * 0.06, 0.6));
         },
-
         loop() {
-            const cvs = document.getElementById('visualizer'); 
-            const c = cvs.getContext('2d');
+            const cvs = document.getElementById('visualizer'); const c = cvs.getContext('2d');
             const draw = () => {
-                requestAnimationFrame(draw);
-                if(!this.ctx) return;
+                requestAnimationFrame(draw); if(!this.ctx) return;
                 if (cvs.width !== cvs.clientWidth) { cvs.width = cvs.clientWidth; cvs.height = cvs.clientHeight; }
                 c.clearRect(0,0,cvs.width,cvs.height);
-                if(Math.random() > 0.92) { 
-                    c.fillStyle = `rgba(99, 102, 241, ${Math.random()*0.2})`;
-                    const w = Math.random() * cvs.width; const x = Math.random() * cvs.width;
-                    c.fillRect(x, 0, w/4, cvs.height);
-                }
-            };
-            draw();
+                if(Math.random() > 0.92) { c.fillStyle = `rgba(99, 102, 241, ${Math.random()*0.2})`; const w = Math.random() * cvs.width; const x = Math.random() * cvs.width; c.fillRect(x, 0, w/4, cvs.height); }
+            }; draw();
         }
     };
 
-    // --- LOGIQUE JEU ---
     const App = {
-        data: { 
-            xp:0, lvl:1, next:100, bestChrono:0, 
-            stats:{c:{}, i:{}}, 
-            settings: { activeC: DB.chords.map(c=>c.id), activeI: DB.invs.map(i=>i.id) } 
-        },
+        data: { xp:0, lvl:1, next:100, bestChrono:0, stats:{c:{}, i:{}}, settings: { activeC: DB.chords.map(c=>c.id), activeI: DB.invs.map(i=>i.id) } },
         session: { mode:'zen', time:60, lives:3, chord:null, selC:null, selI:null, done:false, hint:false, score:0, streak:0, globalOk:0, globalTot:0 },
         timerRef: null,
 
         init() {
-            // NOUVELLE CLE DE SAUVEGARDE POUR FORCER LE RESET
             const s = JSON.parse(localStorage.getItem('harmonist_v4_final') || '{}');
-            
-            // FUSION INTELLIGENTE : On ne charge que si XP existe, sinon on garde les defaults
-            if(s.xp !== undefined) { 
-                this.data = { ...this.data, ...s };
-                // Sécurité : si les settings sont vides dans la sauvegarde, on remet les défauts
-                if(!this.data.settings || !this.data.settings.activeC) {
-                    this.data.settings = { activeC: DB.chords.map(c=>c.id), activeI: DB.invs.map(i=>i.id) };
-                }
-            }
-            
-            // Initialisation des stats manquantes si nécessaire
+            if(s.xp !== undefined) { this.data = { ...this.data, ...s }; if(!this.data.settings || !this.data.settings.activeC) { this.data.settings = { activeC: DB.chords.map(c=>c.id), activeI: DB.invs.map(i=>i.id) }; } }
             DB.chords.forEach(c=>{ if(!this.data.stats.c[c.id]) this.data.stats.c[c.id]={ok:0, tot:0}; });
             DB.invs.forEach(i=>{ if(!this.data.stats.i[i.id]) this.data.stats.i[i.id]={ok:0, tot:0}; });
-            
-            this.calcGlobalStats();
-            UI.renderBoard(); 
-            UI.updateHeader();
+            this.calcGlobalStats(); UI.renderBoard(); UI.updateHeader();
         },
 
-        calcGlobalStats() {
-            let ok=0, tot=0;
-            for(let k in this.data.stats.c) { ok+=this.data.stats.c[k].ok; tot+=this.data.stats.c[k].tot; }
-            this.session.globalOk = ok; this.session.globalTot = tot;
+        calcGlobalStats() { let ok=0, tot=0; for(let k in this.data.stats.c) { ok+=this.data.stats.c[k].ok; tot+=this.data.stats.c[k].tot; } this.session.globalOk = ok; this.session.globalTot = tot; },
+
+        calcXPMultiplier() {
+            const activeC = this.data.settings.activeC.length;
+            const activeI = this.data.settings.activeI.length;
+
+            // MODIF V1.1.1 : Tolérance Zéro pour l'anti-jeu (1 accord + 1 renversement = 0 XP)
+            if (activeC === 1 && activeI === 1) return 0;
+            if (activeC === 1) return 0.05; // 5% si on doit deviner le renversement
+
+            const ratioC = activeC / 6;
+            let iMult = 0.75;
+            if (activeI === 2) iMult = 0.85;
+            if (activeI === 3) iMult = 0.92;
+            if (activeI === 4) iMult = 1.0;
+
+            return ratioC * iMult;
         },
 
         setMode(m) {
-            Audio.init();
-            this.session.mode = m;
+            Audio.init(); this.session.mode = m;
             document.getElementById('modeZen').className = m==='zen'?'mode-opt active':'mode-opt';
             document.getElementById('modeChrono').className = m==='chrono'?'mode-opt active':'mode-opt';
             document.getElementById('chronoDisplay').style.display = m==='chrono'?'block':'none';
-            this.resetRound(true);
-            this.playNew();
+            this.resetRound(true); this.playNew();
         },
 
         toggleSetting(type, id) {
             const list = type === 'c' ? this.data.settings.activeC : this.data.settings.activeI;
             const idx = list.indexOf(id);
             if (idx > -1) { if(list.length > 1) list.splice(idx, 1); } else { list.push(id); }
-            this.save();
-            UI.renderBoard(); UI.renderSettings();
+            this.save(); UI.renderBoard(); UI.renderSettings();
         },
 
         closeSettings() { UI.closeModals(); this.resetRound(true); this.playNew(); },
@@ -686,14 +561,8 @@
         resetRound(full=false) {
             if(this.timerRef) { clearInterval(this.timerRef); this.timerRef = null; }
             if(full) { this.session.score=0; this.session.streak=0; }
-            this.session.time = 60;
-            this.session.lives = 3;
-            this.session.done = false;
-            this.session.chord = null;
-            UI.resetVisuals();
-            UI.updateHeader();
-            UI.updateChrono();
-            UI.msg("Prêt ?");
+            this.session.time = 60; this.session.lives = 3; this.session.done = false; this.session.chord = null;
+            UI.resetVisuals(); UI.updateHeader(); UI.updateChrono(); UI.msg("Prêt ?");
             document.getElementById('playBtn').innerHTML = "<span class='icon-lg'>▶</span><span>Écouter</span>";
             document.getElementById('valBtn').innerText = "Valider";
             document.getElementById('valBtn').classList.remove('next');
@@ -704,78 +573,43 @@
             Audio.init();
             if(this.session.mode === 'chrono' && !this.timerRef && !this.session.chord) {
                 this.timerRef = setInterval(() => {
-                    this.session.time--;
-                    UI.updateChrono();
+                    this.session.time--; UI.updateChrono();
                     if(this.session.time <= 0) { clearInterval(this.timerRef); this.timerRef = null; this.gameOver(); }
                 }, 1000);
             }
-
-            this.session.done = false;
-            this.session.selC = null; this.session.selI = null; this.session.hint = false;
-            UI.resetVisuals();
-
+            this.session.done = false; this.session.selC = null; this.session.selI = null; this.session.hint = false; UI.resetVisuals();
             const ac = DB.chords.filter(c => this.data.settings.activeC.includes(c.id));
             const ai = DB.invs.filter(i => this.data.settings.activeI.includes(i.id));
-            // Sécurité : Si config vide, on remet tout
-            if(!ac.length || !ai.length) {
-                this.data.settings.activeC = DB.chords.map(c=>c.id);
-                this.data.settings.activeI = DB.invs.map(i=>i.id);
-                this.playNew();
-                return;
-            }
-
+            if(!ac.length || !ai.length) { this.data.settings.activeC = DB.chords.map(c=>c.id); this.data.settings.activeI = DB.invs.map(i=>i.id); this.playNew(); return; }
             const type = ac[Math.floor(Math.random()*ac.length)];
             const inv = ai[Math.floor(Math.random()*ai.length)];
             const open = document.getElementById('toggleOpen').checked;
             const root = (open ? 36 : 48) + Math.floor(Math.random()*12);
-            
             let notes = type.iv.map(x => root+x);
             for(let i=0; i<inv.id; i++) notes.push(notes.shift()+12);
-            if(open) {
-                const b = notes[0]; const r = notes.slice(1);
-                r[0]+=12; if(Math.random()>0.5) r[1]+=12; r[2]+=12;
-                notes = [b, ...r];
-            }
-
+            if(open) { const b = notes[0]; const r = notes.slice(1); r[0]+=12; if(Math.random()>0.5) r[1]+=12; r[2]+=12; notes = [b, ...r]; }
             this.session.chord = { type, inv: inv.id, notes };
             UI.msg("Écoute...", "");
-            document.getElementById('playBtn').disabled = true;
-            document.getElementById('replayBtn').disabled = false;
-            document.getElementById('hintBtn').disabled = false;
-            document.getElementById('valBtn').innerText = "Valider";
-            document.getElementById('valBtn').className = "cmd-btn btn-action";
-            document.getElementById('valBtn').disabled = true;
-
+            document.getElementById('playBtn').disabled = true; document.getElementById('replayBtn').disabled = false; document.getElementById('hintBtn').disabled = false;
+            document.getElementById('valBtn').innerText = "Valider"; document.getElementById('valBtn').className = "cmd-btn btn-action"; document.getElementById('valBtn').disabled = true;
             if(ac.length === 1) this.select('c', ac[0].id);
             if(ai.length === 1 && type.id !== 'dim7') this.select('i', ai[0].id);
-
             Audio.chord(notes);
             setTimeout(() => { document.getElementById('playBtn').innerHTML = "<span class='icon-lg'>...</span><span>En cours</span>"; }, 500);
         },
 
         replay() { if(this.session.chord) Audio.chord(this.session.chord.notes); },
-        hint() { 
-            if(this.session.chord && !this.session.done) {
-                this.session.hint = true;
-                Audio.chord(this.session.chord.notes, true);
-                UI.msg("Indice utilisé");
-            }
-        },
+        hint() { if(this.session.chord && !this.session.done) { this.session.hint = true; Audio.chord(this.session.chord.notes, true); UI.msg("Indice utilisé"); } },
 
         select(type, id) {
-            if(this.session.done) return;
-            UI.vibrate(10);
+            if(this.session.done) return; UI.vibrate(10);
             if(type === 'c') {
                 this.session.selC = id;
                 const isDim = (id === 'dim7');
                 const p = document.getElementById('invPanel');
-                p.style.opacity = isDim ? '0.3' : '1';
-                p.style.pointerEvents = isDim ? 'none' : 'auto';
-                if(isDim) this.session.selI = -1;
-                else if(this.session.selI === -1) this.session.selI = null;
-            } else {
-                this.session.selI = id;
-            }
+                p.style.opacity = isDim ? '0.3' : '1'; p.style.pointerEvents = isDim ? 'none' : 'auto';
+                if(isDim) this.session.selI = -1; else if(this.session.selI === -1) this.session.selI = null;
+            } else { this.session.selI = id; }
             UI.renderSel();
         },
 
@@ -788,66 +622,44 @@
             const isDim = c.type.id === 'dim7';
             const okI = isDim ? true : (this.session.selI === c.inv);
             this.session.done = true;
-            
             this.data.stats.c[c.type.id].tot++; if(okC) this.data.stats.c[c.type.id].ok++;
             if(!isDim) { this.data.stats.i[c.inv].tot++; if(okI) this.data.stats.i[c.inv].ok++; }
             this.calcGlobalStats();
-
             if(okC && okI) {
-                let pts = this.session.hint ? 20 : 50;
-                if(document.getElementById('toggleOpen').checked && !this.session.hint) pts = 75;
-                const bonus = this.session.hint ? 0 : (this.session.streak * 10);
-                this.session.score += (pts+bonus);
-                if(!this.session.hint) this.session.streak++;
+                let basePts = 50;
+                if(document.getElementById('toggleOpen').checked) basePts = 75;
+                if(this.session.hint) basePts = 20;
                 
-                this.gainXP(pts+bonus);
-                Audio.sfx('win');
-                UI.vibrate([50,50,50]);
-                UI.confetti();
-                UI.msg(this.session.streak > 2 ? `SÉRIE x${this.session.streak} !` : "EXCELLENT !", true);
+                const multiplier = this.calcXPMultiplier();
+                let finalXP = Math.round(basePts * multiplier);
+                
+                const bonus = this.session.hint ? 0 : (this.session.streak * 10);
+                this.session.score += (finalXP + bonus);
+                if(!this.session.hint) this.session.streak++;
+                this.gainXP(finalXP + bonus);
+                Audio.sfx('win'); UI.vibrate([50,50,50]); UI.confetti(); UI.msg(this.session.streak > 2 ? `SÉRIE x${this.session.streak} !` : "EXCELLENT !", true);
                 if(this.session.mode === 'chrono') this.session.time += 3;
             } else {
-                this.session.streak = 0;
-                Audio.sfx('lose');
-                UI.vibrate(300);
+                this.session.streak = 0; Audio.sfx('lose'); UI.vibrate(300);
                 UI.msg(`Raté : ${c.type.name} ` + (isDim?"":DB.invs[c.inv].corr), false);
-                if(this.session.mode === 'chrono') {
-                    this.session.lives--;
-                    if(this.session.lives <= 0) return this.gameOver();
-                }
+                if(this.session.mode === 'chrono') { this.session.lives--; if(this.session.lives <= 0) return this.gameOver(); }
             }
-
-            UI.reveal(okC, okI);
-            UI.updateHeader();
-            UI.updateChrono();
-            this.save();
-
-            const btn = document.getElementById('valBtn');
-            btn.innerText = "Suivant";
-            btn.classList.add('next');
-            btn.disabled = false;
-            
-            const play = document.getElementById('playBtn');
-            play.innerHTML = "<span class='icon-lg'>▶</span><span>Suivant</span>";
-            play.disabled = false;
+            UI.reveal(okC, okI); UI.updateHeader(); UI.updateChrono(); this.save();
+            const btn = document.getElementById('valBtn'); btn.innerText = "Suivant"; btn.classList.add('next'); btn.disabled = false;
+            const play = document.getElementById('playBtn'); play.innerHTML = "<span class='icon-lg'>▶</span><span>Suivant</span>"; play.disabled = false;
         },
 
         gainXP(n) {
             this.data.xp += n;
             if(this.data.xp >= this.data.next) {
-                this.data.xp -= this.data.next;
-                this.data.lvl++;
-                this.data.next = Math.floor(this.data.next * 1.2);
-                Audio.sfx('lvl');
-                UI.openModal('modalLevelUp');
+                this.data.xp -= this.data.next; this.data.lvl++; this.data.next = Math.floor(this.data.next * 1.2);
+                Audio.sfx('lvl'); UI.showLevelUp();
             }
         },
 
         gameOver() {
             if(this.session.score > this.data.bestChrono) this.data.bestChrono = this.session.score;
-            this.save();
-            document.getElementById('endScore').innerText = this.session.score;
-            UI.openModal('modalGameOver');
+            this.save(); document.getElementById('endScore').innerText = this.session.score; UI.openModal('modalGameOver');
         },
 
         save() { localStorage.setItem('harmonist_v4_final', JSON.stringify(this.data)); },
@@ -857,115 +669,39 @@
     const UI = {
         renderBoard() {
             const cg = document.getElementById('chordGrid'); cg.innerHTML='';
-            if(App.data.settings && App.data.settings.activeC) {
-                DB.chords.forEach(c => {
-                    if(!App.data.settings.activeC.includes(c.id)) return;
-                    cg.innerHTML += `<div class="pad" id="c-${c.id}" onclick="App.select('c','${c.id}')"><div class="pad-main">${c.name}</div><div class="pad-sub">${c.sub}</div></div>`;
-                });
-            }
+            if(App.data.settings && App.data.settings.activeC) { DB.chords.forEach(c => { if(!App.data.settings.activeC.includes(c.id)) return; cg.innerHTML += `<div class="pad" id="c-${c.id}" onclick="App.select('c','${c.id}')"><div class="pad-main">${c.name}</div><div class="pad-sub">${c.sub}</div></div>`; }); }
             const ig = document.getElementById('invGrid'); ig.innerHTML='';
-            if(App.data.settings && App.data.settings.activeI) {
-                DB.invs.forEach(i => {
-                    if(!App.data.settings.activeI.includes(i.id)) return;
-                    ig.innerHTML += `<div class="pad" id="i-${i.id}" onclick="App.select('i',${i.id})"><div class="pad-main">${i.corr}</div><div class="pad-sub">${i.sub}</div></div>`;
-                });
-            }
+            if(App.data.settings && App.data.settings.activeI) { DB.invs.forEach(i => { if(!App.data.settings.activeI.includes(i.id)) return; ig.innerHTML += `<div class="pad" id="i-${i.id}" onclick="App.select('i',${i.id})"><div class="pad-main">${i.corr}</div><div class="pad-sub">${i.sub}</div></div>`; }); }
         },
-
         renderSel() {
             document.querySelectorAll('.pad').forEach(p => p.classList.remove('selected'));
             if(App.session.selC) document.getElementById('c-'+App.session.selC).classList.add('selected');
             if(App.session.selI !== null && App.session.selI !== -1) document.getElementById('i-'+App.session.selI).classList.add('selected');
             document.getElementById('valBtn').disabled = !(App.session.selC && App.session.selI !== null);
         },
-
         reveal(okC, okI) {
-            const c = App.session.chord;
-            document.getElementById('c-'+c.type.id).classList.add(okC?'correct':'correction');
+            const c = App.session.chord; document.getElementById('c-'+c.type.id).classList.add(okC?'correct':'correction');
             if(!okC && App.session.selC) document.getElementById('c-'+App.session.selC).classList.add('wrong');
-            if(c.type.id !== 'dim7') {
-                document.getElementById('i-'+c.inv).classList.add(okI?'correct':'correction');
-                if(!okI && App.session.selI !== null) document.getElementById('i-'+App.session.selI).classList.add('wrong');
-            }
+            if(c.type.id !== 'dim7') { document.getElementById('i-'+c.inv).classList.add(okI?'correct':'correction'); if(!okI && App.session.selI !== null) document.getElementById('i-'+App.session.selI).classList.add('wrong'); }
         },
-
-        resetVisuals() {
-            document.querySelectorAll('.pad').forEach(p => p.className='pad');
-            document.getElementById('invPanel').style.opacity = '1';
-            document.getElementById('invPanel').style.pointerEvents = 'auto';
-        },
-
-        msg(txt, state) {
-            const el = document.getElementById('statusText');
-            el.innerText = txt;
-            el.className = "feedback-msg " + (state==='correct'?'correct':state==='warning'?'warning':state===false?'wrong':'');
-        },
-
+        resetVisuals() { document.querySelectorAll('.pad').forEach(p => p.className='pad'); document.getElementById('invPanel').style.opacity = '1'; document.getElementById('invPanel').style.pointerEvents = 'auto'; },
+        msg(txt, state) { const el = document.getElementById('statusText'); el.innerText = txt; el.className = "feedback-msg " + (state==='correct'?'correct':state==='warning'?'warning':state===false?'wrong':''); },
         vibrate(ptr) { if(navigator.vibrate) navigator.vibrate(ptr); },
-
         updateHeader() {
-            const d = App.data;
-            const r = DB.ranks[Math.min(d.lvl-1, DB.ranks.length-1)];
-            document.getElementById('rankIcon').innerText = r.i;
-            document.getElementById('rankTitle').innerText = r.t;
-            document.getElementById('newRankName').innerText = r.t;
-            document.getElementById('lvlNum').innerText = d.lvl;
-            document.getElementById('xpBar').style.width = (d.xp/d.next)*100 + '%';
-            document.getElementById('streakVal').innerText = App.session.streak;
-            document.getElementById('streakVal').className = App.session.streak > 4 ? 'stat-val streak-fire' : 'stat-val';
+            const d = App.data; const r = DB.ranks[Math.min(d.lvl-1, DB.ranks.length-1)];
+            document.getElementById('rankIcon').innerText = r.i; document.getElementById('rankTitle').innerText = r.t; document.getElementById('lvlOverlayName').innerText = r.t;
+            document.getElementById('lvlNum').innerText = d.lvl; document.getElementById('xpBar').style.width = (d.xp/d.next)*100 + '%';
+            document.getElementById('streakVal').innerText = App.session.streak; document.getElementById('streakVal').className = App.session.streak > 4 ? 'stat-val streak-fire' : 'stat-val';
             document.getElementById('highScoreVal').innerText = d.bestChrono;
-            const pct = App.session.globalTot ? Math.round((App.session.globalOk / App.session.globalTot) * 100) : 0;
-            document.getElementById('precisionVal').innerText = pct + '%';
+            const pct = App.session.globalTot ? Math.round((App.session.globalOk / App.session.globalTot) * 100) : 0; document.getElementById('precisionVal').innerText = pct + '%';
         },
-
-        updateChrono() {
-            document.getElementById('timerVal').innerText = App.session.time;
-            document.getElementById('livesVal').innerText = '❤️'.repeat(App.session.lives);
-        },
-
-        confetti() {
-            const c=document.getElementById('confetti'); const x=c.getContext('2d');
-            c.width=window.innerWidth; c.height=window.innerHeight;
-            let p=[]; for(let i=0;i<60;i++)p.push({x:c.width/2,y:c.height/2,vx:(Math.random()-0.5)*25,vy:(Math.random()-0.5)*25,c:`hsl(${Math.random()*360},100%,50%)`,l:1});
-            const u=()=>{x.clearRect(0,0,c.width,c.height); let a=false; p.forEach(k=>{if(k.l>0){k.x+=k.vx;k.y+=k.vy;k.vy+=0.6;k.l-=0.02;x.fillStyle=k.c;x.beginPath();x.arc(k.x,k.y,6,0,7);x.fill();a=true;}}); if(a)requestAnimationFrame(u);}; u();
-        },
-
-        openModal(id) {
-            if(id==='settingsModal') UI.renderSettings();
-            if(id==='statsModal') UI.renderStats();
-            const el = document.getElementById(id);
-            if(el) { el.classList.add('open'); UI.closeModals = () => document.querySelectorAll('.modal-overlay').forEach(m=>m.classList.remove('open')); }
-        },
+        updateChrono() { document.getElementById('timerVal').innerText = App.session.time; document.getElementById('livesVal').innerText = '❤️'.repeat(App.session.lives); },
+        confetti() { const c=document.getElementById('confetti'); const x=c.getContext('2d'); c.width=window.innerWidth; c.height=window.innerHeight; let p=[]; for(let i=0;i<60;i++)p.push({x:c.width/2,y:c.height/2,vx:(Math.random()-0.5)*25,vy:(Math.random()-0.5)*25,c:`hsl(${Math.random()*360},100%,50%)`,l:1}); const u=()=>{x.clearRect(0,0,c.width,c.height); let a=false; p.forEach(k=>{if(k.l>0){k.x+=k.vx;k.y+=k.vy;k.vy+=0.6;k.l-=0.02;x.fillStyle=k.c;x.beginPath();x.arc(k.x,k.y,6,0,7);x.fill();a=true;}}); if(a)requestAnimationFrame(u);}; u(); },
+        showLevelUp() { const ov = document.getElementById('levelOverlay'); ov.classList.add('active'); setTimeout(() => { ov.classList.remove('active'); }, 3000); },
+        openModal(id) { if(id==='settingsModal') UI.renderSettings(); if(id==='statsModal') UI.renderStats(); const el = document.getElementById(id); if(el) { el.classList.add('open'); UI.closeModals = () => document.querySelectorAll('.modal-overlay').forEach(m=>m.classList.remove('open')); } },
         closeModals() { document.querySelectorAll('.modal-overlay').forEach(m=>m.classList.remove('open')); },
-
-        renderSettings() {
-            const gen = (arr, type, dest) => {
-                document.getElementById(dest).innerHTML = arr.map(x => {
-                    const act = (type==='c'?App.data.settings.activeC:App.data.settings.activeI).includes(x.id);
-                    return `<div class="toggle-row" onclick="App.toggleSetting('${type}', ${typeof x.id==='string'?"'"+x.id+"'":x.id})">
-                        <span>${x.name||x.corr}</span>
-                        <div class="toggle-switch"><div class="slider" style="background:${act?'var(--primary)':'#334155'}"></div></div>
-                    </div>`;
-                }).join('');
-            };
-            gen(DB.chords, 'c', 'settingsChords');
-            gen(DB.invs, 'i', 'settingsInvs');
-        },
-
-        renderStats() {
-            const html = (arr, cat) => arr.map(x => {
-                const s = App.data.stats[cat][x.id] || {ok:0, tot:0};
-                const p = s.tot?Math.round((s.ok/s.tot)*100):0;
-                const col = p>=80?'var(--success)':p>=50?'var(--warning)':'var(--error)';
-                return `<div style="margin-bottom:10px;">
-                    <div style="display:flex;justify-content:space-between;font-size:0.8rem;"><span>${x.name||x.corr}</span><span>${p}%</span></div>
-                    <div style="height:6px;background:rgba(255,255,255,0.1);border-radius:3px;overflow:hidden;margin-top:2px;">
-                        <div style="width:${p}%;height:100%;background:${s.tot?col:'transparent'}"></div>
-                    </div>
-                </div>`;
-            }).join('');
-            document.getElementById('statsContent').innerHTML = "<h4>Accords</h4>"+html(DB.chords,'c')+"<br><h4>Renversements</h4>"+html(DB.invs,'i');
-        }
+        renderSettings() { const gen = (arr, type, dest) => { document.getElementById(dest).innerHTML = arr.map(x => { const act = (type==='c'?App.data.settings.activeC:App.data.settings.activeI).includes(x.id); return `<div class="toggle-row" onclick="App.toggleSetting('${type}', ${typeof x.id==='string'?"'"+x.id+"'":x.id})"><span>${x.name||x.corr}</span><div class="toggle-switch"><div class="slider" style="background:${act?'var(--primary)':'#334155'}"></div></div></div>`; }).join(''); }; gen(DB.chords, 'c', 'settingsChords'); gen(DB.invs, 'i', 'settingsInvs'); },
+        renderStats() { const html = (arr, cat) => arr.map(x => { const s = App.data.stats[cat][x.id] || {ok:0, tot:0}; const p = s.tot?Math.round((s.ok/s.tot)*100):0; const col = p>=80?'var(--success)':p>=50?'var(--warning)':'var(--error)'; return `<div style="margin-bottom:10px;"><div style="display:flex;justify-content:space-between;font-size:0.8rem;"><span>${x.name||x.corr}</span><span>${p}%</span></div><div style="height:6px;background:rgba(255,255,255,0.1);border-radius:3px;overflow:hidden;margin-top:2px;"><div style="width:${p}%;height:100%;background:${s.tot?col:'transparent'}"></div></div></div>`; }).join(''); document.getElementById('statsContent').innerHTML = "<h4>Accords</h4>"+html(DB.chords,'c')+"<br><h4>Renversements</h4>"+html(DB.invs,'i'); }
     };
 
     document.addEventListener('keydown', e => {
