@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Harmonist Academy - V1.1.2 (Coach)</title>
+    <title>Harmonist Academy - Ultimate</title>
     <style>
         :root {
             --bg: #0f172a;
@@ -199,6 +199,7 @@
             content: ''; position: absolute; top: -8px; left: 50%; transform: translateX(-50%);
             border-width: 0 8px 8px; border-style: solid; border-color: #334155 transparent; display: block; width: 0;
         }
+        .coach-bubble strong { color: var(--gold); font-weight: 800; }
         .coach-tag {
             display: inline-block; background: var(--primary); color: white; padding: 2px 6px; 
             border-radius: 4px; font-size: 0.6rem; font-weight: 800; text-transform: uppercase; margin-bottom: 5px;
@@ -576,7 +577,7 @@
             return ratioC * iMult;
         },
 
-     // MODIF V1.1.3 : ALGORITHME DU COACH CORRIGÉ (Prise en compte stricte des Renversements)
+        // ALGORITHME DU COACH CORRIGÉ (V1.1.4)
         analyzeCoach() {
             const tot = this.session.globalTot;
             const ok = this.session.globalOk;
@@ -584,10 +585,7 @@
             // 1. Cold Start
             if(tot < 15) return { t: "Débutant", m: COACH_DB.start[Math.floor(Math.random()*COACH_DB.start.length)] };
 
-            // 2. Dynamique Positive (Session en feu) - Uniquement si on n'a pas de grosses lacunes
-            // On vérifie d'abord qu'il n'y a pas d'urgence avant de féliciter
-            
-            // 3. Talon d'Achille ACCORDS (Chord < 45%)
+            // 2. Talon d'Achille ACCORDS
             let weaks = [];
             for(let cid in this.data.stats.c) {
                 const s = this.data.stats.c[cid];
@@ -600,38 +598,33 @@
                 return { t: tip.t, m: tip.m };
             }
 
-            // 4. Talon d'Achille RENVERSEMENTS (NOUVEAU : Check spécifique)
-            // Si UN SEUL renversement est < 45%, on alerte sur la basse.
+            // 3. Talon d'Achille RENVERSEMENTS (Strict)
             for(let iid in this.data.stats.i) {
                 const s = this.data.stats.i[iid];
-                // On ignore l'état fondamental (0) car c'est facile, on surveille 1, 2, 3
                 if(s.tot > 5 && (s.ok/s.tot) < 0.45) {
                     return { t: "Renversements", m: COACH_DB.bass[Math.floor(Math.random()*COACH_DB.bass.length)] };
                 }
             }
 
-            // Calculs des moyennes
-            const accC = ok/tot; // Moyenne Accords
+            // Calcul Moyennes
+            const accC = ok/tot;
             let accI = 0, totI = 0;
             for(let iid in this.data.stats.i) { totI += this.data.stats.i[iid].tot; accI += this.data.stats.i[iid].ok; }
-            const ratioI = totI ? (accI/totI) : 0; // Moyenne Renversements
+            const ratioI = totI ? (accI/totI) : 0;
 
-            // 5. Syndrome de la Basse (Écart Global)
-            // Si Accords > 60% MAIS Renversements < 50% (Seuil remonté pour être plus strict)
+            // 4. Syndrome de la Basse (Écart Global)
             if(totI > 5 && accC > 0.60 && ratioI < 0.50) {
                 return { t: "Renversements", m: COACH_DB.bass[Math.floor(Math.random()*COACH_DB.bass.length)] };
             }
 
-            // 6. En Feu (Si pas de lacunes détectées au-dessus)
+            // 5. En Feu
             if(this.session.streak > 5) return { t: "En Feu 🔥", m: COACH_DB.boost[Math.floor(Math.random()*COACH_DB.boost.length)] };
 
-            // 7. Maîtrise (Tout > 75%)
-            // CORRECTION : On exige Accords > 75% ET Renversements > 70%
+            // 6. Maîtrise (Tout > 75%)
             if(accC > 0.75 && ratioI > 0.70) {
                 return { t: "Expert", m: COACH_DB.master[Math.floor(Math.random()*COACH_DB.master.length)] };
             }
 
-            // Fallback
             return { t: "Conseil", m: "Tu as des bases solides. Pour passer un cap, essaie de faire des séries de 10 sans aucune erreur." };
         },
 
@@ -794,20 +787,23 @@
         closeModals() { document.querySelectorAll('.modal-overlay').forEach(m=>m.classList.remove('open')); },
         renderSettings() { const gen = (arr, type, dest) => { document.getElementById(dest).innerHTML = arr.map(x => { const act = (type==='c'?App.data.settings.activeC:App.data.settings.activeI).includes(x.id); return `<div class="toggle-row" onclick="App.toggleSetting('${type}', ${typeof x.id==='string'?"'"+x.id+"'":x.id})"><span>${x.name||x.corr}</span><div class="toggle-switch"><div class="slider" style="background:${act?'var(--primary)':'#334155'}"></div></div></div>`; }).join(''); }; gen(DB.chords, 'c', 'settingsChords'); gen(DB.invs, 'i', 'settingsInvs'); },
         
-        // MODIF UI STATS : INJECTION DU COACH
+        // MODIF UI STATS : Avec parser Markdown -> HTML
         renderStats() {
-            // 1. Générer le conseil du coach
             const advice = App.analyzeCoach();
+            // Conversion des astérisques en gras (**) et italique (*)
+            let msg = advice.m;
+            msg = msg.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            msg = msg.replace(/\*(.*?)\*/g, '<em>$1</em>');
+
             const coachHTML = `
                 <div class="coach-avatar">🧠</div>
                 <div class="coach-bubble">
                     <span class="coach-tag">${advice.t}</span><br>
-                    ${advice.m}
+                    ${msg}
                 </div>
             `;
             document.getElementById('coachDisplay').innerHTML = coachHTML;
 
-            // 2. Générer les stats classiques
             const html = (arr, cat) => arr.map(x => {
                 const s = App.data.stats[cat][x.id] || {ok:0, tot:0};
                 const p = s.tot?Math.round((s.ok/s.tot)*100):0;
