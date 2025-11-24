@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Harmonist Academy - V2.9.2 (Final Fix)</title>
+    <title>Harmonist Academy - V3.0 (Badges Update)</title>
     <style>
         :root {
             --bg: #0f172a;
@@ -45,6 +45,19 @@
             background: radial-gradient(circle, transparent 40%, rgba(239, 68, 68, 0.4) 90%);
             animation: heartbeat 1s infinite;
         }
+
+        /* BADGE RIBBON (NOUVEAU) */
+        .badge-ribbon {
+            position: fixed; top: -100px; left: 50%; transform: translateX(-50%);
+            background: linear-gradient(180deg, var(--accent) 0%, #a21caf 100%);
+            color: white; padding: 12px 24px; border-radius: 0 0 16px 16px;
+            box-shadow: 0 5px 20px rgba(217, 70, 239, 0.5); z-index: 300;
+            display: flex; align-items: center; gap: 10px; font-weight: 800;
+            font-size: 0.9rem; transition: top 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            border: 1px solid rgba(255,255,255,0.2); border-top: none;
+        }
+        .badge-ribbon.show { top: 0; }
+        .badge-ribbon-icon { font-size: 1.5rem; animation: pulseFire 1s infinite; }
 
         /* CONFETTI */
         .confetti-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 90; }
@@ -200,7 +213,7 @@
         .combo-popup h2 { font-size: 3rem; margin: 0; color: white; text-shadow: 0 5px 20px rgba(0,0,0,0.5); -webkit-text-stroke: 2px var(--primary); font-weight: 900; font-style: italic; }
         .combo-popup p { margin: 0; color: var(--gold); font-weight: 800; font-size: 1.2rem; text-transform: uppercase; }
 
-        /* RESTAURATION DU CSS STATS */
+        /* STATS */
         .coach-box { margin-bottom: 15px; display: flex; flex-direction: column; align-items: center; }
         .coach-avatar { font-size: 2rem; margin-bottom: 8px; animation: pop 1s infinite alternate; }
         .coach-bubble { background: #334155; color: white; padding: 12px; border-radius: 16px; position: relative; font-size: 0.85rem; line-height: 1.4; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 4px 10px rgba(0,0,0,0.3); max-width: 100%; }
@@ -217,6 +230,27 @@
         .stat-item { margin-bottom: 6px; } .stat-header { display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 2px; }
         .stat-track { height: 5px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; } .stat-fill { height: 100%; }
 
+        /* BADGES GRID */
+        .badges-section { margin-top: 25px; }
+        .badges-grid {
+            display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px;
+            background: rgba(0,0,0,0.2); padding: 10px; border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .badge-item {
+            aspect-ratio: 1/1; background: rgba(255,255,255,0.03); border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.2rem; filter: grayscale(1) opacity(0.3); transition: all 0.2s;
+            cursor: help; position: relative; border: 1px solid transparent;
+        }
+        .badge-item.unlocked {
+            filter: grayscale(0) opacity(1);
+            background: rgba(255,255,255,0.08);
+            box-shadow: 0 0 10px rgba(0,0,0,0.3);
+            border-color: rgba(255,255,255,0.1);
+        }
+        .badge-item.unlocked:hover { transform: scale(1.1); z-index: 10; background: var(--panel); }
+
         @keyframes pop { 0% { transform: scale(0.9); } 100% { transform: scale(1.1); } }
         @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
         @keyframes pulseFire { 0%{transform:scale(1);} 50%{transform:scale(1.1);} 100%{transform:scale(1);} }
@@ -232,6 +266,12 @@
 <body>
 
 <div class="vignette-overlay" id="vignette"></div>
+
+<div class="badge-ribbon" id="badgeRibbon">
+    <span class="badge-ribbon-icon">🏅</span>
+    <span id="badgeRibbonText">Badge Débloqué !</span>
+</div>
+
 <canvas class="confetti-canvas" id="confetti"></canvas>
 
 <div class="level-hud" id="levelOverlay">
@@ -310,7 +350,7 @@
         
         <div id="quizArea">
             <div class="quiz-card">
-                <div class="quiz-hint-txt">Trouve le son :</div>
+                <div class="quiz-hint-txt">Trouve l'accord :</div>
                 <div class="quiz-target" id="quizTargetLbl">...</div>
             </div>
             <div class="quiz-options">
@@ -369,6 +409,14 @@
         </div>
         <h4 style="margin:15px 0 10px 0; font-size:0.8rem; color:var(--text-dim); text-transform:uppercase;">Détails</h4>
         <div id="statsContent"></div>
+        
+        <div class="badges-section">
+            <h4 style="margin:0 0 10px 0; font-size:0.8rem; color:var(--text-dim); text-transform:uppercase; display:flex; justify-content:space-between;">
+                <span>Trophées</span> <span id="badgeCount">0/25</span>
+            </h4>
+            <div class="badges-grid" id="badgesGrid"></div>
+            <div id="badgeDetail" style="font-size:0.7rem; color:var(--gold); text-align:center; min-height:20px; margin-top:5px; font-weight:700;"></div>
+        </div>
     </div>
 </div>
 
@@ -386,7 +434,52 @@
 </div>
 
 <script>
-    const SPRINT_DURATION = 10; // Base de départ
+    const SPRINT_DURATION = 10; 
+
+    // --- BADGE DEFINITIONS ---
+    const BADGES = [
+        // 1. PROGRESSION
+        { id: 'b_appr', icon: '👶', title: "L'Apprenti", desc: "Jouer 100 accords au total", check: (d) => d.stats.totalPlayed >= 100 },
+        { id: 'b_achar', icon: '🏋️', title: "L'Acharné", desc: "Jouer 500 accords au total", check: (d) => d.stats.totalPlayed >= 500 },
+        { id: 'b_ency', icon: '📚', title: "L'Encyclopédie", desc: "Valider les 21 combinaisons uniques", check: (d) => d.stats.combos && d.stats.combos.length >= 21 },
+        { id: 'b_init', icon: '🥉', title: "L'Initié", desc: "Rang Bronze min. sur les 6 accords", check: (d) => checkRankColl(d, 'c', 20) },
+        { id: 'b_conf', icon: '🥈', title: "Le Confirmé", desc: "Rang Argent min. sur les 6 accords", check: (d) => checkRankColl(d, 'c', 50) },
+        { id: 'b_virt', icon: '🥇', title: "Le Virtuose", desc: "Rang Or sur les 6 accords", check: (d) => checkRankColl(d, 'c', 100) },
+        { id: 'b_bat', icon: '🔨', title: "Le Bâtisseur", desc: "Rang Bronze min. sur les 4 renversements", check: (d) => checkRankColl(d, 'i', 20) },
+        { id: 'b_ing', icon: '📐', title: "L'Ingénieur", desc: "Rang Argent min. sur les 4 renversements", check: (d) => checkRankColl(d, 'i', 50) },
+        { id: 'b_arch', icon: '🏗️', title: "L'Architecte", desc: "Rang Or sur les 4 renversements", check: (d) => checkRankColl(d, 'i', 100) },
+
+        // 2. RIGUEUR
+        { id: 'b_reg', icon: '📏', title: "Le Régulier", desc: "Série de 15 sans faute", check: (d, s) => s.streak >= 15 },
+        { id: 'b_inv', icon: '🛡️', title: "L'Invincible", desc: "Série de 30 sans faute", check: (d, s) => s.streak >= 30 },
+        { id: 'b_snip', icon: '🎯', title: "Le Sniper", desc: "Série de 15 sans faute sans aides", check: (d, s) => s.cleanStreak >= 15 },
+        { id: 'b_grand', icon: '🌊', title: "Grand Large", desc: "Série de 15 sans faute en Mode Éclaté", check: (d, s) => s.openStreak >= 15 },
+        { id: 'b_pur', icon: '🧐', title: "Le Puriste", desc: "Série de 25 sans faute avec TOUS réglages", check: (d, s) => s.fullConfigStreak >= 25 },
+
+        // 3. EXPERTISE (Persistant)
+        { id: 'b_jazz', icon: '🎷', title: "Jazz Cat", desc: "10 réussites consécutives sur Maj7/min7", check: (d) => d.stats.str_jazz >= 10 },
+        { id: 'b_007', icon: '🕵️', title: "Agent 007", desc: "10 réussites consécutives sur MinMaj7", check: (d) => d.stats.str_007 >= 10 },
+        { id: 'b_dem', icon: '💣', title: "Démineur", desc: "10 réussites consécutives sur Dim7", check: (d) => d.stats.str_dim >= 10 },
+        { id: 'b_acro', icon: '🤸', title: "L'Acrobate", desc: "10 réussites consécutives sur Renversements", check: (d) => d.stats.str_inv >= 10 },
+
+        // 4. MODES
+        { id: 'b_expl', icon: '🧭', title: "L'Explorateur", desc: "Finir une partie dans les 4 modes", check: (d) => d.stats.modesPlayed && d.stats.modesPlayed.length >= 4 },
+        { id: 'b_ecl', icon: '⚡', title: "L'Éclair", desc: "3 réponses < 2s d'affilée", check: (d, s) => s.fastStreak >= 3 },
+        { id: 'b_bolt', icon: '🏃', title: "Usain Bolt", desc: "Score 2 500 pts (Sprint)", check: (d, s) => s.mode === 'sprint' && s.score >= 2500 },
+        { id: 'b_comp', icon: '🎼', title: "Le Compositeur", desc: "Série de 10 sans faute (Inverse)", check: (d, s) => s.mode === 'inverse' && s.streak >= 10 },
+        { id: 'b_pres', icon: '⏲️', title: "Sous Pression", desc: "Survivre 2 minutes (Chrono)", check: (d, s) => s.mode === 'chrono' && (Date.now() - s.startTime) >= 120000 },
+        { id: 'b_phen', icon: '🦅', title: "Le Phénix", desc: "1 vie -> 1 000 pts (Chrono/Sprint)", check: (d, s) => s.lowLifeRecovery && s.score >= 1000 },
+
+        // 5. ULTIME
+        { id: 'b_leg', icon: '👑', title: "La Légende", desc: "Débloquer les 24 autres badges", check: (d) => d.badges.length >= 24 }
+    ];
+
+    const checkRankColl = (d, type, limit) => {
+        const list = (type==='c' ? DB.chords : DB.invs);
+        const stats = (type==='c' ? d.stats.c : d.stats.i);
+        const cleanList = (type==='i') ? list.filter(x => x.id !== 0) : list;
+        return cleanList.every(x => (stats[x.id] && stats[x.id].ok >= limit));
+    };
 
     const COACH_DB = {
         start: [ "Entraîne-toi encore un peu, j'ai besoin de plus de données pour analyser ton oreille.", "Je t'observe... Enchaîne quelques accords pour que je puisse établir ton profil." ],
@@ -444,11 +537,24 @@
         data: { 
             xp:0, lvl:1, next:100, 
             bestChrono:0, bestSprint:0, bestInverse:0,
-            stats:{c:{}, i:{}}, 
+            stats:{
+                c:{}, i:{}, 
+                totalPlayed: 0, 
+                combos: [], 
+                modesPlayed: [], 
+                str_jazz: 0, str_007: 0, str_dim: 0, str_inv: 0
+            }, 
+            badges: [], 
             settings: { activeC: DB.chords.map(c=>c.id), activeI: DB.invs.map(i=>i.id) },
             history: [], tempToday: { date: null, ok: 0, tot: 0 }
         },
-        session: { mode:'zen', time:60, lives:3, chord:null, selC:null, selI:null, done:false, hint:false, score:0, streak:0, globalOk:0, globalTot:0, quizOptions:[], quizCorrectIdx:0, quizUserChoice:null, currentSprintTime: 10, roundLocked: false },
+        session: { 
+            mode:'zen', time:60, lives:3, chord:null, selC:null, selI:null, done:false, 
+            hint:false, score:0, streak:0, globalOk:0, globalTot:0, 
+            quizOptions:[], quizCorrectIdx:0, quizUserChoice:null, 
+            currentSprintTime: 10, roundLocked: false,
+            startTime: 0, cleanStreak: 0, openStreak: 0, fullConfigStreak: 0, fastStreak: 0, lowLifeRecovery: false, lastActionTime: 0
+        },
         timerRef: null,
         sprintRef: null,
         vignetteRef: null,
@@ -462,6 +568,15 @@
                 if(!this.data.tempToday) this.data.tempToday = { date: null, ok: 0, tot: 0 };
                 if(this.data.bestSprint === undefined) this.data.bestSprint = 0;
                 if(this.data.bestInverse === undefined) this.data.bestInverse = 0;
+
+                // RETRO COMPATIBILITÉ BADGES
+                if(!this.data.badges) this.data.badges = [];
+                if(!this.data.stats.totalPlayed) this.data.stats.totalPlayed = 0;
+                if(!this.data.stats.combos) this.data.stats.combos = [];
+                if(!this.data.stats.modesPlayed) this.data.stats.modesPlayed = [];
+                if(this.data.stats.str_jazz === undefined) { 
+                    this.data.stats.str_jazz=0; this.data.stats.str_007=0; this.data.stats.str_dim=0; this.data.stats.str_inv=0; 
+                }
             }
             const todayStr = new Date().toLocaleDateString('fr-FR', {day: 'numeric', month: 'numeric'});
             if(this.data.tempToday.date !== todayStr) { this.data.tempToday = { date: todayStr, ok: 0, tot: 0 }; }
@@ -576,11 +691,19 @@
             document.getElementById('vignette').className = 'vignette-overlay';
             UI.updateBackground(0);
 
-            if(full) { this.session.score=0; this.session.streak=0; }
+            if(full) { 
+                this.session.score=0; this.session.streak=0; 
+                this.session.cleanStreak=0; this.session.openStreak=0; 
+                this.session.fullConfigStreak=0; this.session.fastStreak=0;
+                this.session.lowLifeRecovery = false;
+                this.session.startTime = Date.now(); 
+            }
             this.session.time = 60; this.session.lives = 3; this.session.done = false; 
             this.session.roundLocked = false; 
             this.session.chord = null;
             this.session.quizUserChoice = null;
+            this.session.lastActionTime = Date.now();
+
             UI.resetVisuals(); UI.updateHeader(); UI.updateChrono(); UI.msg("Prêt ?");
             document.getElementById('playBtn').innerHTML = "<span class='icon-lg'>▶</span><span>Écouter</span>";
             document.getElementById('valBtn').innerText = "Valider";
@@ -679,6 +802,7 @@
             this.session.selI = null; 
             this.session.hint = false; 
             UI.resetVisuals();
+            this.session.lastActionTime = Date.now();
 
             const ac = DB.chords.filter(c => this.data.settings.activeC.includes(c.id));
             const ai = DB.invs.filter(i => this.data.settings.activeI.includes(i.id));
@@ -699,8 +823,6 @@
             
             document.querySelectorAll('.quiz-btn').forEach(b => {b.className='quiz-btn'; b.querySelector('.reveal').innerText='...';});
 
-            // V2.9.1 FIX: No Auto-Selection to prevent spam exploit
-            
             Audio.chord(notes);
             setTimeout(() => { document.getElementById('playBtn').innerHTML = "<span class='icon-lg'>...</span><span>En cours</span>"; }, 500);
 
@@ -719,6 +841,7 @@
             this.session.hint = false; 
             this.session.quizUserChoice = null;
             UI.resetVisuals();
+            this.session.lastActionTime = Date.now();
 
             const ac = DB.chords.filter(c => this.data.settings.activeC.includes(c.id));
             const ai = DB.invs.filter(i => this.data.settings.activeI.includes(i.id));
@@ -775,7 +898,7 @@
             UI.msg("Trouve le son !", "");
             document.getElementById('playBtn').disabled = true; 
             document.getElementById('replayBtn').disabled = true; 
-            document.getElementById('hintBtn').disabled = true;    
+            document.getElementById('hintBtn').disabled = true;     
             document.getElementById('valBtn').innerText = "Valider";
             document.getElementById('valBtn').className = "cmd-btn btn-action";
             document.getElementById('valBtn').disabled = true;
@@ -870,7 +993,7 @@
         },
 
         validate() {
-            if(this.session.roundLocked) return; // FIX: Prevent spam
+            if(this.session.roundLocked) return; 
             
             if(this.sprintRef) { clearTimeout(this.sprintRef); this.sprintRef = null; }
             if(this.vignetteRef) { clearTimeout(this.vignetteRef); this.vignetteRef = null; }
@@ -883,7 +1006,7 @@
             const okI = isDim ? true : (this.session.selI === c.inv);
             
             this.session.done = true; 
-            this.session.roundLocked = true; // LOCK ROUND
+            this.session.roundLocked = true; 
 
             const win = (okC && okI);
             
@@ -904,12 +1027,21 @@
         processWin(win) {
             const c = this.session.chord;
             const isDim = c.type.id === 'dim7';
+            
+            // STATS DE BASE
             this.data.stats.c[c.type.id].tot++; if(win) this.data.stats.c[c.type.id].ok++;
             if(!isDim) { this.data.stats.i[c.inv].tot++; if(win) this.data.stats.i[c.inv].ok++; }
+            this.data.stats.totalPlayed++; 
             this.calcGlobalStats();
+            
+            // TRACKING COMBOS (Encyclopédie)
+            if(win) {
+                const comboID = `${c.type.id}-${c.inv}`;
+                if(!this.data.stats.combos.includes(comboID)) this.data.stats.combos.push(comboID);
+            }
 
-            this.data.tempToday.tot++;
-            if(win) this.data.tempToday.ok++;
+            // GESTION HISTORIQUE
+            this.data.tempToday.tot++; if(win) this.data.tempToday.ok++;
             if(this.data.tempToday.tot >= 5) {
                 const todayStr = this.data.tempToday.date;
                 const lastIdx = this.data.history.length - 1;
@@ -918,36 +1050,61 @@
             }
 
             if(win) {
-                let basePts = 50;
-                if(document.getElementById('toggleOpen').checked) basePts = 75;
+                let basePts = 50; if(document.getElementById('toggleOpen').checked) basePts = 75;
                 if(this.session.hint) basePts = 20;
                 if(this.session.mode === 'sprint') {
                     const speedMultiplier = 10 / this.session.currentSprintTime; 
                     basePts = Math.round(basePts * speedMultiplier);
                 }
-
                 const multiplier = this.calcXPMultiplier();
                 let finalXP = Math.round(basePts * multiplier);
                 const bonus = this.session.hint ? 0 : (this.session.streak * 10);
                 this.session.score += (finalXP + bonus);
-                
-                if(!this.session.hint) {
-                    this.session.streak++;
-                    UI.triggerCombo(this.session.streak);
-                }
-                
+                if(!this.session.hint) { this.session.streak++; UI.triggerCombo(this.session.streak); }
                 this.gainXP(finalXP + bonus);
-                Audio.sfx('win'); UI.vibrate([50,50,50]); UI.confetti(); UI.msg(this.session.streak > 2 ? `SÉRIE x${this.session.streak} !` : "EXCELLENT !", true);
+
+                // --- TRACKING STREAKS ---
+                if(!this.session.hint) this.session.cleanStreak++; else this.session.cleanStreak = 0;
+                if(c.open) this.session.openStreak++; else this.session.openStreak = 0;
+                
+                const allC = this.data.settings.activeC.length === DB.chords.length;
+                const allI = this.data.settings.activeI.length === DB.invs.length;
+                if(allC && allI) this.session.fullConfigStreak++; else this.session.fullConfigStreak = 0;
+
+                const reactionTime = (Date.now() - this.session.lastActionTime);
+                if(reactionTime < 2000) this.session.fastStreak++; else this.session.fastStreak = 0;
+
+                // Persistent Streaks
+                if(c.type.id === 'maj7' || c.type.id === 'min7') this.data.stats.str_jazz++;
+                if(c.type.id === 'minmaj7') this.data.stats.str_007++;
+                if(c.type.id === 'dim7') this.data.stats.str_dim++;
+                if(!isDim && c.inv !== 0) this.data.stats.str_inv++;
+
+                if(this.session.lives === 1) this.session.lowLifeRecovery = true;
+
+                Audio.sfx('win'); UI.vibrate([50,50,50]); UI.confetti(); 
+                UI.msg(this.session.streak > 2 ? `SÉRIE x${this.session.streak} !` : "EXCELLENT !", true);
                 if(this.session.mode === 'chrono') this.session.time += 3;
+
             } else {
-                this.session.streak = 0; Audio.sfx('lose'); UI.vibrate(300);
-                UI.updateBackground(0);
+                this.session.streak = 0; 
+                this.session.cleanStreak = 0; this.session.openStreak = 0; 
+                this.session.fullConfigStreak = 0; this.session.fastStreak = 0;
+                
+                if(c.type.id === 'maj7' || c.type.id === 'min7') this.data.stats.str_jazz = 0;
+                if(c.type.id === 'minmaj7') this.data.stats.str_007 = 0;
+                if(c.type.id === 'dim7') this.data.stats.str_dim = 0;
+                if(!isDim && c.inv !== 0) this.data.stats.str_inv = 0;
+
+                Audio.sfx('lose'); UI.vibrate(300); UI.updateBackground(0);
                 UI.msg(`Raté : ${c.type.name} ` + (isDim?"":DB.invs[c.inv].corr), false);
                 if(this.session.mode === 'chrono' || this.session.mode === 'sprint') { 
                     this.session.lives--; 
                     if(this.session.lives <= 0) return this.gameOver(); 
                 }
             }
+            this.checkBadges();
+
             UI.updateHeader(); UI.updateChrono(); this.save();
             document.getElementById('hintBtn').disabled = false; 
             const btn = document.getElementById('valBtn'); btn.innerText = "Suivant"; btn.classList.add('next'); btn.disabled = false;
@@ -956,6 +1113,19 @@
             setTimeout(() => {
                 if(this.session.done) UI.msg("🎹 Mode Instrument : Clique pour comparer", "warning");
             }, 1500);
+        },
+
+        checkBadges() {
+            BADGES.forEach(b => {
+                if(!this.data.badges.includes(b.id)) {
+                    if(b.check(this.data, this.session)) {
+                        this.data.badges.push(b.id);
+                        UI.showBadge(b);
+                        Audio.sfx('lvl'); 
+                        this.save();
+                    }
+                }
+            });
         },
 
         gainXP(n) {
@@ -967,6 +1137,11 @@
         },
 
         gameOver() {
+            if(!this.data.stats.modesPlayed.includes(this.session.mode)) {
+                this.data.stats.modesPlayed.push(this.session.mode);
+            }
+            this.checkBadges();
+
             let isBest = false;
             if(this.session.mode === 'chrono' && this.session.score > this.data.bestChrono) { this.data.bestChrono = this.session.score; isBest=true; }
             if(this.session.mode === 'sprint' && this.session.score > this.data.bestSprint) { this.data.bestSprint = this.session.score; isBest=true; }
@@ -1039,7 +1214,6 @@
             document.getElementById('streakVal').innerText = App.session.streak; 
             document.getElementById('streakVal').className = App.session.streak > 20 ? 'stat-val streak-super' : (App.session.streak > 10 ? 'stat-val streak-fire' : 'stat-val');
             
-            // Update Score
             if(document.getElementById('scoreGroup').classList.contains('active')) {
                 document.getElementById('currentScoreVal').innerText = App.session.score;
             }
@@ -1070,6 +1244,14 @@
         confetti() { const c=document.getElementById('confetti'); const x=c.getContext('2d'); c.width=window.innerWidth; c.height=window.innerHeight; let p=[]; for(let i=0;i<60;i++)p.push({x:c.width/2,y:c.height/2,vx:(Math.random()-0.5)*25,vy:(Math.random()-0.5)*25,c:`hsl(${Math.random()*360},100%,50%)`,l:1}); const u=()=>{x.clearRect(0,0,c.width,c.height); let a=false; p.forEach(k=>{if(k.l>0){k.x+=k.vx;k.y+=k.vy;k.vy+=0.6;k.l-=0.02;x.fillStyle=k.c;x.beginPath();x.arc(k.x,k.y,6,0,7);x.fill();a=true;}}); if(a)requestAnimationFrame(u);}; u(); },
         showLevelUp() { const ov = document.getElementById('levelOverlay'); ov.classList.add('active'); setTimeout(() => { ov.classList.remove('active'); }, 3000); },
         showToast(msg) { const t = document.getElementById('rankToast'); t.innerText = msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 3000); },
+        showBadge(b) {
+            const el = document.getElementById('badgeRibbon');
+            const txt = document.getElementById('badgeRibbonText');
+            txt.innerHTML = `${b.title} débloqué !`;
+            document.querySelector('.badge-ribbon-icon').innerText = b.icon;
+            el.classList.add('show');
+            setTimeout(() => el.classList.remove('show'), 4000);
+        },
         
         openModal(id, locked = false) { 
             if(id==='settingsModal') UI.renderSettings(); 
@@ -1092,6 +1274,7 @@
             msg = msg.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
             msg = msg.replace(/\*(.*?)\*/g, '<em>$1</em>');
             document.getElementById('coachDisplay').innerHTML = `<div class="coach-avatar">🧠</div><div class="coach-bubble"><span class="coach-tag">${advice.t}</span><br>${msg}</div>`;
+            
             const histContainer = document.getElementById('historyChart');
             let histHTML = '<div class="chart-limit-line"></div><div class="chart-container">';
             const data = App.data.history || [];
@@ -1107,6 +1290,7 @@
             }
             histHTML += '</div>';
             histContainer.innerHTML = histHTML;
+            
             const html = (arr, cat) => arr.map(x => {
                 const s = App.data.stats[cat][x.id] || {ok:0, tot:0};
                 const p = s.tot?Math.round((s.ok/s.tot)*100):0;
@@ -1114,6 +1298,26 @@
                 return `<div class="stat-item"><div class="stat-header"><span>${x.name||x.corr}</span><span>${p}%</span></div><div class="stat-track"><div class="stat-fill" style="width:${p}%;background:${s.tot?col:'transparent'}"></div></div></div>`;
             }).join('');
             document.getElementById('statsContent').innerHTML = "<h4>Accords</h4>"+html(DB.chords,'c')+"<br><h4>Renversements</h4>"+html(DB.invs,'i');
+
+            // BADGES RENDER
+            const grid = document.getElementById('badgesGrid');
+            grid.innerHTML = '';
+            let count = 0;
+            BADGES.forEach(b => {
+                const unlocked = App.data.badges.includes(b.id);
+                if(unlocked) count++;
+                const el = document.createElement('div');
+                el.className = `badge-item ${unlocked ? 'unlocked' : ''}`;
+                el.innerHTML = b.icon;
+                el.onclick = () => {
+                    const det = document.getElementById('badgeDetail');
+                    det.innerHTML = `<span style="color:white; text-transform:uppercase;">${b.title}</span><br>${b.desc}`;
+                    if(!unlocked) det.innerHTML += " <span style='color:var(--text-dim)'>(Verrouillé)</span>";
+                };
+                grid.appendChild(el);
+            });
+            document.getElementById('badgeCount').innerText = `${count}/${BADGES.length}`;
+            document.getElementById('badgeDetail').innerText = ""; 
         }
     };
 
