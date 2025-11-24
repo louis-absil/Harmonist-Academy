@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Harmonist Academy - Ultimate</title>
+    <title>Harmonist Academy - V2.0</title>
     <style>
         :root {
             --bg: #0f172a;
@@ -16,6 +16,9 @@
             --warning: #f59e0b;
             --error: #ef4444;
             --gold: #fbbf24;
+            --gold-dark: #b45309;
+            --silver: #94a3b8;
+            --bronze: #92400e;
             --text: #f8fafc;
             --text-dim: #94a3b8;
             --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
@@ -44,7 +47,8 @@
             padding: 10px; 
             gap: 8px; 
             position: relative;
-            padding-bottom: env(safe-area-inset-bottom, 10px);
+            /* On laisse un peu de place en bas pour le footer discret */
+            padding-bottom: max(20px, env(safe-area-inset-bottom));
         }
 
         /* HEADER */
@@ -130,27 +134,69 @@
         .grid-c { grid-template-columns: repeat(2, 1fr); grid-auto-rows: 1fr; }
         .grid-i { grid-template-columns: repeat(2, 1fr); grid-auto-rows: 1fr; }
         
+        /* --- BOUTONS ACCORDS (V1.8 : Heavy Metal) --- */
         .pad {
-            background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05);
+            background: rgba(255,255,255,0.03); 
+            border: 1px solid rgba(255,255,255,0.05);
             border-radius: 10px; cursor: pointer; position: relative;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1);
             height: 100%; width: 100%; min-height: 40px; 
         }
         .pad:active { transform: scale(0.96); }
         .pad:hover { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.1); }
+        
+        /* RANGS DE MAITRISE (Dark Metal) */
+        .pad.rank-bronze { 
+            border-color: #b45309; color: #fdba74;
+            background: linear-gradient(145deg, rgba(180, 83, 9, 0.15), rgba(67, 20, 7, 0.3));
+            box-shadow: inset 1px 1px 0 rgba(255,255,255,0.15), inset -1px -1px 0 rgba(0,0,0,0.4);
+        }
+        .pad.rank-silver { 
+            border-color: #94a3b8; color: #f1f5f9; 
+            background: linear-gradient(145deg, rgba(148, 163, 184, 0.15), rgba(30, 41, 59, 0.3));
+            box-shadow: inset 1px 1px 0 rgba(255,255,255,0.2), inset -1px -1px 0 rgba(0,0,0,0.4);
+            text-shadow: 0 0 5px rgba(255,255,255,0.2);
+        }
+        .pad.rank-gold { 
+            border-color: #fbbf24; color: #fbbf24; 
+            background: linear-gradient(145deg, rgba(251, 191, 36, 0.15), rgba(120, 53, 15, 0.3));
+            box-shadow: inset 1px 1px 0 rgba(255,255,255,0.3), inset -1px -1px 0 rgba(0,0,0,0.4), 0 0 10px rgba(251, 191, 36, 0.15);
+            text-shadow: 0 0 10px rgba(251, 191, 36, 0.4);
+        }
+
+        /* OVERRIDES */
         .pad.selected { 
-            background: rgba(99, 102, 241, 0.15); border-color: var(--primary); 
-            box-shadow: 0 0 15px rgba(99, 102, 241, 0.2), inset 0 0 10px rgba(99, 102, 241, 0.1);
+            background: rgba(99, 102, 241, 0.25) !important; 
+            border-color: var(--primary) !important; 
+            color: white !important;
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.4) !important;
+            text-shadow: none !important;
         }
-        .pad.correct { 
-            background: var(--success); border-color: var(--success); color: #000;
-            box-shadow: 0 0 20px rgba(16, 185, 129, 0.4); z-index: 5;
+        .pad.wrong { 
+            border-color: var(--error) !important; 
+            color: var(--error) !important; 
+            background: transparent !important;
+            box-shadow: none !important;
+            opacity: 0.4; 
         }
-        .pad.wrong { border-color: var(--error); color: var(--error); opacity: 0.4; }
-        .pad.correction { border-color: var(--gold); color: var(--gold); }
-        .pad-main { font-size: 1rem; font-weight: 800; font-family: monospace; }
-        .pad-sub { font-size: 0.6rem; opacity: 0.6; margin-top: 0px; }
+        .pad.correct, .pad.correction { 
+            border-color: #fcd34d !important; 
+            background: rgba(251, 191, 36, 0.3) !important;
+            color: #fff !important;
+            box-shadow: 0 0 0 2px #fbbf24, 0 0 30px rgba(251, 191, 36, 0.6) !important;
+            text-shadow: 0 0 10px rgba(251, 191, 36, 1) !important;
+            animation: pulseCorrection 1.5s infinite;
+            z-index: 10;
+        }
+        @keyframes pulseCorrection { 
+            0%{transform:scale(1); box-shadow: 0 0 0 2px #fbbf24, 0 0 20px rgba(251, 191, 36, 0.4);} 
+            50%{transform:scale(1.03); box-shadow: 0 0 0 4px #fbbf24, 0 0 40px rgba(251, 191, 36, 0.8);} 
+            100%{transform:scale(1); box-shadow: 0 0 0 2px #fbbf24, 0 0 20px rgba(251, 191, 36, 0.4);} 
+        }
+
+        .pad-main { font-size: 1rem; font-weight: 800; font-family: monospace; pointer-events: none; }
+        .pad-sub { font-size: 0.6rem; opacity: 0.6; margin-top: 0px; pointer-events: none; }
 
         /* COMMAND BAR */
         .command-deck {
@@ -173,13 +219,42 @@
         .btn-action.next { background: var(--primary); box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3); }
         .icon-lg { font-size: 1.1rem; margin-bottom: 2px; }
 
+        /* FOOTER DISCRET (V2.0) */
+        .app-footer {
+            text-align: center; font-size: 0.6rem; color: var(--text-dim); opacity: 0.5;
+            margin-top: 2px; pointer-events: none;
+        }
+
         /* MODALS */
         .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 100; backdrop-filter: blur(5px); align-items: center; justify-content: center; }
         .modal-overlay.open { display: flex; animation: fadeIn 0.2s; }
-        .modal { background: #1e293b; padding: 25px; border-radius: 24px; width: 90%; max-width: 400px; border: 1px solid rgba(255,255,255,0.1); text-align: center; box-shadow: 0 25px 50px rgba(0,0,0,0.6); max-height: 85vh; overflow-y: auto; }
+        .modal { 
+            background: #1e293b; padding: 20px; border-radius: 24px; width: 90%; max-width: 400px; 
+            border: 1px solid rgba(255,255,255,0.1); text-align: center; box-shadow: 0 25px 50px rgba(0,0,0,0.6); 
+            max-height: 85vh; overflow-y: auto; position: relative;
+        }
         
+        /* BRANDING (V2.0) */
+        .brand-title { font-size: 1.5rem; font-weight: 900; margin: 0 0 20px 0; letter-spacing: -0.5px; }
+        .brand-primary { color: var(--text); }
+        .brand-accent { color: var(--primary); }
+
+        /* SETTINGS GRID */
         .toggle-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
         .toggle-row:last-child { border: none; }
+        .settings-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 20px; }
+        .setting-chip {
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px; padding: 10px 5px; cursor: pointer;
+            font-size: 0.8rem; font-weight: 700; color: var(--text-dim);
+            transition: all 0.2s; display: flex; flex-direction: column; align-items: center;
+        }
+        .setting-chip.active {
+            background: var(--primary); color: white; border-color: var(--primary);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+        .setting-chip:active { transform: scale(0.95); }
+
         .toggle-switch { position: relative; width: 40px; height: 22px; }
         .toggle-switch input { opacity: 0; width: 0; height: 0; }
         .slider { position: absolute; cursor: pointer; inset: 0; background: #334155; transition: .3s; border-radius: 22px; }
@@ -187,12 +262,12 @@
         input:checked + .slider { background: var(--primary); }
         input:checked + .slider:before { transform: translateX(18px); }
 
-        /* COACH BUBBLE */
-        .coach-box { margin-bottom: 20px; display: flex; flex-direction: column; align-items: center; }
-        .coach-avatar { font-size: 2.5rem; margin-bottom: 10px; animation: pop 1s infinite alternate; }
+        /* COACH & CHART */
+        .coach-box { margin-bottom: 15px; display: flex; flex-direction: column; align-items: center; }
+        .coach-avatar { font-size: 2rem; margin-bottom: 8px; animation: pop 1s infinite alternate; }
         .coach-bubble {
-            background: #334155; color: white; padding: 15px; border-radius: 16px;
-            position: relative; font-size: 0.9rem; line-height: 1.4; border: 1px solid rgba(255,255,255,0.1);
+            background: #334155; color: white; padding: 12px; border-radius: 16px;
+            position: relative; font-size: 0.85rem; line-height: 1.4; border: 1px solid rgba(255,255,255,0.1);
             box-shadow: 0 4px 10px rgba(0,0,0,0.3); max-width: 100%;
         }
         .coach-bubble:after {
@@ -205,13 +280,50 @@
             border-radius: 4px; font-size: 0.6rem; font-weight: 800; text-transform: uppercase; margin-bottom: 5px;
         }
 
+        .history-box {
+            background: rgba(0,0,0,0.2); border-radius: 12px; padding: 10px; margin-bottom: 15px;
+            border: 1px solid rgba(255,255,255,0.05); position: relative;
+        }
+        .chart-limit-line {
+            position: absolute; top: 50%; left: 10px; right: 10px; height: 1px; 
+            background: rgba(255,255,255,0.1); border-top: 1px dashed rgba(255,255,255,0.3); pointer-events: none;
+        }
+        .chart-container {
+            display: flex; align-items: flex-end; justify-content: space-between; height: 80px; gap: 6px; z-index: 1; position: relative;
+        }
+        .chart-col {
+            flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; justify-content: flex-end;
+        }
+        .chart-track {
+            width: 100%; flex: 1; background: rgba(255,255,255,0.05); border-radius: 4px; 
+            display: flex; align-items: flex-end; overflow: hidden; min-height: 60px;
+        }
+        .chart-bar {
+            width: 100%; transition: height 0.5s ease-out; min-height: 0;
+        }
+        .chart-label { font-size: 0.55rem; color: var(--text-dim); margin-top: 2px;}
+        
+        .stat-item { margin-bottom: 6px; }
+        .stat-header { display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 2px; }
+        .stat-track { height: 5px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; }
+        .stat-fill { height: 100%; }
+
         /* ANIMATIONS */
         @keyframes pop { 0% { transform: scale(0.9); } 100% { transform: scale(1.1); } }
         @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
         @keyframes fadeIn { from{opacity:0} to{opacity:1} }
         .confetti-canvas { position: fixed; top:0; left:0; width:100%; height:100%; pointer-events: none; z-index: 90; }
 
-        /* HUD DE LEVEL UP */
+        .toast-box {
+            position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px);
+            background: var(--panel); border: 1px solid var(--gold); color: var(--gold);
+            padding: 10px 20px; border-radius: 20px; font-weight: 700; font-size: 0.85rem;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5); z-index: 200; pointer-events: none;
+            opacity: 0; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); text-align: center;
+            white-space: nowrap;
+        }
+        .toast-box.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
         .level-hud {
             position: fixed; inset: 0; pointer-events: none; z-index: 200;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -267,6 +379,8 @@
     <p>Niveau Supérieur !</p>
     <h1 id="lvlOverlayName">...</h1>
 </div>
+
+<div class="toast-box" id="rankToast"></div>
 
 <div class="app-container">
     <header>
@@ -336,14 +450,19 @@
         <button class="cmd-btn btn-action" id="valBtn" onclick="App.handleMain()" disabled>Valider</button>
         <button class="cmd-btn btn-listen" id="hintBtn" onclick="App.hint()" disabled style="flex:0.5; font-size:1.2rem;">🔍</button>
     </div>
+    <div class="app-footer">Harmonist Academy © 2024 Louis Absil</div>
 </div>
 
 <div class="modal-overlay" id="settingsModal">
     <div class="modal">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-            <h2 style="margin:0;">Paramètres</h2>
-            <span style="cursor:pointer; font-size:1.5rem;" onclick="App.closeSettings()">✕</span>
+        <div style="display:flex; justify-content:flex-end;">
+            <span style="cursor:pointer; font-size:1.5rem;" onclick="UI.closeModals()">✕</span>
         </div>
+        
+        <div class="brand-title">
+            <span class="brand-primary">Harmonist</span> <span class="brand-accent">Academy</span>
+        </div>
+
         <div class="toggle-row">
             <span>Mode "Éclaté" (+50% XP)</span>
             <label class="toggle-switch">
@@ -351,9 +470,11 @@
             </label>
         </div>
         <h4 style="text-align:left; color:var(--primary); margin:15px 0 5px 0;">Accords</h4>
-        <div id="settingsChords" style="max-height:150px; overflow-y:auto; border:1px solid rgba(255,255,255,0.1); border-radius:10px; padding:0 10px;"></div>
+        <div id="settingsChords" class="settings-grid"></div>
+        
         <h4 style="text-align:left; color:var(--primary); margin:15px 0 5px 0;">Renversements</h4>
-        <div id="settingsInvs" style="border:1px solid rgba(255,255,255,0.1); border-radius:10px; padding:0 10px;"></div>
+        <div id="settingsInvs" class="settings-grid"></div>
+        
         <button class="cmd-btn" onclick="App.hardReset()" style="width:100%; margin-top:20px; background:rgba(239, 68, 68, 0.2); color:var(--error); padding:10px;">⚠️ Réinitialiser</button>
     </div>
 </div>
@@ -365,7 +486,14 @@
             <span style="cursor:pointer; font-size:1.5rem;" onclick="UI.closeModals()">✕</span>
         </div>
         <div class="coach-box" id="coachDisplay"></div>
-        <div id="statsContent" style="max-height:50vh; overflow-y:auto;"></div>
+        
+        <h4 style="margin:0 0 10px 0; font-size:0.8rem; color:var(--text-dim); text-transform:uppercase;">Historique de Précision</h4>
+        <div class="history-box" id="historyChart">
+            <div class="chart-limit-line"></div>
+        </div>
+
+        <h4 style="margin:15px 0 10px 0; font-size:0.8rem; color:var(--text-dim); text-transform:uppercase;">Détails</h4>
+        <div id="statsContent"></div>
     </div>
 </div>
 
@@ -382,181 +510,65 @@
 </div>
 
 <script>
-    // --- BIBLIOTHEQUE DE PHRASES (V7 - Nettoyée et Validée) ---
     const COACH_DB = {
-        start: [
-            "Entraîne-toi encore un peu, j'ai besoin de plus de données pour analyser ton oreille.",
-            "Je t'observe... Enchaîne quelques accords pour que je puisse établir ton profil."
-        ],
+        start: [ "Entraîne-toi encore un peu, j'ai besoin de plus de données pour analyser ton oreille.", "Je t'observe... Enchaîne quelques accords pour que je puisse établir ton profil." ],
         weakness: {
-            maj7: [
-                {t:"Théorie", m:"Le **M7M (Maj7)** te résiste ? Cherche la *Sensible* (la 7ème note) qui veut monter d'un demi-ton vers la Tonique."},
-                {t:"Image", m:"Le **M7M (Maj7)** c'est la couleur caractéristique du Jazz : stable, lumineuse, avec une nostalgie planante."},
-                {t:"Astuce", m:"Pour le **M7M (Maj7)**, arpège les notes dans ta tête : c'est le début de la chanson *'Mr. Sandman'* (1-3-5-7)."}
-            ],
-            min7: [
-                {t:"Théorie", m:"Le **m7m (min7)** est souvent le **IIe degré** d'une gamme majeure. Imagine qu'il amène une cadence parfaite (II - V - I)."},
-                {t:"Image", m:"Le **m7m (min7)** est une couleur douce et contemplative. Contrairement aux autres, il a très peu de tension interne."},
-                {t:"Astuce", m:"Le **m7m (min7)** sonne mineur, mais sans le frottement étrange du **mM7** ni la noirceur du **Ø**."}
-            ],
-            dom7: [
-                {t:"Théorie", m:"La présence du **Triton** (3 tons) dans le **M7m (Dom7)** crée une forte tension qui appelle une résolution."},
-                {t:"Image", m:"Le **M7m (Dom7)** est dynamique, 'en mouvement'. Il ne peut pas rester là, il doit aller quelque part."},
-                {t:"Astuce", m:"Sur le **M7m (Dom7)**, concentre-toi sur ce sentiment d'instabilité. L'accord est 'en suspens' et tire fortement vers la fin."}
-            ],
-            hdim7: [
-                {t:"Théorie", m:"Le **Ø (m7b5)** est le **IIe degré** de la gamme mineure. Comme le **m7m**, mais avec une quinte bémol qui rajoute de la dissonance."},
-                {t:"Image", m:"Le **Ø (m7b5)** est plus sombre que le mineur 7, mais moins dramatique que le diminué complet."},
-                {t:"Astuce", m:"Le **Ø (m7b5)** est l'accord pivot des cadences en mode mineur (II - V - i). Il prépare généralement une Dominante."}
-            ],
-            dim7: [
-                {t:"Théorie", m:"Le **dim7** est composé uniquement de **tierces mineures** empilées. C'est un enchevêtrement de deux tritons !"},
-                {t:"Image", m:"Le **dim7** c'est l'accord de l'angoisse ou du 'Jumpscare' au cinéma. Une tension extrême sans direction précise."},
-                {t:"Astuce", m:"Le **dim7** est un caméléon : chaque note peut devenir la sensible d'une nouvelle tonalité. Il peut aller n'importe où."}
-            ],
-            minmaj7: [
-                {t:"Théorie", m:"Le **mM7 (minMaj7)** est le plus dissonant des six. Très utilisé comme 'couleur' et tension statique au XXème siècle."},
-                {t:"Image", m:"Le **mM7 (minMaj7)** est l'accord du mystère, type *James Bond* ou film noir. Une base mineure triste avec une note finale perçante."},
-                {t:"Astuce", m:"Pour le **mM7 (minMaj7)**, repère le frottement très dur (seconde mineure) entre la 7ème majeure et la Tonique."}
-            ]
+            maj7: [ {t:"Théorie", m:"Le **M7M (Maj7)** te résiste ? Cherche la *Sensible* (la 7ème note) qui veut monter d'un demi-ton vers la Tonique."}, {t:"Image", m:"Le **M7M (Maj7)** c'est la couleur caractéristique du Jazz : stable, lumineuse, avec une nostalgie planante."}, {t:"Astuce", m:"Pour le **M7M (Maj7)**, arpège les notes dans ta tête : c'est le début de la chanson *'Mr. Sandman'* (1-3-5-7)."} ],
+            min7: [ {t:"Théorie", m:"Le **m7m (min7)** est souvent le **IIe degré** d'une gamme majeure. Imagine qu'il amène une cadence parfaite (II - V - I)."}, {t:"Image", m:"Le **m7m (min7)** est une couleur douce et contemplative. Contrairement aux autres, il a très peu de tension interne."}, {t:"Astuce", m:"Le **m7m (min7)** sonne mineur, mais sans le frottement étrange du **mM7** ni la noirceur du **Ø**."} ],
+            dom7: [ {t:"Théorie", m:"La présence du **Triton** (3 tons) dans le **M7m (Dom7)** crée une forte tension qui appelle une résolution."}, {t:"Image", m:"Le **M7m (Dom7)** est dynamique, 'en mouvement'. Il ne peut pas rester là, il doit aller quelque part."}, {t:"Astuce", m:"Sur le **M7m (Dom7)**, concentre-toi sur ce sentiment d'instabilité. L'accord est 'en suspens' et tire fortement vers la fin."} ],
+            hdim7: [ {t:"Théorie", m:"Le **Ø (m7b5)** est le **IIe degré** de la gamme mineure. Comme le **m7m**, mais avec une quinte bémol qui rajoute de la dissonance."}, {t:"Image", m:"Le **Ø (m7b5)** est plus sombre que le mineur 7, mais moins dramatique que le diminué complet."}, {t:"Astuce", m:"Le **Ø (m7b5)** est l'accord pivot des cadences en mode mineur (II - V - i). Il prépare généralement une Dominante."} ],
+            dim7: [ {t:"Théorie", m:"Le **dim7** est composé uniquement de **tierces mineures** empilées. C'est un enchevêtrement de deux tritons !"}, {t:"Image", m:"Le **dim7** c'est l'accord de l'angoisse ou du 'Jumpscare' au cinéma. Une tension extrême sans direction précise."}, {t:"Astuce", m:"Le **dim7** est un caméléon : chaque note peut devenir la sensible d'une nouvelle tonalité. Il peut aller n'importe où."} ],
+            minmaj7: [ {t:"Théorie", m:"Le **mM7 (minMaj7)** est le plus dissonant des six. Très utilisé comme 'couleur' et tension statique au XXème siècle."}, {t:"Image", m:"Le **mM7 (minMaj7)** est l'accord du mystère, type *James Bond* ou film noir. Une base mineure triste avec une note finale perçante."}, {t:"Astuce", m:"Pour le **mM7 (minMaj7)**, repère le frottement très dur (seconde mineure) entre la 7ème majeure et la Tonique."} ]
         },
-        bass: [ // REVENU AUX 3 PHRASES VALIDÉES
-            "Ton oreille capte bien la couleur, mais néglige la fondation. Chante la note la plus grave (la Basse) pour t'orienter.",
-            "Pour les renversements, cherche l'intervalle de **Seconde** (notes voisines). Sa position t'indique la réponse.",
-            "La Seconde est en haut ? C'est un **65**. Au milieu ? Un **43**. En bas ? Un **2**. Aucune seconde ? C'est l'état fondamental (**7**)."
-        ],
-        boost: [
-            "Tu es particulièrement affûté aujourd'hui ! Profite de cet élan pour battre ton record.",
-            "Belle remontée ! Tu es en train de corriger tes lacunes à vitesse grand V.",
-            "Tu es 'dans la zone'. Fais confiance à ton intuition, elle est juste."
-        ],
-        master: [
-            "Ton niveau est solide. Essaie maintenant de répondre plus vite, sans réfléchir, à l'instinct.",
-            "C'est presque trop facile ? Tente de faire une série de 20 sans aucune erreur.",
-            "Excellent. Pour le défi ultime, active le mode 'Éclaté' dans les paramètres si ce n'est pas déjà fait."
-        ]
+        bass: [ "Ton oreille capte bien la couleur, mais néglige la fondation. Chante la note la plus grave (la Basse) pour t'orienter.", "Pour les renversements, cherche l'intervalle de **Seconde** (notes voisines). Sa position t'indique la réponse.", "La Seconde est en haut ? C'est un **65**. Au milieu ? Un **43**. En bas ? Un **2**. Aucune seconde ? C'est l'état fondamental (**7**)." ],
+        boost: [ "Tu es particulièrement affûté aujourd'hui ! Profite de cet élan pour battre ton record.", "Belle remontée ! Tu es en train de corriger tes lacunes à vitesse grand V.", "Tu es 'dans la zone'. Fais confiance à ton intuition, elle est juste." ],
+        master: [ "Ton niveau est solide. Essaie maintenant de répondre plus vite, sans réfléchir, à l'instinct.", "C'est presque trop facile ? Tente de faire une série de 20 sans aucune erreur.", "Excellent. Pour le défi ultime, active le mode 'Éclaté' dans les paramètres si ce n'est pas déjà fait." ]
     };
 
     const DB = {
-        chords: [
-            { id: 'maj7', name: 'M7M', sub: 'Maj7', iv: [0,4,7,11] },
-            { id: 'min7', name: 'm7m', sub: 'min7', iv: [0,3,7,10] },
-            { id: 'dom7', name: 'M7m', sub: 'Dom7', iv: [0,4,7,10] },
-            { id: 'hdim7', name: 'dim7m', sub: 'Ø', iv: [0,3,6,10] },
-            { id: 'dim7', name: 'dim7dim', sub: 'Dim7', iv: [0,3,6,9] },
-            { id: 'minmaj7', name: 'm7M', sub: 'mM7', iv: [0,3,7,11] }
-        ],
-        invs: [
-            { id: 0, name: '7', sub: 'Fond.', corr: '7' },
-            { id: 1, name: '65', sub: '1er', corr: '65' },
-            { id: 2, name: '43', sub: '2ème', corr: '43' },
-            { id: 3, name: '2', sub: '3ème', corr: '2' }
-        ],
-        ranks: [
-            {t:"Tourneur de pages enthousiaste",i:"📄"}, {t:"Régisseur distrait",i:"🔦"}, {t:"Déchiffreur du dimanche",i:"👓"},
-            {t:"Spécialiste des cordes à vide",i:"🎻"}, {t:"Harmoniste en herbe",i:"🌱"}, {t:"Explorateur de Tonalités",i:"🧭"},
-            {t:"Adepte des mouvements contraires",i:"↔️"}, {t:"Amateur de résolutions heureuses",i:"😌"}, {t:"Expert du Retard",i:"⏳"},
-            {t:"Premier Prix de Solfège",i:"🥇"}, {t:"Chef de pupitre",i:"🎼"}, {t:"Supersoliste",i:"🌟"},
-            {t:"Disciple de Rameau",i:"📖"}, {t:"Architecte des Modulations",i:"🏗️"}, {t:"Chef d'orchestre inspiré",i:"🥢"},
-            {t:"Virtuose de l’oreille relative",i:"👂"}, {t:"Explorateur du chromatisme",i:"🌈"}, {t:"Théoricien Post-Tonal",i:"🌌"},
-            {t:"Maître des Fonctions harmoniques",i:"🔮"}, {t:"Réincarnation de Bach",i:"👑"}
-        ]
+        chords: [ { id: 'maj7', name: 'M7M', sub: 'Maj7', iv: [0,4,7,11] }, { id: 'min7', name: 'm7m', sub: 'min7', iv: [0,3,7,10] }, { id: 'dom7', name: 'M7m', sub: 'Dom7', iv: [0,4,7,10] }, { id: 'hdim7', name: 'dim7m', sub: 'Ø', iv: [0,3,6,10] }, { id: 'dim7', name: 'dim7dim', sub: 'Dim7', iv: [0,3,6,9] }, { id: 'minmaj7', name: 'm7M', sub: 'mM7', iv: [0,3,7,11] } ],
+        invs: [ { id: 0, name: '7', sub: 'Fond.', corr: '7' }, { id: 1, name: '65', sub: '1er', corr: '65' }, { id: 2, name: '43', sub: '2ème', corr: '43' }, { id: 3, name: '2', sub: '3ème', corr: '2' } ],
+        ranks: [ {t:"Tourneur de pages enthousiaste",i:"📄"}, {t:"Régisseur distrait",i:"🔦"}, {t:"Déchiffreur du dimanche",i:"👓"}, {t:"Spécialiste des cordes à vide",i:"🎻"}, {t:"Harmoniste en herbe",i:"🌱"}, {t:"Explorateur de Tonalités",i:"🧭"}, {t:"Adepte des mouvements contraires",i:"↔️"}, {t:"Amateur de résolutions heureuses",i:"😌"}, {t:"Expert du Retard",i:"⏳"}, {t:"Premier Prix de Solfège",i:"🥇"}, {t:"Chef de pupitre",i:"🎼"}, {t:"Supersoliste",i:"🌟"}, {t:"Disciple de Rameau",i:"📖"}, {t:"Architecte des Modulations",i:"🏗️"}, {t:"Chef d'orchestre inspiré",i:"🥢"}, {t:"Virtuose de l’oreille relative",i:"👂"}, {t:"Explorateur du chromatisme",i:"🌈"}, {t:"Théoricien Post-Tonal",i:"🌌"}, {t:"Maître des Fonctions harmoniques",i:"🔮"}, {t:"Réincarnation de Bach",i:"👑"} ]
     };
 
     const KEY_MAP = { '1':0, '2':1, '3':2, '4':3, '5':4, '6':5, 'q':0, 'a':0, 'w':1, 'z':1, 'e':2, 'r':3 };
 
     const Audio = {
-        ctx: null, master: null, reverb: null, samples: {},
-        baseUrl: 'https://tonejs.github.io/audio/salamander/',
+        ctx: null, master: null, reverb: null, samples: {}, baseUrl: 'https://tonejs.github.io/audio/salamander/',
         sampleMap: { 36: 'C2.mp3', 39: 'Ds2.mp3', 42: 'Fs2.mp3', 45: 'A2.mp3', 48: 'C3.mp3', 51: 'Ds3.mp3', 54: 'Fs3.mp3', 57: 'A3.mp3', 60: 'C4.mp3', 63: 'Ds4.mp3', 66: 'Fs4.mp3', 69: 'A4.mp3', 72: 'C5.mp3', 75: 'Ds5.mp3', 78: 'Fs5.mp3', 81: 'A5.mp3', 84: 'C6.mp3' },
         fallbackMode: false,
-
-        init() {
-            if (this.ctx) return;
-            const AC = window.AudioContext || window.webkitAudioContext;
-            this.ctx = new AC();
-            this.master = this.ctx.createGain(); this.master.gain.value = 1.0;
-            this.reverb = this.ctx.createConvolver(); this.reverb.buffer = this.createReverbImpulse(2.0);
-            const revGain = this.ctx.createGain(); revGain.gain.value = 0.3;
-            this.master.connect(this.ctx.destination); this.master.connect(this.reverb); this.reverb.connect(revGain); revGain.connect(this.ctx.destination);
-            this.loop(); this.loadSamples();
-        },
-        createReverbImpulse(duration) {
-            const rate = this.ctx.sampleRate, length = rate * duration, impulse = this.ctx.createBuffer(2, length, rate), L = impulse.getChannelData(0), R = impulse.getChannelData(1);
-            for (let i = 0; i < length; i++) { const decay = Math.pow(1 - i / length, 3); L[i] = (Math.random() * 2 - 1) * decay; R[i] = (Math.random() * 2 - 1) * decay; }
-            return impulse;
-        },
-        async loadSamples() {
-            UI.msg("Chargement Piano...", "correction");
-            const promises = Object.keys(this.sampleMap).map(async (midi) => {
-                try {
-                    const response = await fetch(this.baseUrl + this.sampleMap[midi]);
-                    if(!response.ok) throw new Error('Network');
-                    const buff = await response.arrayBuffer();
-                    this.samples[midi] = await this.ctx.decodeAudioData(buff);
-                } catch (e) { }
-            });
-            await Promise.all(promises);
-            if(Object.keys(this.samples).length > 5) UI.msg("Piano Activé", "correct");
-            else { this.fallbackMode = true; UI.msg("Mode Secours (Local)", "warning"); }
-            setTimeout(() => UI.msg("Prêt ?"), 2000);
-        },
-        playNote(midi, time, velocity = 0.5) {
-            if (!this.ctx) return;
-            if (this.fallbackMode) this.playSynthNote(midi, time, velocity); else this.playSampledNote(midi, time, velocity);
-        },
-        playSampledNote(midi, time, velocity) {
-            const available = Object.keys(this.samples).map(Number).sort((a,b)=>a-b);
-            let closest = available[0], minDiff = Math.abs(midi - closest);
-            for (let n of available) { const diff = Math.abs(midi - n); if (diff < minDiff) { minDiff = diff; closest = n; } }
-            const src = this.ctx.createBufferSource(); src.buffer = this.samples[closest]; src.playbackRate.value = Math.pow(2, (midi - closest) / 12);
-            const g = this.ctx.createGain(); g.gain.setValueAtTime(0, time); g.gain.linearRampToValueAtTime(velocity, time + 0.01); g.gain.exponentialRampToValueAtTime(0.001, time + 4.0);
-            src.connect(g); g.connect(this.master); src.start(time);
-        },
-        playSynthNote(midi, time, velocity) {
-            const freq = 440 * Math.pow(2, (midi - 69) / 12);
-            const osc = this.ctx.createOscillator(); osc.type = 'triangle'; osc.frequency.value = freq;
-            const mod = this.ctx.createOscillator(); mod.type = 'sine'; mod.frequency.value = freq * 2;
-            const modGain = this.ctx.createGain(); modGain.gain.setValueAtTime(velocity * 50, time); modGain.gain.exponentialRampToValueAtTime(0.1, time + 0.5);
-            mod.connect(modGain); modGain.connect(osc.frequency);
-            const env = this.ctx.createGain(); env.gain.setValueAtTime(0, time); env.gain.linearRampToValueAtTime(velocity * 0.5, time + 0.02); env.gain.exponentialRampToValueAtTime(0.01, time + 2.0);
-            osc.connect(env); env.connect(this.master); osc.start(time); osc.stop(time + 2.5); mod.start(time); mod.stop(time + 2.5);
-        },
-        playPureTone(f, t, dur=0.5) {
-            const o = this.ctx.createOscillator(); o.type = 'sine'; o.frequency.value = f;
-            const g = this.ctx.createGain(); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.1, t + 0.05); g.gain.exponentialRampToValueAtTime(0.001, t + dur);
-            o.connect(g); g.connect(this.ctx.destination); o.start(t); o.stop(t + dur + 0.1);
-        },
-        chord(notes, arp = false) {
-            if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume(); if (!this.ctx) this.init();
-            const now = this.ctx.currentTime;
-            notes.forEach((n, i) => { const humanize = arp ? 0 : Math.random() * 0.04; const t = now + (arp ? i * 0.12 : humanize); const vel = Math.max(0.4, 0.85 - (n / 140)); this.playNote(n, t, vel); });
-        },
-        sfx(k) {
-            if(!this.ctx) return; const now = this.ctx.currentTime;
-            if (k === 'win') [523, 659, 783, 987].forEach((f, i) => this.playPureTone(f, now + i * 0.1, 0.8));
-            else if (k === 'lose') { this.playPureTone(180, now, 0.3); this.playPureTone(130, now + 0.15, 0.4); }
-            else if (k === 'lvl') [523, 659, 783, 1046, 1318, 1568].forEach((f,i) => this.playPureTone(f, now + i * 0.06, 0.6));
-        },
-        loop() {
-            const cvs = document.getElementById('visualizer'); const c = cvs.getContext('2d');
-            const draw = () => {
-                requestAnimationFrame(draw); if(!this.ctx) return;
-                if (cvs.width !== cvs.clientWidth) { cvs.width = cvs.clientWidth; cvs.height = cvs.clientHeight; }
-                c.clearRect(0,0,cvs.width,cvs.height);
-                if(Math.random() > 0.92) { c.fillStyle = `rgba(99, 102, 241, ${Math.random()*0.2})`; const w = Math.random() * cvs.width; const x = Math.random() * cvs.width; c.fillRect(x, 0, w/4, cvs.height); }
-            }; draw();
-        }
+        init() { if (this.ctx) return; const AC = window.AudioContext || window.webkitAudioContext; this.ctx = new AC(); this.master = this.ctx.createGain(); this.master.gain.value = 1.0; this.reverb = this.ctx.createConvolver(); this.reverb.buffer = this.createReverbImpulse(2.0); const revGain = this.ctx.createGain(); revGain.gain.value = 0.3; this.master.connect(this.ctx.destination); this.master.connect(this.reverb); this.reverb.connect(revGain); revGain.connect(this.ctx.destination); this.loop(); this.loadSamples(); },
+        createReverbImpulse(duration) { const rate = this.ctx.sampleRate, length = rate * duration, impulse = this.ctx.createBuffer(2, length, rate), L = impulse.getChannelData(0), R = impulse.getChannelData(1); for (let i = 0; i < length; i++) { const decay = Math.pow(1 - i / length, 3); L[i] = (Math.random() * 2 - 1) * decay; R[i] = (Math.random() * 2 - 1) * decay; } return impulse; },
+        async loadSamples() { UI.msg("Chargement Piano...", "correction"); const promises = Object.keys(this.sampleMap).map(async (midi) => { try { const response = await fetch(this.baseUrl + this.sampleMap[midi]); if(!response.ok) throw new Error('Network'); const buff = await response.arrayBuffer(); this.samples[midi] = await this.ctx.decodeAudioData(buff); } catch (e) { } }); await Promise.all(promises); if(Object.keys(this.samples).length > 5) UI.msg("Piano Activé", "correct"); else { this.fallbackMode = true; UI.msg("Mode Secours (Local)", "warning"); } setTimeout(() => UI.msg("Prêt ?"), 2000); },
+        playNote(midi, time, velocity = 0.5) { if (!this.ctx) return; if (this.fallbackMode) this.playSynthNote(midi, time, velocity); else this.playSampledNote(midi, time, velocity); },
+        playSampledNote(midi, time, velocity) { const available = Object.keys(this.samples).map(Number).sort((a,b)=>a-b); let closest = available[0], minDiff = Math.abs(midi - closest); for (let n of available) { const diff = Math.abs(midi - n); if (diff < minDiff) { minDiff = diff; closest = n; } } const src = this.ctx.createBufferSource(); src.buffer = this.samples[closest]; src.playbackRate.value = Math.pow(2, (midi - closest) / 12); const g = this.ctx.createGain(); g.gain.setValueAtTime(0, time); g.gain.linearRampToValueAtTime(velocity, time + 0.01); g.gain.exponentialRampToValueAtTime(0.001, time + 4.0); src.connect(g); g.connect(this.master); src.start(time); },
+        playSynthNote(midi, time, velocity) { const freq = 440 * Math.pow(2, (midi - 69) / 12); const osc = this.ctx.createOscillator(); osc.type = 'triangle'; osc.frequency.value = freq; const mod = this.ctx.createOscillator(); mod.type = 'sine'; mod.frequency.value = freq * 2; const modGain = this.ctx.createGain(); modGain.gain.setValueAtTime(velocity * 50, time); modGain.gain.exponentialRampToValueAtTime(0.1, time + 0.5); mod.connect(modGain); modGain.connect(osc.frequency); const env = this.ctx.createGain(); env.gain.setValueAtTime(0, time); env.gain.linearRampToValueAtTime(velocity * 0.5, time + 0.02); env.gain.exponentialRampToValueAtTime(0.01, time + 2.0); osc.connect(env); env.connect(this.master); osc.start(time); osc.stop(time + 2.5); mod.start(time); mod.stop(time + 2.5); },
+        playPureTone(f, t, dur=0.5) { const o = this.ctx.createOscillator(); o.type = 'sine'; o.frequency.value = f; const g = this.ctx.createGain(); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.1, t + 0.05); g.gain.exponentialRampToValueAtTime(0.001, t + dur); o.connect(g); g.connect(this.ctx.destination); o.start(t); o.stop(t + dur + 0.1); },
+        chord(notes, arp = false) { if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume(); if (!this.ctx) this.init(); const now = this.ctx.currentTime; notes.forEach((n, i) => { const humanize = arp ? 0 : Math.random() * 0.04; const t = now + (arp ? i * 0.12 : humanize); const vel = Math.max(0.4, 0.85 - (n / 140)); this.playNote(n, t, vel); }); },
+        sfx(k) { if(!this.ctx) return; const now = this.ctx.currentTime; if (k === 'win') [523, 659, 783, 987].forEach((f, i) => this.playPureTone(f, now + i * 0.1, 0.8)); else if (k === 'lose') { this.playPureTone(180, now, 0.3); this.playPureTone(130, now + 0.15, 0.4); } else if (k === 'lvl') [523, 659, 783, 1046, 1318, 1568].forEach((f,i) => this.playPureTone(f, now + i * 0.06, 0.6)); },
+        loop() { const cvs = document.getElementById('visualizer'); const c = cvs.getContext('2d'); const draw = () => { requestAnimationFrame(draw); if(!this.ctx) return; if (cvs.width !== cvs.clientWidth) { cvs.width = cvs.clientWidth; cvs.height = cvs.clientHeight; } c.clearRect(0,0,cvs.width,cvs.height); if(Math.random() > 0.92) { c.fillStyle = `rgba(99, 102, 241, ${Math.random()*0.2})`; const w = Math.random() * cvs.width; const x = Math.random() * cvs.width; c.fillRect(x, 0, w/4, cvs.height); } }; draw(); }
     };
 
     const App = {
-        data: { xp:0, lvl:1, next:100, bestChrono:0, stats:{c:{}, i:{}}, settings: { activeC: DB.chords.map(c=>c.id), activeI: DB.invs.map(i=>i.id) } },
+        data: { 
+            xp:0, lvl:1, next:100, bestChrono:0, 
+            stats:{c:{}, i:{}}, 
+            settings: { activeC: DB.chords.map(c=>c.id), activeI: DB.invs.map(i=>i.id) },
+            history: [], tempToday: { date: null, ok: 0, tot: 0 }
+        },
         session: { mode:'zen', time:60, lives:3, chord:null, selC:null, selI:null, done:false, hint:false, score:0, streak:0, globalOk:0, globalTot:0 },
         timerRef: null,
 
         init() {
             const s = JSON.parse(localStorage.getItem('harmonist_v4_final') || '{}');
-            if(s.xp !== undefined) { this.data = { ...this.data, ...s }; if(!this.data.settings || !this.data.settings.activeC) { this.data.settings = { activeC: DB.chords.map(c=>c.id), activeI: DB.invs.map(i=>i.id) }; } }
+            if(s.xp !== undefined) { 
+                this.data = { ...this.data, ...s }; 
+                if(!this.data.settings || !this.data.settings.activeC) { this.data.settings = { activeC: DB.chords.map(c=>c.id), activeI: DB.invs.map(i=>i.id) }; }
+                if(!this.data.history) this.data.history = [];
+                if(!this.data.tempToday) this.data.tempToday = { date: null, ok: 0, tot: 0 };
+            }
+            const todayStr = new Date().toLocaleDateString('fr-FR', {day: 'numeric', month: 'numeric'});
+            if(this.data.tempToday.date !== todayStr) { this.data.tempToday = { date: todayStr, ok: 0, tot: 0 }; }
             DB.chords.forEach(c=>{ if(!this.data.stats.c[c.id]) this.data.stats.c[c.id]={ok:0, tot:0}; });
             DB.invs.forEach(i=>{ if(!this.data.stats.i[i.id]) this.data.stats.i[i.id]={ok:0, tot:0}; });
             this.calcGlobalStats(); UI.renderBoard(); UI.updateHeader();
@@ -577,53 +589,34 @@
             return ratioC * iMult;
         },
 
-        // ALGORITHME DU COACH (V1.3 : Le Grand Sac + Nettoyage phrases)
         analyzeCoach() {
             const tot = this.session.globalTot;
             const ok = this.session.globalOk;
-            
-            // 1. Cold Start
-            if(tot < 15) return { t: "Débutant", m: COACH_DB.start[Math.floor(Math.random()*COACH_DB.start.length)] };
-
-            // 2. Collecte de TOUS les conseils pertinents
+            if(tot < 10) return { t: "Débutant", m: COACH_DB.start[Math.floor(Math.random()*COACH_DB.start.length)] };
             let allPossibleTips = [];
-
-            // A. Collecte Accords Faibles
+            let hasWeakness = false; 
             for(let cid in this.data.stats.c) {
                 const s = this.data.stats.c[cid];
-                if(s.tot > 5 && (s.ok/s.tot) < 0.45) {
-                    COACH_DB.weakness[cid].forEach(phrase => allPossibleTips.push({t: phrase.t, m: phrase.m}));
+                if(s.tot >= 5 && (s.ok/s.tot) < 0.50) { 
+                    hasWeakness = true;
+                    COACH_DB.weakness[cid].forEach(phrase => allPossibleTips.push({t: phrase.t, m: phrase.m})); 
                 }
             }
-
-            // B. Collecte Renversements Faibles
             let bassIssue = false;
             for(let iid in this.data.stats.i) {
                 const s = this.data.stats.i[iid];
-                if(s.tot > 5 && (s.ok/s.tot) < 0.45) bassIssue = true;
+                if(s.tot >= 3 && (s.ok/s.tot) < 0.50) { 
+                    bassIssue = true; hasWeakness = true;
+                }
             }
             const accC = ok/tot;
             let accI = 0, totI = 0;
             for(let iid in this.data.stats.i) { totI += this.data.stats.i[iid].tot; accI += this.data.stats.i[iid].ok; }
             const ratioI = totI ? (accI/totI) : 0;
-            
-            if(bassIssue || (totI > 5 && accC > 0.60 && ratioI < 0.50)) {
-                // On ajoute les phrases de renversement validées
-                COACH_DB.bass.forEach(phrase => allPossibleTips.push({t: "Renversements", m: phrase}));
-            }
-
-            // 3. Tirage au sort dans le Grand Sac
-            if(allPossibleTips.length > 0) {
-                return allPossibleTips[Math.floor(Math.random() * allPossibleTips.length)];
-            }
-
-            // 4. Sinon : Encouragements ou Maîtrise
+            if(bassIssue || (totI >= 5 && accC > 0.60 && ratioI < 0.50)) { COACH_DB.bass.forEach(phrase => allPossibleTips.push({t: "Renversements", m: phrase})); }
+            if(allPossibleTips.length > 0) { return allPossibleTips[Math.floor(Math.random() * allPossibleTips.length)]; }
             if(this.session.streak > 5) return { t: "En Feu 🔥", m: COACH_DB.boost[Math.floor(Math.random()*COACH_DB.boost.length)] };
-
-            if(accC > 0.75 && ratioI > 0.70) {
-                return { t: "Expert", m: COACH_DB.master[Math.floor(Math.random()*COACH_DB.master.length)] };
-            }
-
+            if(!hasWeakness && accC > 0.80 && ratioI > 0.75) { return { t: "Expert", m: COACH_DB.master[Math.floor(Math.random()*COACH_DB.master.length)] }; }
             return { t: "Conseil", m: "Tu as des bases solides. Pour passer un cap, essaie de faire des séries de 10 sans aucune erreur." };
         },
 
@@ -708,10 +701,33 @@
             const isDim = c.type.id === 'dim7';
             const okI = isDim ? true : (this.session.selI === c.inv);
             this.session.done = true;
+            
             this.data.stats.c[c.type.id].tot++; if(okC) this.data.stats.c[c.type.id].ok++;
             if(!isDim) { this.data.stats.i[c.inv].tot++; if(okI) this.data.stats.i[c.inv].ok++; }
+            
             this.calcGlobalStats();
-            if(okC && okI) {
+
+            // CHECK RANK UP
+            const checkRank = (val, name) => {
+                if(val === 20) UI.showToast(`🥉 Maîtrise du ${name} : Rang Bronze débloqué !`);
+                if(val === 50) UI.showToast(`🥈 Maîtrise du ${name} : Rang Argent débloqué !`);
+                if(val === 100) UI.showToast(`🥇 Maîtrise du ${name} : Rang Or débloqué !`);
+            };
+            if(okC) checkRank(this.data.stats.c[c.type.id].ok, c.type.sub);
+            if(okI && !isDim) checkRank(this.data.stats.i[c.inv].ok, DB.invs[c.inv].corr);
+
+            // HISTORY
+            const win = (okC && okI);
+            this.data.tempToday.tot++;
+            if(win) this.data.tempToday.ok++;
+            if(this.data.tempToday.tot >= 5) {
+                const todayStr = this.data.tempToday.date;
+                const lastIdx = this.data.history.length - 1;
+                if(lastIdx >= 0 && this.data.history[lastIdx].date === todayStr) { this.data.history[lastIdx] = { ...this.data.tempToday }; } 
+                else { this.data.history.push({ ...this.data.tempToday }); if(this.data.history.length > 7) this.data.history.shift(); }
+            }
+
+            if(win) {
                 let basePts = 50;
                 if(document.getElementById('toggleOpen').checked) basePts = 75;
                 if(this.session.hint) basePts = 20;
@@ -752,10 +768,29 @@
 
     const UI = {
         renderBoard() {
+            const getRankClass = (ok) => {
+                if(ok >= 100) return 'rank-gold';
+                if(ok >= 50) return 'rank-silver';
+                if(ok >= 20) return 'rank-bronze';
+                return '';
+            };
+
             const cg = document.getElementById('chordGrid'); cg.innerHTML='';
-            if(App.data.settings && App.data.settings.activeC) { DB.chords.forEach(c => { if(!App.data.settings.activeC.includes(c.id)) return; cg.innerHTML += `<div class="pad" id="c-${c.id}" onclick="App.select('c','${c.id}')"><div class="pad-main">${c.name}</div><div class="pad-sub">${c.sub}</div></div>`; }); }
+            if(App.data.settings && App.data.settings.activeC) { 
+                DB.chords.forEach(c => { 
+                    if(!App.data.settings.activeC.includes(c.id)) return; 
+                    const ok = App.data.stats.c[c.id] ? App.data.stats.c[c.id].ok : 0;
+                    cg.innerHTML += `<div class="pad ${getRankClass(ok)}" id="c-${c.id}" onclick="App.select('c','${c.id}')"><div class="pad-main">${c.name}</div><div class="pad-sub">${c.sub}</div></div>`; 
+                }); 
+            }
             const ig = document.getElementById('invGrid'); ig.innerHTML='';
-            if(App.data.settings && App.data.settings.activeI) { DB.invs.forEach(i => { if(!App.data.settings.activeI.includes(i.id)) return; ig.innerHTML += `<div class="pad" id="i-${i.id}" onclick="App.select('i',${i.id})"><div class="pad-main">${i.corr}</div><div class="pad-sub">${i.sub}</div></div>`; }); }
+            if(App.data.settings && App.data.settings.activeI) { 
+                DB.invs.forEach(i => { 
+                    if(!App.data.settings.activeI.includes(i.id)) return; 
+                    const ok = App.data.stats.i[i.id] ? App.data.stats.i[i.id].ok : 0;
+                    ig.innerHTML += `<div class="pad ${getRankClass(ok)}" id="i-${i.id}" onclick="App.select('i',${i.id})"><div class="pad-main">${i.corr}</div><div class="pad-sub">${i.sub}</div></div>`; 
+                }); 
+            }
         },
         renderSel() {
             document.querySelectorAll('.pad').forEach(p => p.classList.remove('selected'));
@@ -768,7 +803,7 @@
             if(!okC && App.session.selC) document.getElementById('c-'+App.session.selC).classList.add('wrong');
             if(c.type.id !== 'dim7') { document.getElementById('i-'+c.inv).classList.add(okI?'correct':'correction'); if(!okI && App.session.selI !== null) document.getElementById('i-'+App.session.selI).classList.add('wrong'); }
         },
-        resetVisuals() { document.querySelectorAll('.pad').forEach(p => p.className='pad'); document.getElementById('invPanel').style.opacity = '1'; document.getElementById('invPanel').style.pointerEvents = 'auto'; },
+        resetVisuals() { document.querySelectorAll('.pad').forEach(p => p.className='pad'); UI.renderBoard(); document.getElementById('invPanel').style.opacity = '1'; document.getElementById('invPanel').style.pointerEvents = 'auto'; },
         msg(txt, state) { const el = document.getElementById('statusText'); el.innerText = txt; el.className = "feedback-msg " + (state==='correct'?'correct':state==='warning'?'warning':state===false?'wrong':''); },
         vibrate(ptr) { if(navigator.vibrate) navigator.vibrate(ptr); },
         updateHeader() {
@@ -782,37 +817,60 @@
         updateChrono() { document.getElementById('timerVal').innerText = App.session.time; document.getElementById('livesVal').innerText = '❤️'.repeat(App.session.lives); },
         confetti() { const c=document.getElementById('confetti'); const x=c.getContext('2d'); c.width=window.innerWidth; c.height=window.innerHeight; let p=[]; for(let i=0;i<60;i++)p.push({x:c.width/2,y:c.height/2,vx:(Math.random()-0.5)*25,vy:(Math.random()-0.5)*25,c:`hsl(${Math.random()*360},100%,50%)`,l:1}); const u=()=>{x.clearRect(0,0,c.width,c.height); let a=false; p.forEach(k=>{if(k.l>0){k.x+=k.vx;k.y+=k.vy;k.vy+=0.6;k.l-=0.02;x.fillStyle=k.c;x.beginPath();x.arc(k.x,k.y,6,0,7);x.fill();a=true;}}); if(a)requestAnimationFrame(u);}; u(); },
         showLevelUp() { const ov = document.getElementById('levelOverlay'); ov.classList.add('active'); setTimeout(() => { ov.classList.remove('active'); }, 3000); },
-        openModal(id) { if(id==='settingsModal') UI.renderSettings(); if(id==='statsModal') UI.renderStats(); const el = document.getElementById(id); if(el) { el.classList.add('open'); UI.closeModals = () => document.querySelectorAll('.modal-overlay').forEach(m=>m.classList.remove('open')); } },
-        closeModals() { document.querySelectorAll('.modal-overlay').forEach(m=>m.classList.remove('open')); },
-        renderSettings() { const gen = (arr, type, dest) => { document.getElementById(dest).innerHTML = arr.map(x => { const act = (type==='c'?App.data.settings.activeC:App.data.settings.activeI).includes(x.id); return `<div class="toggle-row" onclick="App.toggleSetting('${type}', ${typeof x.id==='string'?"'"+x.id+"'":x.id})"><span>${x.name||x.corr}</span><div class="toggle-switch"><div class="slider" style="background:${act?'var(--primary)':'#334155'}"></div></div></div>`; }).join(''); }; gen(DB.chords, 'c', 'settingsChords'); gen(DB.invs, 'i', 'settingsInvs'); },
+        showToast(msg) { const t = document.getElementById('rankToast'); t.innerText = msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 3000); },
         
-        // MODIF UI STATS : Avec parser Markdown -> HTML
+        // MODIF V2.0 : CLIC EXTERIEUR
+        openModal(id) { 
+            if(id==='settingsModal') UI.renderSettings(); 
+            if(id==='statsModal') UI.renderStats(); 
+            const el = document.getElementById(id); 
+            if(el) { 
+                el.classList.add('open'); 
+                // Ecouteur pour fermer si on clique sur l'overlay (fond)
+                el.onclick = (e) => {
+                    if (e.target === el) UI.closeModals();
+                };
+                UI.closeModals = () => document.querySelectorAll('.modal-overlay').forEach(m=>m.classList.remove('open')); 
+            } 
+        },
+        closeModals() { document.querySelectorAll('.modal-overlay').forEach(m=>m.classList.remove('open')); },
+        renderSettings() { const gen = (arr, type, dest) => { document.getElementById(dest).innerHTML = arr.map(x => { const act = (type==='c'?App.data.settings.activeC:App.data.settings.activeI).includes(x.id); return `<div class="setting-chip ${act?'active':''}" onclick="App.toggleSetting('${type}', ${typeof x.id==='string'?"'"+x.id+"'":x.id})">${x.name||x.corr}</div>`; }).join(''); }; gen(DB.chords, 'c', 'settingsChords'); gen(DB.invs, 'i', 'settingsInvs'); },
+        
         renderStats() {
             const advice = App.analyzeCoach();
             let msg = advice.m;
             msg = msg.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
             msg = msg.replace(/\*(.*?)\*/g, '<em>$1</em>');
-
-            const coachHTML = `
-                <div class="coach-avatar">🧠</div>
-                <div class="coach-bubble">
-                    <span class="coach-tag">${advice.t}</span><br>
-                    ${msg}
-                </div>
-            `;
-            document.getElementById('coachDisplay').innerHTML = coachHTML;
-
+            document.getElementById('coachDisplay').innerHTML = `<div class="coach-avatar">🧠</div><div class="coach-bubble"><span class="coach-tag">${advice.t}</span><br>${msg}</div>`;
+            const histContainer = document.getElementById('historyChart');
+            let histHTML = '<div class="chart-limit-line"></div><div class="chart-container">';
+            const data = App.data.history || [];
+            for(let i=0; i<7; i++) {
+                const entry = data[i];
+                if(entry) {
+                    const pct = Math.round((entry.ok / entry.tot) * 100);
+                    let col = '#ef4444'; if(pct >= 50) col = '#f59e0b'; if(pct >= 80) col = '#10b981';
+                    histHTML += `<div class="chart-col"><div class="chart-track"><div class="chart-bar" style="height:${pct}%; background:${col};"></div></div><span class="chart-label">${entry.date}</span></div>`;
+                } else {
+                    histHTML += `<div class="chart-col"><div class="chart-track" style="background:rgba(255,255,255,0.02);"></div><span class="chart-label">-</span></div>`;
+                }
+            }
+            histHTML += '</div>';
+            histContainer.innerHTML = histHTML;
             const html = (arr, cat) => arr.map(x => {
                 const s = App.data.stats[cat][x.id] || {ok:0, tot:0};
                 const p = s.tot?Math.round((s.ok/s.tot)*100):0;
                 const col = p>=80?'var(--success)':p>=50?'var(--warning)':'var(--error)';
-                return `<div style="margin-bottom:10px;"><div style="display:flex;justify-content:space-between;font-size:0.8rem;"><span>${x.name||x.corr}</span><span>${p}%</span></div><div style="height:6px;background:rgba(255,255,255,0.1);border-radius:3px;overflow:hidden;margin-top:2px;"><div style="width:${p}%;height:100%;background:${s.tot?col:'transparent'}"></div></div></div>`;
+                return `<div class="stat-item"><div class="stat-header"><span>${x.name||x.corr}</span><span>${p}%</span></div><div class="stat-track"><div class="stat-fill" style="width:${p}%;background:${s.tot?col:'transparent'}"></div></div></div>`;
             }).join('');
             document.getElementById('statsContent').innerHTML = "<h4>Accords</h4>"+html(DB.chords,'c')+"<br><h4>Renversements</h4>"+html(DB.invs,'i');
         }
     };
 
     document.addEventListener('keydown', e => {
+        // MODIF V2.0 : TOUCHE ECHAP
+        if(e.code==='Escape') UI.closeModals();
+        
         if(e.code==='Space') { e.preventDefault(); if(!App.session.chord) App.playNew(); else if(!App.session.done) App.replay(); }
         if(e.code==='Enter'||e.code==='NumpadEnter') { e.preventDefault(); App.handleMain(); }
         if(e.code==='KeyH') App.hint();
