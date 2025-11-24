@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Harmonist Academy - V3.0 (Badges Update)</title>
+    <title>Harmonist Academy - V3.1 (Final Edition)</title>
     <style>
         :root {
             --bg: #0f172a;
@@ -46,18 +46,22 @@
             animation: heartbeat 1s infinite;
         }
 
-        /* BADGE RIBBON (NOUVEAU) */
+        /* NOUVEAU BADGE RIBBON (STYLE PILULE GLASS & GOLD) */
         .badge-ribbon {
             position: fixed; top: -100px; left: 50%; transform: translateX(-50%);
-            background: linear-gradient(180deg, var(--accent) 0%, #a21caf 100%);
-            color: white; padding: 12px 24px; border-radius: 0 0 16px 16px;
-            box-shadow: 0 5px 20px rgba(217, 70, 239, 0.5); z-index: 300;
-            display: flex; align-items: center; gap: 10px; font-weight: 800;
-            font-size: 0.9rem; transition: top 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-            border: 1px solid rgba(255,255,255,0.2); border-top: none;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--gold);
+            color: white; padding: 10px 24px; border-radius: 50px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 15px rgba(251, 191, 36, 0.3);
+            z-index: 300;
+            display: flex; align-items: center; gap: 12px; font-weight: 800;
+            font-size: 0.9rem; transition: top 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+            white-space: nowrap;
         }
-        .badge-ribbon.show { top: 0; }
-        .badge-ribbon-icon { font-size: 1.5rem; animation: pulseFire 1s infinite; }
+        .badge-ribbon.show { top: 20px; }
+        .badge-ribbon-icon { font-size: 1.4rem; animation: pulseFire 1.5s infinite; }
+        .badge-txt-gold { color: var(--gold); text-transform: uppercase; letter-spacing: 0.5px; margin-right: 5px; }
 
         /* CONFETTI */
         .confetti-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 90; }
@@ -96,7 +100,6 @@
         .stat-val { font-weight: 800; font-size: 0.85rem; color: white; }
         .stat-lbl { font-size: 0.45rem; text-transform: uppercase; color: var(--text-dim); letter-spacing: 0.5px; margin-bottom: 2px;}
         
-        /* Dynamic Score Display */
         .score-group { display: none; } 
         .score-group.active { display: flex; flex-direction: column; }
         .score-main { font-size: 0.9rem; font-weight: 900; color: var(--gold); line-height: 1; }
@@ -200,37 +203,13 @@
         .slider { position: absolute; cursor: pointer; inset: 0; background: #334155; transition: .3s; border-radius: 22px; } .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background: white; transition: .3s; border-radius: 50%; }
         input:checked + .slider { background: var(--primary); } input:checked + .slider:before { transform: translateX(18px); }
 
-        /* HUD */
+        /* HUD & BADGES GRID */
         .toast-box { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--panel); border: 1px solid var(--gold); color: var(--gold); padding: 10px 20px; border-radius: 20px; font-weight: 700; font-size: 0.85rem; box-shadow: 0 10px 25px rgba(0,0,0,0.5); z-index: 200; pointer-events: none; opacity: 0; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); text-align: center; white-space: nowrap; }
         .toast-box.show { transform: translateX(-50%) translateY(0); opacity: 1; }
         .level-hud { position: fixed; inset: 0; pointer-events: none; z-index: 200; display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; transform: scale(0.8); transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); text-align: center; }
         .level-hud.active { opacity: 1; transform: scale(1); }
         .level-hud h1 { font-size: 3rem; margin: 0; color: white; text-shadow: 0 0 30px rgba(251, 191, 36, 0.8), 0 4px 10px black; line-height: 1.2; }
         
-        /* COMBO POPUP */
-        .combo-popup { position: fixed; top: 40%; left: 50%; transform: translate(-50%, -50%) scale(0); pointer-events: none; z-index: 150; text-align: center; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); opacity: 0; }
-        .combo-popup.show { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-        .combo-popup h2 { font-size: 3rem; margin: 0; color: white; text-shadow: 0 5px 20px rgba(0,0,0,0.5); -webkit-text-stroke: 2px var(--primary); font-weight: 900; font-style: italic; }
-        .combo-popup p { margin: 0; color: var(--gold); font-weight: 800; font-size: 1.2rem; text-transform: uppercase; }
-
-        /* STATS */
-        .coach-box { margin-bottom: 15px; display: flex; flex-direction: column; align-items: center; }
-        .coach-avatar { font-size: 2rem; margin-bottom: 8px; animation: pop 1s infinite alternate; }
-        .coach-bubble { background: #334155; color: white; padding: 12px; border-radius: 16px; position: relative; font-size: 0.85rem; line-height: 1.4; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 4px 10px rgba(0,0,0,0.3); max-width: 100%; }
-        .coach-bubble:after { content: ''; position: absolute; top: -8px; left: 50%; transform: translateX(-50%); border-width: 0 8px 8px; border-style: solid; border-color: #334155 transparent; display: block; width: 0; }
-        .coach-bubble strong { color: var(--gold); font-weight: 800; }
-        .coach-tag { display: inline-block; background: var(--primary); color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.6rem; font-weight: 800; text-transform: uppercase; margin-bottom: 5px; }
-        .history-box { background: rgba(0,0,0,0.2); border-radius: 12px; padding: 10px; margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.05); position: relative; }
-        .chart-limit-line { position: absolute; top: 50%; left: 10px; right: 10px; height: 1px; background: rgba(255,255,255,0.1); border-top: 1px dashed rgba(255,255,255,0.3); pointer-events: none; }
-        .chart-container { display: flex; align-items: flex-end; justify-content: space-between; height: 80px; gap: 6px; z-index: 1; position: relative; }
-        .chart-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; justify-content: flex-end; }
-        .chart-track { width: 100%; flex: 1; background: rgba(255,255,255,0.05); border-radius: 4px; display: flex; align-items: flex-end; overflow: hidden; min-height: 60px; }
-        .chart-bar { width: 100%; transition: height 0.5s ease-out; min-height: 0; }
-        .chart-label { font-size: 0.55rem; color: var(--text-dim); margin-top: 2px;}
-        .stat-item { margin-bottom: 6px; } .stat-header { display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 2px; }
-        .stat-track { height: 5px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; } .stat-fill { height: 100%; }
-
-        /* BADGES GRID */
         .badges-section { margin-top: 25px; }
         .badges-grid {
             display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px;
@@ -251,6 +230,27 @@
         }
         .badge-item.unlocked:hover { transform: scale(1.1); z-index: 10; background: var(--panel); }
 
+        .combo-popup { position: fixed; top: 40%; left: 50%; transform: translate(-50%, -50%) scale(0); pointer-events: none; z-index: 150; text-align: center; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); opacity: 0; }
+        .combo-popup.show { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        .combo-popup h2 { font-size: 3rem; margin: 0; color: white; text-shadow: 0 5px 20px rgba(0,0,0,0.5); -webkit-text-stroke: 2px var(--primary); font-weight: 900; font-style: italic; }
+        .combo-popup p { margin: 0; color: var(--gold); font-weight: 800; font-size: 1.2rem; text-transform: uppercase; }
+
+        .coach-box { margin-bottom: 15px; display: flex; flex-direction: column; align-items: center; }
+        .coach-avatar { font-size: 2rem; margin-bottom: 8px; animation: pop 1s infinite alternate; }
+        .coach-bubble { background: #334155; color: white; padding: 12px; border-radius: 16px; position: relative; font-size: 0.85rem; line-height: 1.4; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 4px 10px rgba(0,0,0,0.3); max-width: 100%; }
+        .coach-bubble:after { content: ''; position: absolute; top: -8px; left: 50%; transform: translateX(-50%); border-width: 0 8px 8px; border-style: solid; border-color: #334155 transparent; display: block; width: 0; }
+        .coach-bubble strong { color: var(--gold); font-weight: 800; }
+        .coach-tag { display: inline-block; background: var(--primary); color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.6rem; font-weight: 800; text-transform: uppercase; margin-bottom: 5px; }
+        .history-box { background: rgba(0,0,0,0.2); border-radius: 12px; padding: 10px; margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.05); position: relative; }
+        .chart-limit-line { position: absolute; top: 50%; left: 10px; right: 10px; height: 1px; background: rgba(255,255,255,0.1); border-top: 1px dashed rgba(255,255,255,0.3); pointer-events: none; }
+        .chart-container { display: flex; align-items: flex-end; justify-content: space-between; height: 80px; gap: 6px; z-index: 1; position: relative; }
+        .chart-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; justify-content: flex-end; }
+        .chart-track { width: 100%; flex: 1; background: rgba(255,255,255,0.05); border-radius: 4px; display: flex; align-items: flex-end; overflow: hidden; min-height: 60px; }
+        .chart-bar { width: 100%; transition: height 0.5s ease-out; min-height: 0; }
+        .chart-label { font-size: 0.55rem; color: var(--text-dim); margin-top: 2px;}
+        .stat-item { margin-bottom: 6px; } .stat-header { display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 2px; }
+        .stat-track { height: 5px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; } .stat-fill { height: 100%; }
+
         @keyframes pop { 0% { transform: scale(0.9); } 100% { transform: scale(1.1); } }
         @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
         @keyframes pulseFire { 0%{transform:scale(1);} 50%{transform:scale(1.1);} 100%{transform:scale(1);} }
@@ -269,7 +269,10 @@
 
 <div class="badge-ribbon" id="badgeRibbon">
     <span class="badge-ribbon-icon">🏅</span>
-    <span id="badgeRibbonText">Badge Débloqué !</span>
+    <div>
+        <span class="badge-txt-gold" id="badgeRibbonTitle">Badge</span>
+        <span>Débloqué !</span>
+    </div>
 </div>
 
 <canvas class="confetti-canvas" id="confetti"></canvas>
@@ -297,7 +300,6 @@
                 <div class="xp-container"><div class="xp-fill" id="xpBar"></div></div>
             </div>
         </div>
-        
         <div class="header-right">
             <div class="stats-cluster">
                 <div class="stat-badge">
@@ -350,7 +352,7 @@
         
         <div id="quizArea">
             <div class="quiz-card">
-                <div class="quiz-hint-txt">Trouve l'accord :</div>
+                <div class="quiz-hint-txt">Trouve le son :</div>
                 <div class="quiz-target" id="quizTargetLbl">...</div>
             </div>
             <div class="quiz-options">
@@ -529,7 +531,16 @@
             const o = this.ctx.createOscillator(); o.type = 'sine'; o.frequency.value = f; const g = this.ctx.createGain(); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.1, t + 0.05); g.gain.exponentialRampToValueAtTime(0.001, t + dur); o.connect(g); g.connect(this.ctx.destination); o.start(t); o.stop(t + dur + 0.1); 
         },
         chord(notes, arp = false) { if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume(); if (!this.ctx) this.init(); const now = this.ctx.currentTime; notes.forEach((n, i) => { const humanize = arp ? 0 : Math.random() * 0.04; const t = now + (arp ? i * 0.12 : humanize); const vel = Math.max(0.4, 0.85 - (n / 140)); this.playNote(n, t, vel); }); },
-        sfx(k) { if(!this.ctx) return; const now = this.ctx.currentTime; if (k === 'win') [523, 659, 783, 987].forEach((f, i) => this.playPureTone(f, now + i * 0.1, 0.8)); else if (k === 'lose') { this.playPureTone(180, now, 0.3); this.playPureTone(130, now + 0.15, 0.4); } else if (k === 'lvl') [523, 659, 783, 1046, 1318, 1568].forEach((f,i) => this.playPureTone(f, now + i * 0.06, 0.6)); },
+        sfx(k) { 
+            if(!this.ctx) return; const now = this.ctx.currentTime; 
+            if (k === 'win') [523, 659, 783, 987].forEach((f, i) => this.playPureTone(f, now + i * 0.1, 0.8)); 
+            else if (k === 'lose') { this.playPureTone(180, now, 0.3); this.playPureTone(130, now + 0.15, 0.4); } 
+            else if (k === 'lvl') [523, 659, 783, 1046, 1318, 1568].forEach((f,i) => this.playPureTone(f, now + i * 0.06, 0.6));
+            else if (k === 'badge') {
+                const notes = [1046, 1318, 1568, 1975, 2093]; 
+                notes.forEach((f,i) => this.playPureTone(f, now + i*0.05, 0.4));
+            }
+        },
         loop() { const cvs = document.getElementById('visualizer'); const c = cvs.getContext('2d'); const draw = () => { requestAnimationFrame(draw); if(!this.ctx) return; if (cvs.width !== cvs.clientWidth) { cvs.width = cvs.clientWidth; cvs.height = cvs.clientHeight; } c.clearRect(0,0,cvs.width,cvs.height); if(Math.random() > 0.92) { c.fillStyle = `rgba(99, 102, 241, ${Math.random()*0.2})`; const w = Math.random() * cvs.width; const x = Math.random() * cvs.width; c.fillRect(x, 0, w/4, cvs.height); } }; draw(); }
     };
 
@@ -599,6 +610,8 @@
             if (activeI === 4) iMult = 1.0;
             return ratioC * iMult;
         },
+
+        isRankedMode() { return this.data.settings.activeC.length >= 2; },
 
         analyzeCoach() {
             const tot = this.session.globalTot;
@@ -680,6 +693,7 @@
             const idx = list.indexOf(id);
             if (idx > -1) { if(list.length > 1) list.splice(idx, 1); } else { list.push(id); }
             this.save(); UI.renderBoard(); UI.renderSettings();
+            UI.updateHeader(); 
         },
 
         closeSettings() { UI.closeModals(); this.resetRound(true); if(this.session.mode==='inverse') this.playNewQuiz(); else this.playNew(); },
@@ -795,7 +809,6 @@
                 }, 1000);
             }
 
-            // RESET STATE
             this.session.done = false; 
             this.session.roundLocked = false; 
             this.session.selC = null; 
@@ -1010,7 +1023,7 @@
 
             const win = (okC && okI);
             
-            if(win) {
+            if(win && this.isRankedMode()) {
                 const checkRank = (val, name) => {
                     if(val === 20) UI.showToast(`🥉 Maîtrise du ${name} : Rang Bronze débloqué !`);
                     if(val === 50) UI.showToast(`🥈 Maîtrise du ${name} : Rang Argent débloqué !`);
@@ -1027,20 +1040,21 @@
         processWin(win) {
             const c = this.session.chord;
             const isDim = c.type.id === 'dim7';
+            const ranked = this.isRankedMode();
             
-            // STATS DE BASE
+            let badgeUnlocked = false;
+            let levelUp = false;
+
             this.data.stats.c[c.type.id].tot++; if(win) this.data.stats.c[c.type.id].ok++;
             if(!isDim) { this.data.stats.i[c.inv].tot++; if(win) this.data.stats.i[c.inv].ok++; }
             this.data.stats.totalPlayed++; 
             this.calcGlobalStats();
             
-            // TRACKING COMBOS (Encyclopédie)
             if(win) {
                 const comboID = `${c.type.id}-${c.inv}`;
                 if(!this.data.stats.combos.includes(comboID)) this.data.stats.combos.push(comboID);
             }
 
-            // GESTION HISTORIQUE
             this.data.tempToday.tot++; if(win) this.data.tempToday.ok++;
             if(this.data.tempToday.tot >= 5) {
                 const todayStr = this.data.tempToday.date;
@@ -1050,39 +1064,43 @@
             }
 
             if(win) {
-                let basePts = 50; if(document.getElementById('toggleOpen').checked) basePts = 75;
-                if(this.session.hint) basePts = 20;
-                if(this.session.mode === 'sprint') {
-                    const speedMultiplier = 10 / this.session.currentSprintTime; 
-                    basePts = Math.round(basePts * speedMultiplier);
+                if(ranked) {
+                    let basePts = 50; if(document.getElementById('toggleOpen').checked) basePts = 75;
+                    if(this.session.hint) basePts = 20;
+                    if(this.session.mode === 'sprint') {
+                        const speedMultiplier = 10 / this.session.currentSprintTime; 
+                        basePts = Math.round(basePts * speedMultiplier);
+                    }
+                    const multiplier = this.calcXPMultiplier();
+                    let finalXP = Math.round(basePts * multiplier);
+                    const bonus = this.session.hint ? 0 : (this.session.streak * 10);
+                    this.session.score += (finalXP + bonus);
+                    if(!this.session.hint) { this.session.streak++; UI.triggerCombo(this.session.streak); }
+                    
+                    this.data.xp += (finalXP + bonus);
+                    if(this.data.xp >= this.data.next) {
+                        this.data.xp -= this.data.next; this.data.lvl++; this.data.next = Math.floor(this.data.next * 1.2);
+                        levelUp = true; UI.showLevelUp();
+                    }
+
+                    if(!this.session.hint) this.session.cleanStreak++; else this.session.cleanStreak = 0;
+                    if(c.open) this.session.openStreak++; else this.session.openStreak = 0;
+                    const allC = this.data.settings.activeC.length === DB.chords.length;
+                    const allI = this.data.settings.activeI.length === DB.invs.length;
+                    if(allC && allI) this.session.fullConfigStreak++; else this.session.fullConfigStreak = 0;
+                    const reactionTime = (Date.now() - this.session.lastActionTime);
+                    if(reactionTime < 2000) this.session.fastStreak++; else this.session.fastStreak = 0;
+
+                    if(c.type.id === 'maj7' || c.type.id === 'min7') this.data.stats.str_jazz++;
+                    if(c.type.id === 'minmaj7') this.data.stats.str_007++;
+                    if(c.type.id === 'dim7') this.data.stats.str_dim++;
+                    if(!isDim && c.inv !== 0) this.data.stats.str_inv++;
+                    if(this.session.lives === 1) this.session.lowLifeRecovery = true;
+                } else {
+                    UI.showToast("⚠️ Mode Entraînement : Pas d'XP/Badges");
                 }
-                const multiplier = this.calcXPMultiplier();
-                let finalXP = Math.round(basePts * multiplier);
-                const bonus = this.session.hint ? 0 : (this.session.streak * 10);
-                this.session.score += (finalXP + bonus);
-                if(!this.session.hint) { this.session.streak++; UI.triggerCombo(this.session.streak); }
-                this.gainXP(finalXP + bonus);
 
-                // --- TRACKING STREAKS ---
-                if(!this.session.hint) this.session.cleanStreak++; else this.session.cleanStreak = 0;
-                if(c.open) this.session.openStreak++; else this.session.openStreak = 0;
-                
-                const allC = this.data.settings.activeC.length === DB.chords.length;
-                const allI = this.data.settings.activeI.length === DB.invs.length;
-                if(allC && allI) this.session.fullConfigStreak++; else this.session.fullConfigStreak = 0;
-
-                const reactionTime = (Date.now() - this.session.lastActionTime);
-                if(reactionTime < 2000) this.session.fastStreak++; else this.session.fastStreak = 0;
-
-                // Persistent Streaks
-                if(c.type.id === 'maj7' || c.type.id === 'min7') this.data.stats.str_jazz++;
-                if(c.type.id === 'minmaj7') this.data.stats.str_007++;
-                if(c.type.id === 'dim7') this.data.stats.str_dim++;
-                if(!isDim && c.inv !== 0) this.data.stats.str_inv++;
-
-                if(this.session.lives === 1) this.session.lowLifeRecovery = true;
-
-                Audio.sfx('win'); UI.vibrate([50,50,50]); UI.confetti(); 
+                UI.vibrate([50,50,50]); UI.confetti(); 
                 UI.msg(this.session.streak > 2 ? `SÉRIE x${this.session.streak} !` : "EXCELLENT !", true);
                 if(this.session.mode === 'chrono') this.session.time += 3;
 
@@ -1103,7 +1121,12 @@
                     if(this.session.lives <= 0) return this.gameOver(); 
                 }
             }
-            this.checkBadges();
+            
+            if(ranked) badgeUnlocked = this.checkBadges();
+
+            if(badgeUnlocked) Audio.sfx('badge');
+            else if(levelUp) Audio.sfx('lvl');
+            else if(win) Audio.sfx('win');
 
             UI.updateHeader(); UI.updateChrono(); this.save();
             document.getElementById('hintBtn').disabled = false; 
@@ -1116,40 +1139,38 @@
         },
 
         checkBadges() {
+            let unlockedSomething = false;
             BADGES.forEach(b => {
                 if(!this.data.badges.includes(b.id)) {
                     if(b.check(this.data, this.session)) {
                         this.data.badges.push(b.id);
                         UI.showBadge(b);
-                        Audio.sfx('lvl'); 
+                        unlockedSomething = true;
                         this.save();
                     }
                 }
             });
-        },
-
-        gainXP(n) {
-            this.data.xp += n;
-            if(this.data.xp >= this.data.next) {
-                this.data.xp -= this.data.next; this.data.lvl++; this.data.next = Math.floor(this.data.next * 1.2);
-                Audio.sfx('lvl'); UI.showLevelUp();
-            }
+            return unlockedSomething;
         },
 
         gameOver() {
-            if(!this.data.stats.modesPlayed.includes(this.session.mode)) {
+            if(this.isRankedMode() && !this.data.stats.modesPlayed.includes(this.session.mode)) {
                 this.data.stats.modesPlayed.push(this.session.mode);
             }
-            this.checkBadges();
+            const badged = this.isRankedMode() ? this.checkBadges() : false;
+            if(badged) Audio.sfx('badge');
 
             let isBest = false;
-            if(this.session.mode === 'chrono' && this.session.score > this.data.bestChrono) { this.data.bestChrono = this.session.score; isBest=true; }
-            if(this.session.mode === 'sprint' && this.session.score > this.data.bestSprint) { this.data.bestSprint = this.session.score; isBest=true; }
-            if(this.session.mode === 'inverse' && this.session.score > this.data.bestInverse) { this.data.bestInverse = this.session.score; isBest=true; }
+            if(this.isRankedMode()) {
+                if(this.session.mode === 'chrono' && this.session.score > this.data.bestChrono) { this.data.bestChrono = this.session.score; isBest=true; }
+                if(this.session.mode === 'sprint' && this.session.score > this.data.bestSprint) { this.data.bestSprint = this.session.score; isBest=true; }
+                if(this.session.mode === 'inverse' && this.session.score > this.data.bestInverse) { this.data.bestInverse = this.session.score; isBest=true; }
+            }
             
             this.save(); 
             document.getElementById('endScore').innerText = this.session.score;
             document.getElementById('endHighScore').innerText = (isBest ? "Nouveau Record !" : "Record: " + (this.session.mode==='chrono'?this.data.bestChrono:this.session.mode==='sprint'?this.data.bestSprint:this.data.bestInverse));
+            if(!this.isRankedMode()) document.getElementById('endHighScore').innerText = "Mode Entraînement";
             UI.openModal('modalGameOver', true);
         },
         
@@ -1215,7 +1236,9 @@
             document.getElementById('streakVal').className = App.session.streak > 20 ? 'stat-val streak-super' : (App.session.streak > 10 ? 'stat-val streak-fire' : 'stat-val');
             
             if(document.getElementById('scoreGroup').classList.contains('active')) {
-                document.getElementById('currentScoreVal').innerText = App.session.score;
+                const sc = document.getElementById('currentScoreVal');
+                sc.innerText = App.session.score;
+                if(!App.isRankedMode()) sc.style.color = 'var(--text-dim)'; else sc.style.color = 'var(--gold)';
             }
             const pct = App.session.globalTot ? Math.round((App.session.globalOk / App.session.globalTot) * 100) : 0; document.getElementById('precisionVal').innerText = pct + '%';
         },
@@ -1246,8 +1269,8 @@
         showToast(msg) { const t = document.getElementById('rankToast'); t.innerText = msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 3000); },
         showBadge(b) {
             const el = document.getElementById('badgeRibbon');
-            const txt = document.getElementById('badgeRibbonText');
-            txt.innerHTML = `${b.title} débloqué !`;
+            const tit = document.getElementById('badgeRibbonTitle');
+            tit.innerText = b.title;
             document.querySelector('.badge-ribbon-icon').innerText = b.icon;
             el.classList.add('show');
             setTimeout(() => el.classList.remove('show'), 4000);
@@ -1299,7 +1322,6 @@
             }).join('');
             document.getElementById('statsContent').innerHTML = "<h4>Accords</h4>"+html(DB.chords,'c')+"<br><h4>Renversements</h4>"+html(DB.invs,'i');
 
-            // BADGES RENDER
             const grid = document.getElementById('badgesGrid');
             grid.innerHTML = '';
             let count = 0;
