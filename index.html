@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Harmonist Academy - V2.6 (Confetti Fix)</title>
+    <title>Harmonist Academy - V2.9.1 (Stable)</title>
     <style>
         :root {
             --bg: #0f172a;
@@ -16,9 +16,6 @@
             --warning: #f59e0b;
             --error: #ef4444;
             --gold: #fbbf24;
-            --gold-dark: #b45309;
-            --silver: #94a3b8;
-            --bronze: #92400e;
             --text: #f8fafc;
             --text-dim: #94a3b8;
             --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
@@ -35,24 +32,29 @@
             height: 100dvh; width: 100vw; overflow: hidden;
             display: flex; justify-content: center;
             overscroll-behavior: none; 
+            transition: background-color 1s ease;
         }
 
-        /* V2.6 : FIX CONFETTI Z-INDEX */
-        .confetti-canvas {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none; /* Important : permet de cliquer au travers */
-            z-index: 90; /* Au-dessus du jeu, en dessous des modales */
+        /* VIGNETTE STRESS EFFECT */
+        .vignette-overlay {
+            position: fixed; inset: 0; pointer-events: none; z-index: 80;
+            background: radial-gradient(circle, transparent 50%, rgba(239, 68, 68, 0) 70%);
+            transition: background 0.5s ease;
         }
+        .vignette-overlay.stress {
+            background: radial-gradient(circle, transparent 40%, rgba(239, 68, 68, 0.4) 90%);
+            animation: heartbeat 1s infinite;
+        }
+
+        /* CONFETTI */
+        .confetti-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 90; }
 
         .app-container {
             width: 100%; max-width: 1200px; height: 100%;
             display: flex; flex-direction: column;
             padding: 10px; gap: 8px; position: relative;
             padding-bottom: max(20px, env(safe-area-inset-bottom));
+            z-index: 85; 
         }
 
         /* HEADER */
@@ -80,21 +82,35 @@
         }
         .stat-val { font-weight: 800; font-size: 0.85rem; color: white; }
         .stat-lbl { font-size: 0.45rem; text-transform: uppercase; color: var(--text-dim); letter-spacing: 0.5px; margin-bottom: 2px;}
-        .trophy { color: var(--gold); border-color: rgba(251, 191, 36, 0.2); }
+        
+        /* Dynamic Score Display */
+        .score-group { display: none; } 
+        .score-group.active { display: flex; flex-direction: column; }
+        .score-main { font-size: 0.9rem; font-weight: 900; color: var(--gold); line-height: 1; }
+        .score-sub { font-size: 0.5rem; color: var(--text-dim); margin-top: 2px; }
+
         .streak-fire { color: #ef4444; text-shadow: 0 0 10px #ef4444; animation: pulseFire 1s infinite; }
-        @keyframes pulseFire { 0%{transform:scale(1);} 50%{transform:scale(1.1);} 100%{transform:scale(1);} }
+        .streak-super { color: #d946ef; text-shadow: 0 0 15px #d946ef; animation: pulseFire 0.5s infinite; }
 
         .header-actions { display: flex; gap: 5px; padding-left: 10px; border-left: 1px solid var(--panel-border); }
         .icon-btn { background: transparent; border: none; font-size: 1.3rem; cursor: pointer; padding: 5px; border-radius: 8px; transition: background 0.2s; opacity: 0.8; }
         .icon-btn:hover { background: rgba(255,255,255,0.1); opacity: 1; }
 
         /* TOOLS */
-        .tools-bar { display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; padding: 0 5px; height: 40px; }
+        .tools-bar { display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; padding: 0 5px; height: 40px; position: relative; }
         .mode-selector { background: var(--panel); padding: 3px; border-radius: 20px; display: flex; border: 1px solid var(--panel-border); }
         .mode-opt { padding: 4px 10px; border-radius: 16px; font-size: 0.7rem; font-weight: 700; color: var(--text-dim); cursor: pointer; transition: 0.2s; }
         .mode-opt.active { background: var(--primary); color: white; box-shadow: 0 2px 10px rgba(99, 102, 241, 0.3); }
         .vis-container { flex: 1; margin: 0 10px; height: 100%; background: rgba(0,0,0,0.2); border-radius: 10px; position: relative; overflow: hidden; border: 1px solid var(--panel-border); display: flex; align-items: center; justify-content: center; }
         canvas { width: 100%; height: 100%; opacity: 0.5; position: absolute; top:0; left:0; }
+        
+        .sprint-bar-container { position: absolute; bottom: 0; left: 0; right: 0; height: 6px; background: transparent; overflow: hidden; border-radius: 0 0 10px 10px; display: none; }
+        .sprint-bar-fill { height: 100%; width: 100%; transform-origin: left; transition: transform 0.1s linear, background-color 0.3s; }
+        .sprint-bar-fill.easy { background: #10b981; }
+        .sprint-bar-fill.med { background: #f59e0b; box-shadow: 0 0 10px #f59e0b; }
+        .sprint-bar-fill.hard { background: #ef4444; box-shadow: 0 0 15px #ef4444; }
+        .tools-bar.sprint-active .sprint-bar-container { display: block; }
+
         .feedback-msg { z-index: 2; font-weight: 800; font-size: 0.9rem; text-shadow: 0 2px 4px rgba(0,0,0,0.8); transition: 0.2s; white-space: nowrap;}
         .feedback-msg.correct { color: var(--success); animation: pop 0.2s; }
         .feedback-msg.wrong { color: var(--error); animation: shake 0.3s; }
@@ -112,24 +128,17 @@
         .grid-c { grid-template-columns: repeat(2, 1fr); grid-auto-rows: 1fr; }
         .grid-i { grid-template-columns: repeat(2, 1fr); grid-auto-rows: 1fr; }
         
-        /* BOUTONS (Unified Design V2.5) */
+        /* BOUTONS */
         .pad { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 10px; cursor: pointer; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1); height: 100%; width: 100%; min-height: 40px; }
         .pad:active { transform: scale(0.96); }
         .pad:hover { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.1); }
-        
         .pad.rank-bronze { border-color: #b45309; color: #fdba74; background: linear-gradient(145deg, rgba(180, 83, 9, 0.15), rgba(67, 20, 7, 0.3)); box-shadow: inset 1px 1px 0 rgba(255,255,255,0.15), inset -1px -1px 0 rgba(0,0,0,0.4); }
         .pad.rank-silver { border-color: #94a3b8; color: #f1f5f9; background: linear-gradient(145deg, rgba(148, 163, 184, 0.15), rgba(30, 41, 59, 0.3)); box-shadow: inset 1px 1px 0 rgba(255,255,255,0.2), inset -1px -1px 0 rgba(0,0,0,0.4); text-shadow: 0 0 5px rgba(255,255,255,0.2); }
         .pad.rank-gold { border-color: #fbbf24; color: #fbbf24; background: linear-gradient(145deg, rgba(251, 191, 36, 0.15), rgba(120, 53, 15, 0.3)); box-shadow: inset 1px 1px 0 rgba(255,255,255,0.3), inset -1px -1px 0 rgba(0,0,0,0.4), 0 0 10px rgba(251, 191, 36, 0.15); text-shadow: 0 0 10px rgba(251, 191, 36, 0.4); }
-
         .pad.selected { background: rgba(99, 102, 241, 0.25) !important; border-color: var(--primary) !important; color: white !important; box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.4) !important; text-shadow: none !important; }
         .pad.wrong { border-color: var(--error) !important; color: var(--error) !important; background: transparent !important; box-shadow: none !important; opacity: 0.4; }
         .pad.correct, .pad.correction { border-color: #fcd34d !important; background: rgba(251, 191, 36, 0.3) !important; color: #fff !important; box-shadow: 0 0 0 2px #fbbf24, 0 0 30px rgba(251, 191, 36, 0.6) !important; text-shadow: 0 0 10px rgba(251, 191, 36, 1) !important; animation: pulseCorrection 1.5s infinite; z-index: 10; }
-        @keyframes pulseCorrection { 0%{transform:scale(1); box-shadow: 0 0 0 2px #fbbf24, 0 0 20px rgba(251, 191, 36, 0.4);} 50%{transform:scale(1.03); box-shadow: 0 0 0 4px #fbbf24, 0 0 40px rgba(251, 191, 36, 0.8);} 100%{transform:scale(1); box-shadow: 0 0 0 2px #fbbf24, 0 0 20px rgba(251, 191, 36, 0.4);} }
-        
-        /* FLASH EFFECT (Unified) */
         .pad.playing, .quiz-btn.playing { transform: scale(0.95) !important; border-color: white !important; background: rgba(255,255,255,0.3) !important; box-shadow: 0 0 20px white !important; color: white !important; transition: 0s !important; }
-
-        /* V2.5: Lisibilité accrue en mode Zen */
         .pad-main { font-size: 1.5rem; font-weight: 900; font-family: monospace; pointer-events: none; letter-spacing: -0.5px; }
         .pad-sub { font-size: 0.85rem; font-weight: 700; opacity: 0.8; margin-top: 0px; pointer-events: none; }
 
@@ -158,13 +167,11 @@
         .btn-action.next { background: var(--primary); box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3); }
         .icon-lg { font-size: 1.1rem; margin-bottom: 2px; }
         
-        /* CONTEXTUAL MODIFICATIONS */
         .app-container.quiz-mode .btn-listen { display: none; }
         .app-container.quiz-mode .btn-action { flex-grow: 1; }
-
         .app-footer { text-align: center; font-size: 0.6rem; color: var(--text-dim); opacity: 0.5; margin-top: 2px; pointer-events: none; }
 
-        /* MODALS & OTHERS */
+        /* MODALS */
         .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 100; backdrop-filter: blur(5px); align-items: center; justify-content: center; }
         .modal-overlay.open { display: flex; animation: fadeIn 0.2s; }
         .modal { background: #1e293b; padding: 20px; border-radius: 24px; width: 90%; max-width: 400px; border: 1px solid rgba(255,255,255,0.1); text-align: center; box-shadow: 0 25px 50px rgba(0,0,0,0.6); max-height: 85vh; overflow-y: auto; position: relative; }
@@ -180,31 +187,24 @@
         .slider { position: absolute; cursor: pointer; inset: 0; background: #334155; transition: .3s; border-radius: 22px; } .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background: white; transition: .3s; border-radius: 50%; }
         input:checked + .slider { background: var(--primary); } input:checked + .slider:before { transform: translateX(18px); }
 
-        /* STATS */
-        .coach-box { margin-bottom: 15px; display: flex; flex-direction: column; align-items: center; }
-        .coach-avatar { font-size: 2rem; margin-bottom: 8px; animation: pop 1s infinite alternate; }
-        .coach-bubble { background: #334155; color: white; padding: 12px; border-radius: 16px; position: relative; font-size: 0.85rem; line-height: 1.4; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 4px 10px rgba(0,0,0,0.3); max-width: 100%; }
-        .coach-bubble:after { content: ''; position: absolute; top: -8px; left: 50%; transform: translateX(-50%); border-width: 0 8px 8px; border-style: solid; border-color: #334155 transparent; display: block; width: 0; }
-        .coach-bubble strong { color: var(--gold); font-weight: 800; }
-        .coach-tag { display: inline-block; background: var(--primary); color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.6rem; font-weight: 800; text-transform: uppercase; margin-bottom: 5px; }
-        .history-box { background: rgba(0,0,0,0.2); border-radius: 12px; padding: 10px; margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.05); position: relative; }
-        .chart-limit-line { position: absolute; top: 50%; left: 10px; right: 10px; height: 1px; background: rgba(255,255,255,0.1); border-top: 1px dashed rgba(255,255,255,0.3); pointer-events: none; }
-        .chart-container { display: flex; align-items: flex-end; justify-content: space-between; height: 80px; gap: 6px; z-index: 1; position: relative; }
-        .chart-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; justify-content: flex-end; }
-        .chart-track { width: 100%; flex: 1; background: rgba(255,255,255,0.05); border-radius: 4px; display: flex; align-items: flex-end; overflow: hidden; min-height: 60px; }
-        .chart-bar { width: 100%; transition: height 0.5s ease-out; min-height: 0; }
-        .chart-label { font-size: 0.55rem; color: var(--text-dim); margin-top: 2px;}
-        .stat-item { margin-bottom: 6px; } .stat-header { display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 2px; }
-        .stat-track { height: 5px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; } .stat-fill { height: 100%; }
+        /* HUD */
         .toast-box { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--panel); border: 1px solid var(--gold); color: var(--gold); padding: 10px 20px; border-radius: 20px; font-weight: 700; font-size: 0.85rem; box-shadow: 0 10px 25px rgba(0,0,0,0.5); z-index: 200; pointer-events: none; opacity: 0; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); text-align: center; white-space: nowrap; }
         .toast-box.show { transform: translateX(-50%) translateY(0); opacity: 1; }
         .level-hud { position: fixed; inset: 0; pointer-events: none; z-index: 200; display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; transform: scale(0.8); transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); text-align: center; }
         .level-hud.active { opacity: 1; transform: scale(1); }
         .level-hud h1 { font-size: 3rem; margin: 0; color: white; text-shadow: 0 0 30px rgba(251, 191, 36, 0.8), 0 4px 10px black; line-height: 1.2; }
-        .level-hud p { font-size: 1.2rem; margin: 0; color: var(--gold); font-weight: 800; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
+        
+        /* COMBO POPUP */
+        .combo-popup { position: fixed; top: 40%; left: 50%; transform: translate(-50%, -50%) scale(0); pointer-events: none; z-index: 150; text-align: center; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); opacity: 0; }
+        .combo-popup.show { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        .combo-popup h2 { font-size: 3rem; margin: 0; color: white; text-shadow: 0 5px 20px rgba(0,0,0,0.5); -webkit-text-stroke: 2px var(--primary); font-weight: 900; font-style: italic; }
+        .combo-popup p { margin: 0; color: var(--gold); font-weight: 800; font-size: 1.2rem; text-transform: uppercase; }
 
         @keyframes pop { 0% { transform: scale(0.9); } 100% { transform: scale(1.1); } }
         @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+        @keyframes pulseFire { 0%{transform:scale(1);} 50%{transform:scale(1.1);} 100%{transform:scale(1);} }
+        @keyframes pulseCorrection { 0%{transform:scale(1); box-shadow: 0 0 0 2px #fbbf24, 0 0 20px rgba(251, 191, 36, 0.4);} 50%{transform:scale(1.03); box-shadow: 0 0 0 4px #fbbf24, 0 0 40px rgba(251, 191, 36, 0.8);} 100%{transform:scale(1); box-shadow: 0 0 0 2px #fbbf24, 0 0 20px rgba(251, 191, 36, 0.4);} }
+        @keyframes heartbeat { 0%{opacity:0.3;} 50%{opacity:0.7;} 100%{opacity:0.3;} }
         @keyframes fadeIn { from{opacity:0} to{opacity:1} }
 
         @media (min-width: 769px) { .grid-c { grid-template-columns: repeat(3, 1fr); } }
@@ -214,12 +214,18 @@
 </head>
 <body>
 
+<div class="vignette-overlay" id="vignette"></div>
 <canvas class="confetti-canvas" id="confetti"></canvas>
 
 <div class="level-hud" id="levelOverlay">
     <div style="font-size:4rem;">🎉</div>
     <p>Niveau Supérieur !</p>
     <h1 id="lvlOverlayName">...</h1>
+</div>
+
+<div class="combo-popup" id="comboPopup">
+    <h2 id="comboTitle">COMBO x10</h2>
+    <p>Incroyable !</p>
 </div>
 
 <div class="toast-box" id="rankToast"></div>
@@ -241,9 +247,9 @@
                     <span class="stat-lbl">Précision</span>
                     <span class="stat-val" id="precisionVal">0%</span>
                 </div>
-                <div class="stat-badge trophy">
-                    <span class="stat-lbl">Record</span>
-                    <span class="stat-val" id="highScoreVal">0</span>
+                <div class="stat-badge trophy score-group" id="scoreGroup">
+                    <span class="score-main" id="currentScoreVal">0</span>
+                    <span class="score-sub">TOP: <span id="highScoreVal">0</span></span>
                 </div>
                 <div class="stat-badge">
                     <span class="stat-lbl">Série</span>
@@ -257,15 +263,17 @@
         </div>
     </header>
 
-    <div class="tools-bar">
+    <div class="tools-bar" id="toolsBar">
         <div class="mode-selector">
             <div class="mode-opt active" id="modeZen" onclick="App.setMode('zen')">🧘 Zen</div>
             <div class="mode-opt" id="modeChrono" onclick="App.setMode('chrono')">⚡ Chrono</div>
+            <div class="mode-opt" id="modeSprint" onclick="App.setMode('sprint')">🏃 Sprint</div>
             <div class="mode-opt" id="modeInverse" onclick="App.setMode('inverse')">🎧 Inverse</div>
         </div>
         <div class="vis-container">
             <canvas id="visualizer"></canvas>
             <div class="feedback-msg" id="statusText">Prêt ?</div>
+            <div class="sprint-bar-container"><div class="sprint-bar-fill" id="sprintFill"></div></div>
         </div>
         <div class="timer-badge" id="chronoDisplay">
             <span id="timerVal">60</span><span class="lives" id="livesVal">❤️❤️❤️</span>
@@ -350,11 +358,12 @@
 <div class="modal-overlay" id="modalGameOver">
     <div class="modal">
         <div style="font-size:3rem;">🏁</div>
-        <h2 style="margin:10px 0;">Temps Écoulé !</h2>
+        <h2 style="margin:10px 0;">Terminé !</h2>
         <div style="font-size:3.5rem; font-weight:900; color:var(--gold); line-height:1;" id="endScore">0</div>
-        <div style="margin-top:20px;">
-            <button class="cmd-btn btn-action next" style="width:100%; padding:15px;" onclick="App.setMode('chrono')">Rejouer</button>
-            <button class="cmd-btn btn-listen" style="width:100%; margin-top:10px; padding:15px;" onclick="App.setMode('zen'); UI.closeModals()">Mode Zen</button>
+        <div style="color:var(--text-dim); margin-bottom:20px;">Record: <span id="endHighScore">0</span></div>
+        <div>
+            <button class="cmd-btn btn-action next" style="width:100%; padding:15px;" onclick="App.replaySameMode()">Rejouer</button>
+            <button class="cmd-btn btn-listen" style="width:100%; margin-top:10px; padding:15px;" onclick="App.setMode('zen'); UI.closeModals()">Menu Principal</button>
         </div>
     </div>
 </div>
@@ -382,11 +391,8 @@
     };
 
     const PHYSICAL_MAP = {
-        // Chiffres 1-6 (Accords en Zen / Quiz 1-6)
         'Digit1': 0, 'Digit2': 1, 'Digit3': 2, 'Digit4': 3, 'Digit5': 4, 'Digit6': 5,
         'Numpad1': 0, 'Numpad2': 1, 'Numpad3': 2, 'Numpad4': 3, 'Numpad5': 4, 'Numpad6': 5,
-        // Lettres (Haut Gauche -> Droite : A Z E R T Y en AZERTY / Q W E R T Y en QWERTY)
-        // Servent pour les Renversements en Zen ou Quiz en Inverse
         'KeyQ': 0, 'KeyW': 1, 'KeyE': 2, 'KeyR': 3, 'KeyT': 4, 'KeyY': 5, 'KeyZ': 5
     };
 
@@ -417,13 +423,16 @@
 
     const App = {
         data: { 
-            xp:0, lvl:1, next:100, bestChrono:0, 
+            xp:0, lvl:1, next:100, 
+            bestChrono:0, bestSprint:0, bestInverse:0,
             stats:{c:{}, i:{}}, 
             settings: { activeC: DB.chords.map(c=>c.id), activeI: DB.invs.map(i=>i.id) },
             history: [], tempToday: { date: null, ok: 0, tot: 0 }
         },
-        session: { mode:'zen', time:60, lives:3, chord:null, selC:null, selI:null, done:false, hint:false, score:0, streak:0, globalOk:0, globalTot:0, quizOptions:[], quizCorrectIdx:0, quizUserChoice:null },
+        session: { mode:'zen', time:60, lives:3, chord:null, selC:null, selI:null, done:false, hint:false, score:0, streak:0, globalOk:0, globalTot:0, quizOptions:[], quizCorrectIdx:0, quizUserChoice:null, currentSprintTime: 10, roundLocked: false },
         timerRef: null,
+        sprintRef: null,
+        vignetteRef: null,
 
         init() {
             const s = JSON.parse(localStorage.getItem('harmonist_v4_final') || '{}');
@@ -432,6 +441,8 @@
                 if(!this.data.settings || !this.data.settings.activeC) { this.data.settings = { activeC: DB.chords.map(c=>c.id), activeI: DB.invs.map(i=>i.id) }; }
                 if(!this.data.history) this.data.history = [];
                 if(!this.data.tempToday) this.data.tempToday = { date: null, ok: 0, tot: 0 };
+                if(this.data.bestSprint === undefined) this.data.bestSprint = 0;
+                if(this.data.bestInverse === undefined) this.data.bestInverse = 0;
             }
             const todayStr = new Date().toLocaleDateString('fr-FR', {day: 'numeric', month: 'numeric'});
             if(this.data.tempToday.date !== todayStr) { this.data.tempToday = { date: todayStr, ok: 0, tot: 0 }; }
@@ -488,13 +499,27 @@
 
         setMode(m) {
             if(Audio.ctx && Audio.ctx.state === 'suspended') Audio.ctx.resume();
-            
             Audio.init(); this.session.mode = m;
+            
             document.getElementById('modeZen').className = m==='zen'?'mode-opt active':'mode-opt';
             document.getElementById('modeChrono').className = m==='chrono'?'mode-opt active':'mode-opt';
+            document.getElementById('modeSprint').className = m==='sprint'?'mode-opt active':'mode-opt';
             document.getElementById('modeInverse').className = m==='inverse'?'mode-opt active':'mode-opt';
-            document.getElementById('chronoDisplay').style.display = m==='chrono'?'block':'none';
             
+            document.getElementById('chronoDisplay').style.display = (m==='chrono' || m==='sprint') ?'block':'none';
+            document.getElementById('toolsBar').className = (m==='sprint') ? 'tools-bar sprint-active' : 'tools-bar';
+            
+            if(m !== 'zen') {
+                document.getElementById('scoreGroup').classList.add('active');
+                let best = 0;
+                if(m === 'chrono') best = this.data.bestChrono;
+                if(m === 'sprint') best = this.data.bestSprint;
+                if(m === 'inverse') best = this.data.bestInverse;
+                document.getElementById('highScoreVal').innerText = best;
+            } else {
+                document.getElementById('scoreGroup').classList.remove('active');
+            }
+
             const mainArea = document.getElementById('mainArea');
             const appContainer = document.querySelector('.app-container');
             
@@ -527,8 +552,15 @@
 
         resetRound(full=false) {
             if(this.timerRef) { clearInterval(this.timerRef); this.timerRef = null; }
+            if(this.sprintRef) { clearInterval(this.sprintRef); this.sprintRef = null; }
+            if(this.vignetteRef) { clearTimeout(this.vignetteRef); this.vignetteRef = null; }
+            document.getElementById('vignette').className = 'vignette-overlay';
+            UI.updateBackground(0);
+
             if(full) { this.session.score=0; this.session.streak=0; }
-            this.session.time = 60; this.session.lives = 3; this.session.done = false; this.session.chord = null;
+            this.session.time = 60; this.session.lives = 3; this.session.done = false; 
+            this.session.roundLocked = false; // Security Reset
+            this.session.chord = null;
             this.session.quizUserChoice = null;
             UI.resetVisuals(); UI.updateHeader(); UI.updateChrono(); UI.msg("Prêt ?");
             document.getElementById('playBtn').innerHTML = "<span class='icon-lg'>▶</span><span>Écouter</span>";
@@ -548,23 +580,93 @@
             return notes;
         },
 
-        // --- LOGIQUE JEU CLASSIQUE ---
+        startSprintTimer(duration) {
+            if(this.sprintRef) clearTimeout(this.sprintRef);
+            if(this.vignetteRef) clearTimeout(this.vignetteRef);
+            document.getElementById('vignette').className = 'vignette-overlay';
+            
+            const fill = document.getElementById('sprintFill');
+            fill.style.transition = 'none';
+            fill.style.transform = 'scaleX(1)';
+            fill.className = 'sprint-bar-fill';
+            if(duration > 7) fill.classList.add('easy');
+            else if(duration > 5) fill.classList.add('med');
+            else fill.classList.add('hard');
+
+            void fill.offsetWidth;
+            fill.style.transition = `transform ${duration}s linear`;
+            fill.style.transform = 'scaleX(0)';
+
+            const stressTime = duration * 0.7;
+            this.vignetteRef = setTimeout(() => {
+                if(!this.session.done) document.getElementById('vignette').classList.add('stress');
+            }, stressTime * 1000);
+
+            this.sprintRef = setTimeout(() => {
+                if(!this.session.done) {
+                    this.handleSprintFail();
+                }
+            }, duration * 1000);
+        },
+
+        handleSprintFail() {
+            if(this.session.roundLocked) return; // Prevent double fail
+            this.session.done = true;
+            this.session.roundLocked = true;
+            this.session.streak = 0;
+            this.session.lives--;
+            UI.updateBackground(0);
+            UI.updateChrono();
+            Audio.sfx('lose');
+            UI.vibrate(300);
+            UI.msg("Temps écoulé !", false);
+            document.getElementById('vignette').className = 'vignette-overlay';
+            
+            const c = this.session.chord;
+            const isDim = c.type.id === 'dim7';
+            document.getElementById('c-'+c.type.id).classList.add('correction');
+            if(!isDim) document.getElementById('i-'+c.inv).classList.add('correction');
+
+            if(this.session.lives <= 0) {
+                this.gameOver();
+            } else {
+                document.getElementById('valBtn').innerText = "Suivant";
+                document.getElementById('valBtn').classList.add('next');
+                document.getElementById('valBtn').disabled = false;
+                document.getElementById('playBtn').innerHTML = "<span class='icon-lg'>▶</span><span>Suivant</span>"; 
+                document.getElementById('playBtn').disabled = false;
+            }
+        },
+
         playNew() {
             Audio.init();
+            if(this.sprintRef) { clearTimeout(this.sprintRef); this.sprintRef = null; }
+            if(this.vignetteRef) { clearTimeout(this.vignetteRef); this.vignetteRef = null; }
+            document.getElementById('sprintFill').style.transition = 'none';
+            document.getElementById('sprintFill').style.transform = 'scaleX(1)';
+            document.getElementById('vignette').className = 'vignette-overlay';
+
             if(this.session.mode === 'chrono' && !this.timerRef && !this.session.chord) {
                 this.timerRef = setInterval(() => {
                     this.session.time--; UI.updateChrono();
                     if(this.session.time <= 0) { clearInterval(this.timerRef); this.timerRef = null; this.gameOver(); }
                 }, 1000);
             }
-            this.session.done = false; this.session.selC = null; this.session.selI = null; this.session.hint = false; UI.resetVisuals();
+
+            this.session.done = false; 
+            this.session.roundLocked = false; // UNLOCK
+            this.session.selC = null; 
+            this.session.selI = null; 
+            this.session.hint = false; 
+            UI.resetVisuals();
+
             const ac = DB.chords.filter(c => this.data.settings.activeC.includes(c.id));
             const ai = DB.invs.filter(i => this.data.settings.activeI.includes(i.id));
             if(!ac.length || !ai.length) { this.data.settings.activeC = DB.chords.map(c=>c.id); this.data.settings.activeI = DB.invs.map(i=>i.id); this.playNew(); return; }
             
             const type = ac[Math.floor(Math.random()*ac.length)];
             let inv = ai[Math.floor(Math.random()*ai.length)];
-            if(type.id === 'dim7') inv = DB.invs.find(i => i.id === 0); // FORCE DIM7
+            if(type.id === 'dim7') inv = DB.invs.find(i => i.id === 0);
             
             const open = document.getElementById('toggleOpen').checked;
             const root = (open ? 36 : 48) + Math.floor(Math.random()*12);
@@ -577,16 +679,29 @@
             
             document.querySelectorAll('.quiz-btn').forEach(b => {b.className='quiz-btn'; b.querySelector('.reveal').innerText='...';});
 
-            if(ac.length === 1) this.select('c', ac[0].id);
-            if(ai.length === 1 && type.id !== 'dim7') this.select('i', ai[0].id);
+            // V2.9.1 FIX: Suppression de l'auto-sélection pour empêcher le spam
+            // On garde uniquement la sélection auto en Quiz Inverse (A,B,C) car c'est le principe
+            if(this.session.mode === 'inverse') {
+                // Logic Inverse handles selections differently
+            } 
+            
             Audio.chord(notes);
             setTimeout(() => { document.getElementById('playBtn').innerHTML = "<span class='icon-lg'>...</span><span>En cours</span>"; }, 500);
+
+            if(this.session.mode === 'sprint') {
+                const reduction = this.session.streak * 0.25;
+                const duration = Math.max(3.5, 10 - reduction);
+                this.session.currentSprintTime = duration;
+                this.startSprintTimer(duration);
+            }
         },
 
-        // --- LOGIQUE QUIZ INVERSE ---
         playNewQuiz() {
             Audio.init();
-            this.session.done = false; this.session.hint = false; this.session.quizUserChoice = null;
+            this.session.done = false; 
+            this.session.roundLocked = false;
+            this.session.hint = false; 
+            this.session.quizUserChoice = null;
             UI.resetVisuals();
 
             const ac = DB.chords.filter(c => this.data.settings.activeC.includes(c.id));
@@ -657,7 +772,6 @@
             if(this.session.done) {
                 const opt = this.session.quizOptions[idx];
                 const btn = document.getElementById('qbtn-'+idx);
-                // V2.5: Flash Effect (Unified)
                 btn.classList.add('playing');
                 setTimeout(() => btn.classList.remove('playing'), 200);
                 Audio.chord(opt.notes);
@@ -722,16 +836,14 @@
         },
 
         validateQuiz() {
-            if(this.session.done) return;
+            if(this.session.roundLocked) return; 
             this.session.done = true;
+            this.session.roundLocked = true;
             
             const userIdx = this.session.quizUserChoice;
             const correctIdx = this.session.quizCorrectIdx;
             const win = (userIdx === correctIdx);
-            const c = this.session.chord;
-            this.data.stats.c[c.type.id].tot++; if(win) this.data.stats.c[c.type.id].ok++;
-            if(c.type.id !== 'dim7') { this.data.stats.i[c.inv].tot++; if(win) this.data.stats.i[c.inv].ok++; }
-            this.calcGlobalStats();
+            this.processWin(win);
 
             document.querySelectorAll('.quiz-btn').forEach((btn, i) => {
                 const o = this.session.quizOptions[i];
@@ -739,48 +851,48 @@
                 if(i === correctIdx) btn.classList.add('correct');
                 else if(i === userIdx && !win) btn.classList.add('wrong');
             });
-
-            if(win) {
-                let basePts = 50;
-                if(document.getElementById('toggleOpen').checked) basePts = 75;
-                if(this.session.hint) basePts = 20;
-                const multiplier = this.calcXPMultiplier();
-                let finalXP = Math.round(basePts * multiplier);
-                this.session.score += finalXP;
-                this.gainXP(finalXP);
-                Audio.sfx('win'); UI.vibrate([50,50,50]); UI.confetti(); UI.msg("EXCELLENT !", true);
-            } else {
-                Audio.sfx('lose'); UI.vibrate(300);
-                UI.msg(`Raté : C'était le ${["A","B","C"][correctIdx]}`, false);
-            }
-
-            this.save();
-            document.getElementById('hintBtn').disabled = false; 
-            const btn = document.getElementById('valBtn'); btn.innerText = "Suivant"; btn.classList.add('next'); btn.disabled = false;
         },
 
         validate() {
-            if(this.session.done) return;
+            if(this.session.roundLocked) return; // FIX: Prevent spam
+            
+            if(this.sprintRef) { clearTimeout(this.sprintRef); this.sprintRef = null; }
+            if(this.vignetteRef) { clearTimeout(this.vignetteRef); this.vignetteRef = null; }
+            document.getElementById('sprintFill').style.transition = 'none';
+            document.getElementById('vignette').className = 'vignette-overlay';
+
             const c = this.session.chord;
             const okC = this.session.selC === c.type.id;
             const isDim = c.type.id === 'dim7';
             const okI = isDim ? true : (this.session.selI === c.inv);
-            this.session.done = true;
             
-            this.data.stats.c[c.type.id].tot++; if(okC) this.data.stats.c[c.type.id].ok++;
-            if(!isDim) { this.data.stats.i[c.inv].tot++; if(okI) this.data.stats.i[c.inv].ok++; }
-            
-            this.calcGlobalStats();
-
-            const checkRank = (val, name) => {
-                if(val === 20) UI.showToast(`🥉 Maîtrise du ${name} : Rang Bronze débloqué !`);
-                if(val === 50) UI.showToast(`🥈 Maîtrise du ${name} : Rang Argent débloqué !`);
-                if(val === 100) UI.showToast(`🥇 Maîtrise du ${name} : Rang Or débloqué !`);
-            };
-            if(okC) checkRank(this.data.stats.c[c.type.id].ok, c.type.sub);
-            if(okI && !isDim) checkRank(this.data.stats.i[c.inv].ok, DB.invs[c.inv].corr);
+            this.session.done = true; 
+            this.session.roundLocked = true; // LOCK ROUND
 
             const win = (okC && okI);
+            
+            // Only check rank if win to avoid toast spam on losses
+            if(win) {
+                const checkRank = (val, name) => {
+                    if(val === 20) UI.showToast(`🥉 Maîtrise du ${name} : Rang Bronze débloqué !`);
+                    if(val === 50) UI.showToast(`🥈 Maîtrise du ${name} : Rang Argent débloqué !`);
+                    if(val === 100) UI.showToast(`🥇 Maîtrise du ${name} : Rang Or débloqué !`);
+                };
+                if(okC) checkRank(this.data.stats.c[c.type.id].ok + 1, c.type.sub);
+                if(okI && !isDim) checkRank(this.data.stats.i[c.inv].ok + 1, DB.invs[c.inv].corr);
+            }
+
+            this.processWin(win);
+            UI.reveal(okC, okI);
+        },
+
+        processWin(win) {
+            const c = this.session.chord;
+            const isDim = c.type.id === 'dim7';
+            this.data.stats.c[c.type.id].tot++; if(win) this.data.stats.c[c.type.id].ok++;
+            if(!isDim) { this.data.stats.i[c.inv].tot++; if(win) this.data.stats.i[c.inv].ok++; }
+            this.calcGlobalStats();
+
             this.data.tempToday.tot++;
             if(win) this.data.tempToday.ok++;
             if(this.data.tempToday.tot >= 5) {
@@ -794,20 +906,34 @@
                 let basePts = 50;
                 if(document.getElementById('toggleOpen').checked) basePts = 75;
                 if(this.session.hint) basePts = 20;
+                if(this.session.mode === 'sprint') {
+                    const speedMultiplier = 10 / this.session.currentSprintTime; 
+                    basePts = Math.round(basePts * speedMultiplier);
+                }
+
                 const multiplier = this.calcXPMultiplier();
                 let finalXP = Math.round(basePts * multiplier);
                 const bonus = this.session.hint ? 0 : (this.session.streak * 10);
                 this.session.score += (finalXP + bonus);
-                if(!this.session.hint) this.session.streak++;
+                
+                if(!this.session.hint) {
+                    this.session.streak++;
+                    UI.triggerCombo(this.session.streak);
+                }
+                
                 this.gainXP(finalXP + bonus);
                 Audio.sfx('win'); UI.vibrate([50,50,50]); UI.confetti(); UI.msg(this.session.streak > 2 ? `SÉRIE x${this.session.streak} !` : "EXCELLENT !", true);
                 if(this.session.mode === 'chrono') this.session.time += 3;
             } else {
                 this.session.streak = 0; Audio.sfx('lose'); UI.vibrate(300);
+                UI.updateBackground(0);
                 UI.msg(`Raté : ${c.type.name} ` + (isDim?"":DB.invs[c.inv].corr), false);
-                if(this.session.mode === 'chrono') { this.session.lives--; if(this.session.lives <= 0) return this.gameOver(); }
+                if(this.session.mode === 'chrono' || this.session.mode === 'sprint') { 
+                    this.session.lives--; 
+                    if(this.session.lives <= 0) return this.gameOver(); 
+                }
             }
-            UI.reveal(okC, okI); UI.updateHeader(); UI.updateChrono(); this.save();
+            UI.updateHeader(); UI.updateChrono(); this.save();
             document.getElementById('hintBtn').disabled = false; 
             const btn = document.getElementById('valBtn'); btn.innerText = "Suivant"; btn.classList.add('next'); btn.disabled = false;
             const play = document.getElementById('playBtn'); play.innerHTML = "<span class='icon-lg'>▶</span><span>Suivant</span>"; play.disabled = false;
@@ -826,8 +952,20 @@
         },
 
         gameOver() {
-            if(this.session.score > this.data.bestChrono) this.data.bestChrono = this.session.score;
-            this.save(); document.getElementById('endScore').innerText = this.session.score; UI.openModal('modalGameOver');
+            let isBest = false;
+            if(this.session.mode === 'chrono' && this.session.score > this.data.bestChrono) { this.data.bestChrono = this.session.score; isBest=true; }
+            if(this.session.mode === 'sprint' && this.session.score > this.data.bestSprint) { this.data.bestSprint = this.session.score; isBest=true; }
+            if(this.session.mode === 'inverse' && this.session.score > this.data.bestInverse) { this.data.bestInverse = this.session.score; isBest=true; }
+            
+            this.save(); 
+            document.getElementById('endScore').innerText = this.session.score;
+            document.getElementById('endHighScore').innerText = (isBest ? "Nouveau Record !" : "Record: " + (this.session.mode==='chrono'?this.data.bestChrono:this.session.mode==='sprint'?this.data.bestSprint:this.data.bestInverse));
+            UI.openModal('modalGameOver', true);
+        },
+        
+        replaySameMode() {
+            UI.closeModals();
+            this.setMode(this.session.mode);
         },
 
         save() { localStorage.setItem('harmonist_v4_final', JSON.stringify(this.data)); },
@@ -883,23 +1021,51 @@
             const d = App.data; const r = DB.ranks[Math.min(d.lvl-1, DB.ranks.length-1)];
             document.getElementById('rankIcon').innerText = r.i; document.getElementById('rankTitle').innerText = r.t; document.getElementById('lvlOverlayName').innerText = r.t;
             document.getElementById('lvlNum').innerText = d.lvl; document.getElementById('xpBar').style.width = (d.xp/d.next)*100 + '%';
-            document.getElementById('streakVal').innerText = App.session.streak; document.getElementById('streakVal').className = App.session.streak > 4 ? 'stat-val streak-fire' : 'stat-val';
-            document.getElementById('highScoreVal').innerText = d.bestChrono;
+            document.getElementById('streakVal').innerText = App.session.streak; 
+            document.getElementById('streakVal').className = App.session.streak > 20 ? 'stat-val streak-super' : (App.session.streak > 10 ? 'stat-val streak-fire' : 'stat-val');
+            
+            // Update Score
+            if(document.getElementById('scoreGroup').classList.contains('active')) {
+                document.getElementById('currentScoreVal').innerText = App.session.score;
+            }
             const pct = App.session.globalTot ? Math.round((App.session.globalOk / App.session.globalTot) * 100) : 0; document.getElementById('precisionVal').innerText = pct + '%';
         },
         updateChrono() { document.getElementById('timerVal').innerText = App.session.time; document.getElementById('livesVal').innerText = '❤️'.repeat(App.session.lives); },
+        updateBackground(streak) {
+            const body = document.body;
+            if(streak >= 20) body.style.backgroundColor = '#370b1b'; 
+            else if(streak >= 10) body.style.backgroundColor = '#1e1b4b'; 
+            else body.style.backgroundColor = '#0f172a'; 
+        },
+        triggerCombo(streak) {
+            this.updateBackground(streak);
+            if(streak > 5) {
+                const sv = document.getElementById('streakVal');
+                sv.style.transform = "scale(1.5)";
+                setTimeout(()=>sv.style.transform="scale(1)", 150);
+            }
+            if(streak > 0 && streak % 10 === 0) {
+                const pop = document.getElementById('comboPopup');
+                document.getElementById('comboTitle').innerText = `COMBO x${streak}`;
+                pop.classList.add('show');
+                Audio.sfx('win');
+                setTimeout(() => pop.classList.remove('show'), 1500);
+            }
+        },
         confetti() { const c=document.getElementById('confetti'); const x=c.getContext('2d'); c.width=window.innerWidth; c.height=window.innerHeight; let p=[]; for(let i=0;i<60;i++)p.push({x:c.width/2,y:c.height/2,vx:(Math.random()-0.5)*25,vy:(Math.random()-0.5)*25,c:`hsl(${Math.random()*360},100%,50%)`,l:1}); const u=()=>{x.clearRect(0,0,c.width,c.height); let a=false; p.forEach(k=>{if(k.l>0){k.x+=k.vx;k.y+=k.vy;k.vy+=0.6;k.l-=0.02;x.fillStyle=k.c;x.beginPath();x.arc(k.x,k.y,6,0,7);x.fill();a=true;}}); if(a)requestAnimationFrame(u);}; u(); },
         showLevelUp() { const ov = document.getElementById('levelOverlay'); ov.classList.add('active'); setTimeout(() => { ov.classList.remove('active'); }, 3000); },
         showToast(msg) { const t = document.getElementById('rankToast'); t.innerText = msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 3000); },
         
-        openModal(id) { 
+        openModal(id, locked = false) { 
             if(id==='settingsModal') UI.renderSettings(); 
             if(id==='statsModal') UI.renderStats(); 
             const el = document.getElementById(id); 
             if(el) { 
                 el.classList.add('open'); 
-                el.onclick = (e) => { if (e.target === el) UI.closeModals(); };
-                UI.closeModals = () => document.querySelectorAll('.modal-overlay').forEach(m=>m.classList.remove('open')); 
+                el.onclick = (e) => { 
+                    if (locked) return; 
+                    if (e.target === el) UI.closeModals(); 
+                };
             } 
         },
         closeModals() { document.querySelectorAll('.modal-overlay').forEach(m=>m.classList.remove('open')); },
