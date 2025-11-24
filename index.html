@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Harmonist Academy - V2.3 (Patched)</title>
+    <title>Harmonist Academy - V2.4</title>
     <style>
         :root {
             --bg: #0f172a;
@@ -122,16 +122,19 @@
         /* QUIZ AREA */
         #quizArea { display: none; flex-direction: column; height: 100%; gap: 10px; }
         .quiz-card { background: rgba(0,0,0,0.2); border: 1px solid var(--panel-border); border-radius: 16px; padding: 20px; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
-        .quiz-target { font-size: 3rem; font-weight: 900; color: white; margin-bottom: 5px; text-shadow: 0 2px 10px rgba(0,0,0,0.5); }
+        /* V2.4: Augmentation taille texte cible */
+        .quiz-target { font-size: 4.5rem; font-weight: 900; color: white; margin-bottom: 5px; text-shadow: 0 2px 10px rgba(0,0,0,0.5); }
         .quiz-target span { color: var(--primary); }
-        .quiz-hint-txt { font-size: 0.8rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
+        .quiz-hint-txt { font-size: 1rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
         .quiz-options { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; height: 120px; flex-shrink: 0;}
-        .quiz-btn { background: var(--panel); border: 2px solid var(--panel-border); border-radius: 16px; font-size: 2rem; font-weight: 900; color: var(--text-dim); cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden; }
+        .quiz-btn { background: var(--panel); border: 2px solid var(--panel-border); border-radius: 16px; font-size: 2rem; font-weight: 900; color: var(--text-dim); cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .quiz-btn:active { transform: scale(0.95); }
         .quiz-btn.selected { border-color: var(--primary); color: white; background: rgba(99, 102, 241, 0.1); }
         .quiz-btn.correct { border-color: var(--success); background: var(--success); color: white; text-shadow: 0 2px 5px rgba(0,0,0,0.3); }
         .quiz-btn.wrong { border-color: var(--error); color: var(--error); opacity: 0.5; }
-        .quiz-btn span.reveal { display: block; font-size: 0.8rem; font-weight: normal; margin-top: 5px; opacity: 0.8; }
+        /* V2.4: Texte révélation plus gros et lisible */
+        .quiz-btn span.reveal { display: block; font-size: 1.1rem; font-weight: 700; margin-top: 5px; opacity: 1; color: var(--text); }
+        .quiz-btn.correct span.reveal, .quiz-btn.selected span.reveal { color: white; }
 
         /* COMMANDS */
         .command-deck { background: var(--panel); padding: 6px; border-radius: 16px; border: 1px solid var(--panel-border); display: flex; gap: 6px; height: 60px; flex-shrink: 0; box-shadow: 0 -5px 20px rgba(0,0,0,0.2); z-index: 10; }
@@ -193,7 +196,7 @@
         @keyframes fadeIn { from{opacity:0} to{opacity:1} }
 
         @media (min-width: 769px) { .grid-c { grid-template-columns: repeat(3, 1fr); } }
-        @media (max-width: 768px) { .game-area { grid-template-columns: 1fr; grid-template-rows: 1.5fr 1fr; } .header-left { flex: 1; min-width: 0; gap: 8px; } .rank-text { display: flex; min-width: 0; } .lvl-pill { display: none; } .stats-cluster { display: none; } .rank-title { font-size: 0.8rem; } .pad-main { font-size: 0.9rem; } .pad-sub { font-size: 0.5rem; } .level-hud h1 { font-size: 2rem; } }
+        @media (max-width: 768px) { .game-area { grid-template-columns: 1fr; grid-template-rows: 1.5fr 1fr; } .header-left { flex: 1; min-width: 0; gap: 8px; } .rank-text { display: flex; min-width: 0; } .lvl-pill { display: none; } .stats-cluster { display: none; } .rank-title { font-size: 0.8rem; } .pad-main { font-size: 0.9rem; } .pad-sub { font-size: 0.5rem; } .level-hud h1 { font-size: 2rem; } .quiz-target { font-size: 3rem; } .quiz-btn { font-size: 1.5rem; } }
         @media (max-height: 700px) { .app-container { gap: 5px; padding: 5px; } header { padding: 4px 8px; min-height: 40px; } .rank-icon { font-size: 1.2rem; } .tools-bar { height: 32px; } .mode-opt { padding: 2px 8px; font-size: 0.65rem; } .command-deck { height: 50px; padding: 4px; } .icon-lg { font-size: 0.9rem; margin-bottom: 0; } .cmd-btn span { font-size: 0.65rem; } .btn-action { font-size: 0.9rem; } .panel-label { margin-bottom: 4px; } }
     </style>
 </head>
@@ -371,22 +374,22 @@
     const Audio = {
         ctx: null, master: null, reverb: null, samples: {}, baseUrl: 'https://tonejs.github.io/audio/salamander/',
         sampleMap: { 36: 'C2.mp3', 39: 'Ds2.mp3', 42: 'Fs2.mp3', 45: 'A2.mp3', 48: 'C3.mp3', 51: 'Ds3.mp3', 54: 'Fs3.mp3', 57: 'A3.mp3', 60: 'C4.mp3', 63: 'Ds4.mp3', 66: 'Fs4.mp3', 69: 'A4.mp3', 72: 'C5.mp3', 75: 'Ds5.mp3', 78: 'Fs5.mp3', 81: 'A5.mp3', 84: 'C6.mp3' },
-        fallbackMode: false,
+        // V2.4: Suppression du fallbackMode (le synthé est désactivé)
         init() { if (this.ctx) return; const AC = window.AudioContext || window.webkitAudioContext; this.ctx = new AC(); this.master = this.ctx.createGain(); this.master.gain.value = 1.0; this.reverb = this.ctx.createConvolver(); this.reverb.buffer = this.createReverbImpulse(2.0); const revGain = this.ctx.createGain(); revGain.gain.value = 0.3; this.master.connect(this.ctx.destination); this.master.connect(this.reverb); this.reverb.connect(revGain); revGain.connect(this.ctx.destination); this.loop(); this.loadSamples(); },
         createReverbImpulse(duration) { const rate = this.ctx.sampleRate, length = rate * duration, impulse = this.ctx.createBuffer(2, length, rate), L = impulse.getChannelData(0), R = impulse.getChannelData(1); for (let i = 0; i < length; i++) { const decay = Math.pow(1 - i / length, 3); L[i] = (Math.random() * 2 - 1) * decay; R[i] = (Math.random() * 2 - 1) * decay; } return impulse; },
-        async loadSamples() { UI.msg("Chargement Piano...", "correction"); const promises = Object.keys(this.sampleMap).map(async (midi) => { try { const response = await fetch(this.baseUrl + this.sampleMap[midi]); if(!response.ok) throw new Error('Network'); const buff = await response.arrayBuffer(); this.samples[midi] = await this.ctx.decodeAudioData(buff); } catch (e) { } }); await Promise.all(promises); if(Object.keys(this.samples).length > 5) UI.msg("Piano Activé", "correct"); else { this.fallbackMode = true; UI.msg("Mode Secours (Local)", "warning"); } setTimeout(() => UI.msg("Prêt ?"), 2000); },
+        async loadSamples() { UI.msg("Chargement Piano...", "correction"); const promises = Object.keys(this.sampleMap).map(async (midi) => { try { const response = await fetch(this.baseUrl + this.sampleMap[midi]); if(!response.ok) throw new Error('Network'); const buff = await response.arrayBuffer(); this.samples[midi] = await this.ctx.decodeAudioData(buff); } catch (e) { } }); await Promise.all(promises); if(Object.keys(this.samples).length > 5) UI.msg("Piano Activé", "correct"); else { UI.msg("Erreur Réseau", "wrong"); } setTimeout(() => UI.msg("Prêt ?"), 2000); },
         playNote(midi, time, velocity = 0.5) { 
-            // FIX: Ensure context is running (fixes silent audio)
             if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
             if (!this.ctx) return; 
-            if (this.fallbackMode) this.playSynthNote(midi, time, velocity); else this.playSampledNote(midi, time, velocity); 
+            // V2.4: On ne joue que si on a des samples
+            this.playSampledNote(midi, time, velocity); 
         },
         playSampledNote(midi, time, velocity) { 
             const available = Object.keys(this.samples).map(Number).sort((a,b)=>a-b);
-            if(available.length === 0) { this.playSynthNote(midi, time, velocity); return; }
+            if(available.length === 0) return; // Pas de samples = pas de son
             let closest = available[0], minDiff = Math.abs(midi - closest); for (let n of available) { const diff = Math.abs(midi - n); if (diff < minDiff) { minDiff = diff; closest = n; } } const src = this.ctx.createBufferSource(); src.buffer = this.samples[closest]; src.playbackRate.value = Math.pow(2, (midi - closest) / 12); const g = this.ctx.createGain(); g.gain.setValueAtTime(0, time); g.gain.linearRampToValueAtTime(velocity, time + 0.01); g.gain.exponentialRampToValueAtTime(0.001, time + 4.0); src.connect(g); g.connect(this.master); src.start(time); 
         },
-        playSynthNote(midi, time, velocity) { const freq = 440 * Math.pow(2, (midi - 69) / 12); const osc = this.ctx.createOscillator(); osc.type = 'triangle'; osc.frequency.value = freq; const mod = this.ctx.createOscillator(); mod.type = 'sine'; mod.frequency.value = freq * 2; const modGain = this.ctx.createGain(); modGain.gain.setValueAtTime(velocity * 50, time); modGain.gain.exponentialRampToValueAtTime(0.1, time + 0.5); mod.connect(modGain); modGain.connect(osc.frequency); const env = this.ctx.createGain(); env.gain.setValueAtTime(0, time); env.gain.linearRampToValueAtTime(velocity * 0.5, time + 0.02); env.gain.exponentialRampToValueAtTime(0.01, time + 2.0); osc.connect(env); env.connect(this.master); osc.start(time); osc.stop(time + 2.5); mod.start(time); mod.stop(time + 2.5); },
+        // V2.4: Synthé supprimé (playSynthNote effacé)
         playPureTone(f, t, dur=0.5) { 
             if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
             const o = this.ctx.createOscillator(); o.type = 'sine'; o.frequency.value = f; const g = this.ctx.createGain(); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.1, t + 0.05); g.gain.exponentialRampToValueAtTime(0.001, t + dur); o.connect(g); g.connect(this.ctx.destination); o.start(t); o.stop(t + dur + 0.1); 
@@ -468,7 +471,6 @@
         },
 
         setMode(m) {
-            // FIX: Ensure audio is resumed on user click interaction
             if(Audio.ctx && Audio.ctx.state === 'suspended') Audio.ctx.resume();
             
             Audio.init(); this.session.mode = m;
@@ -484,13 +486,13 @@
                 mainArea.classList.add('quiz-mode');
                 appContainer.classList.add('quiz-mode');
                 document.getElementById('panelChord').style.display = 'none';
-                document.getElementById('invPanel').style.display = 'none'; // FIX: Correct ID
+                document.getElementById('invPanel').style.display = 'none';
                 document.getElementById('quizArea').style.display = 'flex';
             } else {
                 mainArea.classList.remove('quiz-mode');
                 appContainer.classList.remove('quiz-mode');
                 document.getElementById('panelChord').style.display = 'flex';
-                document.getElementById('invPanel').style.display = 'flex'; // FIX: Correct ID
+                document.getElementById('invPanel').style.display = 'flex';
                 document.getElementById('quizArea').style.display = 'none';
             }
 
@@ -633,7 +635,6 @@
         },
 
         selectQuiz(idx) {
-            // FIX: Resume audio context on user interaction
             if(Audio.ctx && Audio.ctx.state === 'suspended') Audio.ctx.resume();
             if(!Audio.ctx) Audio.init();
 
@@ -685,7 +686,7 @@
             if(type === 'c') {
                 this.session.selC = id;
                 const isDim = (id === 'dim7');
-                const p = document.getElementById('invPanel'); // FIX: ID is now safe
+                const p = document.getElementById('invPanel');
                 if(p) { p.style.opacity = isDim ? '0.3' : '1'; p.style.pointerEvents = isDim ? 'none' : 'auto'; }
                 if(isDim) this.session.selI = -1; else if(this.session.selI === -1) this.session.selI = null;
             } else { this.session.selI = id; }
@@ -854,7 +855,6 @@
         },
         resetVisuals() { 
             document.querySelectorAll('.pad').forEach(p => p.className='pad'); UI.renderBoard(); 
-            // FIX: Ensure ID exists to prevent crash
             const p = document.getElementById('invPanel');
             if(p) { p.style.opacity = '1'; p.style.pointerEvents = 'auto'; }
             document.querySelectorAll('.quiz-btn').forEach(b => {b.className='quiz-btn'; b.querySelector('.reveal').innerText='...';});
