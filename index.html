@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Harmonist Academy - V2.4</title>
+    <title>Harmonist Academy - V2.6 (Confetti Fix)</title>
     <style>
         :root {
             --bg: #0f172a;
@@ -35,6 +35,17 @@
             height: 100dvh; width: 100vw; overflow: hidden;
             display: flex; justify-content: center;
             overscroll-behavior: none; 
+        }
+
+        /* V2.6 : FIX CONFETTI Z-INDEX */
+        .confetti-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none; /* Important : permet de cliquer au travers */
+            z-index: 90; /* Au-dessus du jeu, en dessous des modales */
         }
 
         .app-container {
@@ -101,7 +112,7 @@
         .grid-c { grid-template-columns: repeat(2, 1fr); grid-auto-rows: 1fr; }
         .grid-i { grid-template-columns: repeat(2, 1fr); grid-auto-rows: 1fr; }
         
-        /* BOUTONS */
+        /* BOUTONS (Unified Design V2.5) */
         .pad { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 10px; cursor: pointer; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1); height: 100%; width: 100%; min-height: 40px; }
         .pad:active { transform: scale(0.96); }
         .pad:hover { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.1); }
@@ -114,15 +125,17 @@
         .pad.wrong { border-color: var(--error) !important; color: var(--error) !important; background: transparent !important; box-shadow: none !important; opacity: 0.4; }
         .pad.correct, .pad.correction { border-color: #fcd34d !important; background: rgba(251, 191, 36, 0.3) !important; color: #fff !important; box-shadow: 0 0 0 2px #fbbf24, 0 0 30px rgba(251, 191, 36, 0.6) !important; text-shadow: 0 0 10px rgba(251, 191, 36, 1) !important; animation: pulseCorrection 1.5s infinite; z-index: 10; }
         @keyframes pulseCorrection { 0%{transform:scale(1); box-shadow: 0 0 0 2px #fbbf24, 0 0 20px rgba(251, 191, 36, 0.4);} 50%{transform:scale(1.03); box-shadow: 0 0 0 4px #fbbf24, 0 0 40px rgba(251, 191, 36, 0.8);} 100%{transform:scale(1); box-shadow: 0 0 0 2px #fbbf24, 0 0 20px rgba(251, 191, 36, 0.4);} }
-        .pad.playing { transform: scale(0.92) !important; border-color: white !important; background: rgba(255,255,255,0.3) !important; box-shadow: 0 0 20px white !important; color: white !important; transition: 0s !important; }
+        
+        /* FLASH EFFECT (Unified) */
+        .pad.playing, .quiz-btn.playing { transform: scale(0.95) !important; border-color: white !important; background: rgba(255,255,255,0.3) !important; box-shadow: 0 0 20px white !important; color: white !important; transition: 0s !important; }
 
-        .pad-main { font-size: 1rem; font-weight: 800; font-family: monospace; pointer-events: none; }
-        .pad-sub { font-size: 0.6rem; opacity: 0.6; margin-top: 0px; pointer-events: none; }
+        /* V2.5: Lisibilité accrue en mode Zen */
+        .pad-main { font-size: 1.5rem; font-weight: 900; font-family: monospace; pointer-events: none; letter-spacing: -0.5px; }
+        .pad-sub { font-size: 0.85rem; font-weight: 700; opacity: 0.8; margin-top: 0px; pointer-events: none; }
 
         /* QUIZ AREA */
         #quizArea { display: none; flex-direction: column; height: 100%; gap: 10px; }
         .quiz-card { background: rgba(0,0,0,0.2); border: 1px solid var(--panel-border); border-radius: 16px; padding: 20px; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
-        /* V2.4: Augmentation taille texte cible */
         .quiz-target { font-size: 4.5rem; font-weight: 900; color: white; margin-bottom: 5px; text-shadow: 0 2px 10px rgba(0,0,0,0.5); }
         .quiz-target span { color: var(--primary); }
         .quiz-hint-txt { font-size: 1rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
@@ -132,7 +145,6 @@
         .quiz-btn.selected { border-color: var(--primary); color: white; background: rgba(99, 102, 241, 0.1); }
         .quiz-btn.correct { border-color: var(--success); background: var(--success); color: white; text-shadow: 0 2px 5px rgba(0,0,0,0.3); }
         .quiz-btn.wrong { border-color: var(--error); color: var(--error); opacity: 0.5; }
-        /* V2.4: Texte révélation plus gros et lisible */
         .quiz-btn span.reveal { display: block; font-size: 1.1rem; font-weight: 700; margin-top: 5px; opacity: 1; color: var(--text); }
         .quiz-btn.correct span.reveal, .quiz-btn.selected span.reveal { color: white; }
 
@@ -369,27 +381,31 @@
         ranks: [ {t:"Tourneur de pages enthousiaste",i:"📄"}, {t:"Régisseur distrait",i:"🔦"}, {t:"Déchiffreur du dimanche",i:"👓"}, {t:"Spécialiste des cordes à vide",i:"🎻"}, {t:"Harmoniste en herbe",i:"🌱"}, {t:"Explorateur de Tonalités",i:"🧭"}, {t:"Adepte des mouvements contraires",i:"↔️"}, {t:"Amateur de résolutions heureuses",i:"😌"}, {t:"Expert du Retard",i:"⏳"}, {t:"Premier Prix de Solfège",i:"🥇"}, {t:"Chef de pupitre",i:"🎼"}, {t:"Supersoliste",i:"🌟"}, {t:"Disciple de Rameau",i:"📖"}, {t:"Architecte des Modulations",i:"🏗️"}, {t:"Chef d'orchestre inspiré",i:"🥢"}, {t:"Virtuose de l’oreille relative",i:"👂"}, {t:"Explorateur du chromatisme",i:"🌈"}, {t:"Théoricien Post-Tonal",i:"🌌"}, {t:"Maître des Fonctions harmoniques",i:"🔮"}, {t:"Réincarnation de Bach",i:"👑"} ]
     };
 
-    const KEY_MAP = { '1':0, '2':1, '3':2, '4':3, '5':4, '6':5, 'q':0, 'a':0, 'w':1, 'z':1, 'e':2, 'r':3 };
+    const PHYSICAL_MAP = {
+        // Chiffres 1-6 (Accords en Zen / Quiz 1-6)
+        'Digit1': 0, 'Digit2': 1, 'Digit3': 2, 'Digit4': 3, 'Digit5': 4, 'Digit6': 5,
+        'Numpad1': 0, 'Numpad2': 1, 'Numpad3': 2, 'Numpad4': 3, 'Numpad5': 4, 'Numpad6': 5,
+        // Lettres (Haut Gauche -> Droite : A Z E R T Y en AZERTY / Q W E R T Y en QWERTY)
+        // Servent pour les Renversements en Zen ou Quiz en Inverse
+        'KeyQ': 0, 'KeyW': 1, 'KeyE': 2, 'KeyR': 3, 'KeyT': 4, 'KeyY': 5, 'KeyZ': 5
+    };
 
     const Audio = {
         ctx: null, master: null, reverb: null, samples: {}, baseUrl: 'https://tonejs.github.io/audio/salamander/',
         sampleMap: { 36: 'C2.mp3', 39: 'Ds2.mp3', 42: 'Fs2.mp3', 45: 'A2.mp3', 48: 'C3.mp3', 51: 'Ds3.mp3', 54: 'Fs3.mp3', 57: 'A3.mp3', 60: 'C4.mp3', 63: 'Ds4.mp3', 66: 'Fs4.mp3', 69: 'A4.mp3', 72: 'C5.mp3', 75: 'Ds5.mp3', 78: 'Fs5.mp3', 81: 'A5.mp3', 84: 'C6.mp3' },
-        // V2.4: Suppression du fallbackMode (le synthé est désactivé)
         init() { if (this.ctx) return; const AC = window.AudioContext || window.webkitAudioContext; this.ctx = new AC(); this.master = this.ctx.createGain(); this.master.gain.value = 1.0; this.reverb = this.ctx.createConvolver(); this.reverb.buffer = this.createReverbImpulse(2.0); const revGain = this.ctx.createGain(); revGain.gain.value = 0.3; this.master.connect(this.ctx.destination); this.master.connect(this.reverb); this.reverb.connect(revGain); revGain.connect(this.ctx.destination); this.loop(); this.loadSamples(); },
         createReverbImpulse(duration) { const rate = this.ctx.sampleRate, length = rate * duration, impulse = this.ctx.createBuffer(2, length, rate), L = impulse.getChannelData(0), R = impulse.getChannelData(1); for (let i = 0; i < length; i++) { const decay = Math.pow(1 - i / length, 3); L[i] = (Math.random() * 2 - 1) * decay; R[i] = (Math.random() * 2 - 1) * decay; } return impulse; },
         async loadSamples() { UI.msg("Chargement Piano...", "correction"); const promises = Object.keys(this.sampleMap).map(async (midi) => { try { const response = await fetch(this.baseUrl + this.sampleMap[midi]); if(!response.ok) throw new Error('Network'); const buff = await response.arrayBuffer(); this.samples[midi] = await this.ctx.decodeAudioData(buff); } catch (e) { } }); await Promise.all(promises); if(Object.keys(this.samples).length > 5) UI.msg("Piano Activé", "correct"); else { UI.msg("Erreur Réseau", "wrong"); } setTimeout(() => UI.msg("Prêt ?"), 2000); },
         playNote(midi, time, velocity = 0.5) { 
             if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
             if (!this.ctx) return; 
-            // V2.4: On ne joue que si on a des samples
             this.playSampledNote(midi, time, velocity); 
         },
         playSampledNote(midi, time, velocity) { 
             const available = Object.keys(this.samples).map(Number).sort((a,b)=>a-b);
-            if(available.length === 0) return; // Pas de samples = pas de son
+            if(available.length === 0) return;
             let closest = available[0], minDiff = Math.abs(midi - closest); for (let n of available) { const diff = Math.abs(midi - n); if (diff < minDiff) { minDiff = diff; closest = n; } } const src = this.ctx.createBufferSource(); src.buffer = this.samples[closest]; src.playbackRate.value = Math.pow(2, (midi - closest) / 12); const g = this.ctx.createGain(); g.gain.setValueAtTime(0, time); g.gain.linearRampToValueAtTime(velocity, time + 0.01); g.gain.exponentialRampToValueAtTime(0.001, time + 4.0); src.connect(g); g.connect(this.master); src.start(time); 
         },
-        // V2.4: Synthé supprimé (playSynthNote effacé)
         playPureTone(f, t, dur=0.5) { 
             if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
             const o = this.ctx.createOscillator(); o.type = 'sine'; o.frequency.value = f; const g = this.ctx.createGain(); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.1, t + 0.05); g.gain.exponentialRampToValueAtTime(0.001, t + dur); o.connect(g); g.connect(this.ctx.destination); o.start(t); o.stop(t + dur + 0.1); 
@@ -640,9 +656,11 @@
 
             if(this.session.done) {
                 const opt = this.session.quizOptions[idx];
-                Audio.chord(opt.notes);
                 const btn = document.getElementById('qbtn-'+idx);
-                btn.style.transform = "scale(0.95)"; setTimeout(()=>btn.style.transform="scale(1)", 100);
+                // V2.5: Flash Effect (Unified)
+                btn.classList.add('playing');
+                setTimeout(() => btn.classList.remove('playing'), 200);
+                Audio.chord(opt.notes);
                 return;
             }
             this.session.quizUserChoice = idx;
@@ -919,33 +937,52 @@
     };
 
     document.addEventListener('keydown', e => {
-        if(e.code==='Escape') UI.closeModals();
-        if(e.code==='Space') { e.preventDefault(); if(!App.session.chord) App.playNew(); else if(!App.session.done) App.replay(); }
-        if(e.code==='Enter'||e.code==='NumpadEnter') { e.preventDefault(); App.handleMain(); }
-        if(e.code==='KeyH') App.hint();
+        if(e.code === 'Escape') UI.closeModals();
         
-        if(KEY_MAP[e.key.toLowerCase()] !== undefined) {
+        if(e.code === 'Space') { 
+            e.preventDefault(); 
+            if(!document.getElementById('valBtn').disabled && document.getElementById('valBtn').classList.contains('next')) {
+                App.handleMain();
+            }
+            else if(!App.session.chord) App.playNew(); 
+            else if(!App.session.done) App.replay(); 
+            return;
+        }
+
+        if(e.code === 'Enter' || e.code === 'NumpadEnter') { 
+            e.preventDefault(); 
+            App.handleMain(); 
+            return;
+        }
+
+        if(e.code === 'KeyH') {
+            App.hint();
+            return;
+        }
+
+        if(PHYSICAL_MAP[e.code] !== undefined) {
+            const idx = PHYSICAL_MAP[e.code];
+
             if(App.session.mode === 'inverse') {
-                const idx = parseInt(e.key);
-                if(!isNaN(idx) && idx >= 1 && idx <= 3) {
-                    if(!App.session.done) App.selectQuiz(idx-1);
-                    else App.selectQuiz(idx-1);
+                if(idx < App.session.quizOptions.length) {
+                    if(!App.session.done) App.selectQuiz(idx);
+                    else App.selectQuiz(idx);
                 }
             } else {
-                let type = 'c', id = null;
-                if(!isNaN(parseInt(e.key))) {
-                    const idx = KEY_MAP[e.key];
+                const isDigit = e.code.startsWith('Digit') || e.code.startsWith('Numpad');
+                
+                if(isDigit) {
                     const ac = DB.chords.filter(c => App.data.settings.activeC.includes(c.id));
-                    if(ac[idx]) { type = 'c'; id = ac[idx].id; }
+                    if(ac[idx]) { 
+                        if(!App.session.done) App.select('c', ac[idx].id);
+                        else App.preview('c', ac[idx].id);
+                    }
                 } else {
-                    const idx = KEY_MAP[e.key.toLowerCase()];
                     const ai = DB.invs.filter(i => App.data.settings.activeI.includes(i.id));
-                    if(ai[idx]) { type = 'i'; id = ai[idx].id; }
-                }
-
-                if(id !== null) {
-                    if(!App.session.done) App.select(type, id);
-                    else App.preview(type, id);
+                    if(ai[idx]) {
+                        if(!App.session.done) App.select('i', ai[idx].id);
+                        else App.preview('i', ai[idx].id);
+                    }
                 }
             }
         }
