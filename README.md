@@ -5,7 +5,7 @@
 
 **Harmonist Academy** est une application web d'entraînement auditif (Ear Training), conçue pour aider les musiciens à reconnaître instantanément les accords, les renversements et les voicings complexes.
 
-Loin des exercices académiques austères, l'application utilise des mécaniques de RPG (XP, Niveaux, Maîtrises, Badges) pour rendre l'apprentissage addictif et gratifiant.
+Loin des exercices académiques austères, l'application utilise des mécaniques (XP, Niveaux, Maîtrises, Badges) pour rendre l'apprentissage addictif et gratifiant.
 
 ---
 
