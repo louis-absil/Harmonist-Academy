@@ -22,7 +22,7 @@ Loin des exercices académiques austères, l'application utilise des mécaniques
 - **Système d'XP et Niveaux :** Progressez du niveau 1 au niveau 20.
 - **Série (Streak) & Combos :** Plus vous enchaînez les bonnes réponses, plus l'interface s'anime et le score grimpe.
 - **Système de Maîtrise (Prestige) :**
-  - Une fois le niveau 20 atteint, validez votre Maîtrise pour réinitialiser votre niveau mais gagner une Étoile (Or ⭐, Platine 💠, Cosmique 🟣).
+  - Une fois le niveau 20 atteint, validez votre Maîtrise pour réinitialiser votre niveau mais gagner une Étoile ⭐.
   - Débloque de nouvelles "Salles" (Contenu Jazz, etc.).
 - **Badges & Trophées :** Plus de 25 succès à débloquer ("The Duke", "Métronome", "Sniper"...).
 - **Coach Virtuel :** Analyse vos erreurs en temps réel et vous donne des conseils théoriques ciblés.
