@@ -16,7 +16,7 @@ Loin des exercices académiques austères, l'application utilise des mécaniques
 - **Système de "Salles" (Sets) :**
   - **🏛️ L'Académie (Classique) :** Triades, 7ème, Renversements classiques (État fondamental, 1er, 2ème, 3ème).
   - **🎷 Le Club (Jazz) :** Accords enrichis (6/9, 13, Alt, Sus7b9) et Voicings réalistes (Close, Drop 2, Shell, Rootless).
-- **Feedback Visuel :** Clavier virtuel et effets visuels réactifs.
+- **Feedback Visuel :** Clavier virtuel (en cours de développement) et effets visuels réactifs.
 
 ### 🎮 Gamification & Progression
 - **Système d'XP et Niveaux :** Progressez du niveau 1 au niveau 20.
