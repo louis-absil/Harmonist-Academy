@@ -1,105 +1,101 @@
-# Harmonist Academy – Master Edition (Piano)
+# 🎹 Harmonist Academy
 
-Harmonist Academy – Master Edition est une application web d’entraînement de l’oreille dédiée aux accords de 7ᵉ (qualité + renversement), pensée pour les étudiant·e·s en solfège, harmonie, et formation musicale… mais suffisamment ludique pour plaire aussi aux autodidactes.
+> **Version actuelle :** v3.8.2 (Stable)
+> **Statut :** En développement actif
 
-L’objectif : reconnaître le type d’accord de 7ᵉ et son renversement, gagner de l’XP, monter de niveau, et gravir les rangs prestigieux allant de “Tourneur de pages enthousiaste” jusqu’à “Réincarnation de Bach”. 🎹
+**Harmonist Academy** est une application web d'entraînement auditif (Ear Training) gamifiée, conçue pour aider les musiciens à reconnaître instantanément les accords, les renversements et les voicings complexes.
 
-✨ Fonctionnalités principales
+Loin des exercices académiques austères, l'application utilise des mécaniques de RPG (XP, Niveaux, Maîtrises, Badges) pour rendre l'apprentissage addictif et gratifiant.
 
-🎧 Entraînement aux accords de 7ᵉ
+---
 
-- Majeure 7 (Maj7)
-- Mineure 7 (min7)
-- Dominante 7 (7)
-- Demi-diminuée (ø7)
-- Diminuée (°7)
-- Mineure majeure 7 (mMaj7)
+## ✨ Fonctionnalités Principales
 
-🔁 Reconnaissance de renversements
+### 🎧 Entraînement Auditif Avancé
+- **Moteur Audio Réaliste :** Utilise des samples de piano de haute qualité (Salamander Piano) avec réverbération à convolution.
+- **Système de "Salles" (Sets) :**
+  - **🏛️ L'Académie (Classique) :** Triades, 7ème, Renversements classiques (État fondamental, 1er, 2ème, 3ème).
+  - **🎷 Le Club (Jazz) :** Accords enrichis (6/9, 13, Alt, Sus7b9) et Voicings réalistes (Close, Drop 2, Shell, Rootless).
+- **Feedback Visuel :** Clavier virtuel et effets visuels réactifs.
 
-- 7 – 65 – 43 – 2
-- Gestion spéciale pour l’accord de 7ᵉ diminuée (sans renversement à choisir)
+### 🎮 Gamification & Progression
+- **Système d'XP et Niveaux :** Progressez du niveau 1 au niveau 20.
+- **Série (Streak) & Combos :** Plus vous enchaînez les bonnes réponses, plus l'interface s'anime et le score grimpe.
+- **Système de Maîtrise (Prestige) :**
+  - Une fois le niveau 20 atteint, validez votre Maîtrise pour réinitialiser votre niveau mais gagner une Étoile (Or ⭐, Platine 💠, Cosmique 🟣).
+  - Débloque de nouvelles "Salles" (Contenu Jazz, etc.).
+- **Badges & Trophées :** Plus de 25 succès à débloquer ("The Duke", "Métronome", "Sniper"...).
+- **Coach Virtuel :** Analyse vos erreurs en temps réel et vous donne des conseils théoriques ciblés.
 
-🧠 Deux modes de jeu
+### 🕹️ Modes de Jeu
+L'application propose une courbe de difficulté progressive :
+1.  **🧘 Mode Zen :** Pas de temps, pas de vies. Idéal pour apprendre.
+2.  **🎧 Mode Inverse :** On entend un son, on doit trouver son nom (Quiz). *(Débloqué Niv 3)*
+3.  **⚡ Mode Chrono :** 60 secondes pour faire le meilleur score. *(Débloqué Niv 8)*
+4.  **🏃 Mode Sprint :** 10 secondes par question. La moindre erreur est fatale. *(Débloqué Niv 12)*
 
-- Mode Zen : pas de limite de temps, idéal pour le travail concentré et la pédagogie en cours.
-- Mode Chrono : 60 secondes, vies limitées, bonus de temps si réponse correcte – parfait pour se challenger.
+---
 
-🏅 Système de niveaux & rangs
+## 🚀 Installation & Utilisation
 
-- XP gagnée à chaque bonne réponse, avec bonus de série.
-- Rang évolutif (géré en localStorage) :
-  - Tourneur de pages enthousiaste → Auditeur curieux → Mélomane motivé … → Favori d’Euterpe → Réincarnation de Bach.
+Harmonist Academy est une **Single Page Application (SPA)** construite en HTML/CSS/JS pur (Vanilla). Aucune installation complexe n'est requise.
 
-🛠 Personnalisation pédagogique
+### Prérequis
+- Un navigateur web moderne (Chrome, Firefox, Safari, Edge).
+- Connexion internet requise au premier lancement pour charger les samples audio (puis fonctionne en cache).
 
-- Sélection des types d’accords à travailler.
-- Sélection des renversements actifs.
-- Option “Mode éclaté” (voicing ouvert) pour complexifier l’écoute (+50 % XP).
+### Lancer le projet
+1.  Clonez ce dépôt :
+    ```bash
+    git clone https://github.com/votre-username/harmonist-academy.git
+    ```
+2.  Ouvrez le fichier `index.html` directement dans votre navigateur.
+    *   *Recommandé :* Utilisez une extension comme "Live Server" sur VS Code pour éviter les blocages CORS liés aux modules audio.
 
-📊 Statistiques détaillées
+---
 
-- Précision globale.
-- Statistiques par type d’accord et par renversement.
-- Meilleur score en mode Chrono.
+## 🎼 Contenu Musical
 
-🔊 Audio & feedback
+### Salle 1 : L'Académie (Niveau Standard)
+Focalisée sur la reconnaissance fonctionnelle.
+- **Accords :** Maj7, min7, Dom7, m7b5 (Ø), Dim7, minMaj7.
+- **Variations :** État Fondamental, 1er Renversement (65), 2ème Renversement (43), 3ème Renversement (2).
 
-- Synthèse type piano électrique doux (Web Audio API).
-- Réverbération intégrée pour un son agréable.
-- Effets sonores légers pour : bonne réponse, erreur, montée de niveau.
-- Petit visualiseur graphique et confettis lors des réussites.
+### Salle 2 : Le Club (Maîtrise I)
+Focalisée sur la couleur et la texture Jazz.
+- **Accords :** Maj6, min6, Dom9, Sus7b9, Maj9, min9, Dom13, Alt (7#9b13), Maj7#11.
+- **Voicings (Textures) :**
+  - **Serré (Close) :** Toutes les notes dans une octave.
+  - **Ouvert (Drop 2) :** Voicing aéré typique du piano jazz.
+  - **Shell (Bebop) :** Tonique + Tierce + 7ème (Essentiel).
+  - **Rootless (Bill Evans) :** Sans fondamentale, axé sur les extensions.
 
-⌨️ Raccourcis clavier
+---
 
-- Espace : écouter / réécouter.
-- Entrée : valider / passer à la question suivante.
-- H : indice (arpeggiation de l’accord).
-- Chiffres (1–6) : choix du type d’accord (suivant les accords actifs).
-- Lettres (A Z E R / Q W E R selon clavier) : choix du renversement.
+## 🛠️ Stack Technique
 
-🧱 Stack technique
+- **Core :** Vanilla JavaScript (ES6+).
+- **Audio :** Web Audio API (Context, Gain, Oscillator, Convolver).
+- **Style :** CSS3 (Variables, Flexbox, Grid, Animations).
+- **Data :** LocalStorage pour la persistance des données (sauvegarde automatique).
 
-- HTML / CSS / JavaScript vanilla (une seule page, aucun framework).
-- Web Audio API pour la synthèse sonore.
-- localStorage pour la sauvegarde :
-  - niveau, XP, meilleur score
-  - statistiques d’exercices
-  - configuration des accords & renversements.
+---
 
-Interface responsive pensée pour :
+## 🔮 Roadmap
 
-- écran d’ordinateur
-- tablette
-- utilisation sur écran tactile (boutons larges, haptique sur mobile si disponible).
+- [x] **v3.0 :** Refonte UI & Moteur Audio.
+- [x] **v3.5 :** Ajout des Badges & Coach.
+- [x] **v3.8 :** Système de Maîtrise, Mode Jazz & Voicings.
+- [ ] **v4.0 (Maîtrise II) :** Le Laboratoire (Accords Atonaux, Quartal, Quintal, Clusters).
+- [ ] **v4.5 (Maîtrise III) :** Le Cosmos (Modes de Messiaen, Gammes par tons, Microtonalité).
 
-🚀 Installation & utilisation
+---
 
-- Clone le dépôt :
-  
-  git clone https://github.com/ton-compte/harmonist-academy.git
-  cd harmonist-academy
+## 📝 Crédits
 
-- Ouvre simplement le fichier index.html dans ton navigateur :
-  - soit en double-cliquant dessus,
-  - soit via un petit serveur local (recommandé) :
-    
-    # exemple avec Python
-    python -m http.server 8000
-    # ensuite : http://localhost:8000 dans le navigateur
+Développé par **Louis Absil**.
+Samples de piano par **Salamander Grand Piano**.
 
-Clique sur “Écouter”, choisis :
+---
 
-- la qualité de l’accord (colonne de gauche),
-- le renversement (colonne de droite),
-puis Valider.
-
-Surveille ton rang, ta série, ta précision et ton high score ! 🎼
-
-🎯 Objectif pédagogique
-
-L’application est pensée pour :
-
-- les étudiant·e·s en solfège / FM / harmonie (conservatoires, HEM, écoles de musique),
-- les profs souhaitant un outil rapide et ludique en cours,
-- les musicien·ne·s qui veulent renforcer leur oreille harmonique sur les accords de 7ᵉ et leurs renversements.
+*Fait avec ❤️ et beaucoup de café.*
