@@ -1,101 +1,128 @@
-# 🎹 Harmonist Academy
 
-> **Version actuelle :** v3.8.2 (Stable)
-> **Statut :** En développement actif
+# 🎼 Harmonist Academy V5.1 (Studio Update)
 
-**Harmonist Academy** est une application web d'entraînement auditif (Ear Training), conçue pour aider les musiciens à reconnaître instantanément les accords, les renversements et les voicings complexes.
+> **L'application ultime d'entraînement auditif pour l'harmonie, le jazz et l'acoustique.**
 
-Loin des exercices académiques austères, l'application utilise des mécaniques (XP, Niveaux, Maîtrises, Badges) pour rendre l'apprentissage addictif et gratifiant.
+![Version](https://img.shields.io/badge/version-5.1.0-studio.svg)
+![License](https://img.shields.io/badge/license-MIT-green.svg)
+![Tech](https://img.shields.io/badge/Made%20With-Vanilla%20JS-yellow.svg)
+
+Harmonist Academy est une **Single Page Application (SPA)** gamifiée conçue pour aider les musiciens à reconnaître les accords, les renversements, les voicings jazz et les structures harmoniques complexes à l'oreille.
+
+---
+
+## 🎹 NOUVEAU DANS LA V5.1 : LE STUDIO DE CRÉATION
+
+Cette mise à jour introduit un outil de composition pédagogique permettant aux professeurs et aux élèves de créer leurs propres dictées musicales.
+
+### 1. Le Studio Harmonique
+Un séquenceur visuel intégré pour construire des progressions d'accords sur mesure.
+*   **Timeline Visuelle :** Ajoutez, supprimez et réorganisez vos accords sur une frise chronologique.
+*   **Contrôle Total :** Choisissez la qualité, le renversement et la note de basse précise grâce au clavier virtuel.
+*   **Piano Interactif :** Visualisez les notes en temps réel.
+
+### 2. Exportation de Défis (Custom Seeds)
+Transformez vos créations du Studio en défis jouables.
+*   **Génération de Code :** Exportez votre séquence sous forme de code unique (ex: `JAZZ-EXAM-1`).
+*   **Partage :** Donnez ce code à vos élèves ou amis. Ils joueront *exactement* la séquence que vous avez composée (Mêmes accords, mêmes basses, mêmes renversements).
+
+### 3. Ergonomie & Raccourcis
+Le mode Studio est optimisé pour une saisie rapide au clavier (Mapping AZERTY/QWERTY physique) :
+*   **Notes (Basses) :** `W` à `N` (Rangée du bas) + `,` pour le Si.
+*   **Octaves :** Flèches `Haut` / `Bas`.
+
+---
+
+## ⚔️ L'ARÈNE DES DÉFIS (V5.0)
+
+L'expérience d'apprentissage transformée en compétition e-sportive musicale.
+
+### 🔥 Le Défi du Jour (Daily Challenge)
+Chaque jour, une **séquence unique de 20 accords** est générée.
+*   **Seed Unique :** Tout le monde joue exactement la même séquence (basée sur la date).
+*   **Classement Journalier :** Comparez votre score avec la communauté.
+*   **Rapport Détaillé :** Analyse précise de vos erreurs (Accords ET Renversements) en fin de session.
+
+### 👻 Les Maîtres Fantômes (Ghost Players)
+Mesurez-vous aux légendes de la musique qui peuplent les classements :
+*   **Erik Satie & Bach** (Mode Chrono).
+*   **Mozart & Paganini** (Mode Sprint).
+*   **John Cage & Beethoven** (Mode Inverse).
 
 ---
 
 ## ✨ Fonctionnalités Principales
 
-### 🎧 Entraînement Auditif Avancé
-- **Moteur Audio Réaliste :** Utilise des samples de piano de haute qualité (Salamander Piano) avec réverbération à convolution.
-- **Système de "Salles" (Sets) :**
-  - **🏛️ L'Académie (Classique) :** Triades, 7ème, Renversements classiques (État fondamental, 1er, 2ème, 3ème).
-  - **🎷 Le Club (Jazz) :** Accords enrichis (6/9, 13, Alt, Sus7b9) et Voicings réalistes (Close, Drop 2, Shell, Rootless).
-- **Feedback Visuel :** Clavier virtuel (en cours de développement) et effets visuels réactifs.
+### 🎮 Modes de Jeu
+*   **🧘 Mode Zen :** Entraînement sans stress, feedback immédiat.
+*   **⚡ Mode Chrono :** 60 secondes pour faire le meilleur score.
+*   **🏃 Mode Sprint :** Le temps diminue à chaque réponse. Réservé aux experts.
+*   **🎧 Mode Inverse :** Quiz à l'aveugle (QCM). On vous donne le nom, trouvez le son.
 
-### 🎮 Gamification & Progression
-- **Système d'XP et Niveaux :** Progressez du niveau 1 au niveau 20.
-- **Série (Streak) & Combos :** Plus vous enchaînez les bonnes réponses, plus l'interface s'anime et le score grimpe.
-- **Système de Maîtrise (Prestige) :**
-  - Une fois le niveau 20 atteint, validez votre Maîtrise pour réinitialiser votre niveau mais gagner une Étoile ⭐.
-  - Débloque de nouvelles "Salles" (Contenu Jazz, etc.).
-- **Badges & Trophées :** Plus de 25 succès à débloquer ("The Duke", "Métronome", "Sniper"...).
-- **Coach Virtuel :** Analyse vos erreurs en temps réel et vous donne des conseils théoriques ciblés.
+### 📚 Contenu Harmonique (Sets)
+1.  **🏛️ L'Académie (Classique) :** Accords de base (Maj7, min7, Dom7, Dim7) et gestion des 4 renversements.
+2.  **🎷 Le Club (Jazz) :** Extensions (9ème, 13ème, Altérés, Sus) et Voicings (Close, Drop-2, Shell, Rootless).
+3.  **🧪 Le Laboratoire (Acoustique) :** Structures intervalliques, Trichordes (Clusters), Accords Suspendus et variations de densité (Contracté/Dilaté).
 
-### 🕹️ Modes de Jeu
-L'application propose une courbe de difficulté progressive :
-1.  **🧘 Mode Zen :** Pas de temps, pas de vies. Idéal pour apprendre.
-2.  **🎧 Mode Inverse :** On entend un son, on doit trouver son nom (Quiz). *(Débloqué Niv 3)*
-3.  **⚡ Mode Chrono :** 60 secondes pour faire le meilleur score. *(Débloqué Niv 8)*
-4.  **🏃 Mode Sprint :** 10 secondes par question. La moindre erreur est fatale. *(Débloqué Niv 12)*
+### 🏆 Gamification & Lore
+*   **Système de Maîtrise :** Progressez de *Novice* à *Virtuose* à travers des matériaux nobles (Cristal, Marbre, Or, Obsidienne...).
+*   **Badges & Trophées :** +30 succès, dont des badges secrets liés au "Lore" du jeu.
+*   **Coach IA :** Analyse vos faiblesses en temps réel pour donner des conseils contextuels.
 
 ---
 
-## 🚀 Installation & Utilisation
+## 💻 Architecture Technique
 
-Harmonist Academy est une **Single Page Application (SPA)** construite en HTML/CSS/JS pur (Vanilla). Aucune installation complexe n'est requise.
+Le projet a été entièrement migré vers du **JavaScript Pur (ES Modules)** pour une performance maximale et une maintenance simplifiée.
 
-### Prérequis
-- Un navigateur web moderne (Chrome, Firefox, Safari, Edge).
-- Connexion internet requise au premier lancement pour charger les samples audio (puis fonctionne en cache).
+*   **Frontend :** HTML5 / CSS3 (Grid, Flexbox, Glassmorphism).
+*   **Logique :** Vanilla JS (ES6+ Modules). Aucune étape de build complexe requise.
+*   **Audio :** Web Audio API (Piano samplé + Synthèse SFX).
+*   **Backend (Firebase) :**
+    *   **Firestore :** Stockage des Leaderboards, des Défis et des Profils.
+    *   **Auth :** Authentification anonyme transparente.
 
-### Lancer le projet
-1.  Clonez ce dépôt :
+### Structure des Fichiers
+
+```bash
+/
+├── index.html      # Point d'entrée DOM
+├── styles.css      # Design System & Thèmes
+├── main.js         # Point d'entrée JS & Event Listeners
+├── app.js          # État global (State) & Boucle de jeu
+├── ui.js           # Gestion de l'interface & Rendu DOM
+├── audio.js        # Moteur Audio & Piano Virtuel
+├── data.js         # Base de données (Accords, Badges, Ghosts, Textes)
+├── challenges.js   # Gestionnaire des Seeds, RNG & Mode Examen
+└── firebase.js     # Connecteur Cloud (Firestore/Auth)
+```
+
+---
+
+## 🚀 Installation & Démarrage
+
+L'application utilise des **Modules ES6**, elle nécessite un serveur local pour contourner les politiques CORS (Cross-Origin Resource Sharing).
+
+### Méthode 1 : Avec Node.js & NPM
+
+1.  Installez les dépendances :
     ```bash
-    git clone https://github.com/votre-username/harmonist-academy.git
+    npm install
     ```
-2.  Ouvrez le fichier `index.html` directement dans votre navigateur.
-    *   *Recommandé :* Utilisez une extension comme "Live Server" sur VS Code pour éviter les blocages CORS liés aux modules audio.
+2.  Lancez le serveur de développement :
+    ```bash
+    npm run dev
+    ```
+
+### Méthode 2 : Python
+
+Si Python est installé sur votre machine :
+
+```bash
+python -m http.server 8000
+```
+Puis ouvrez `http://localhost:8000` dans votre navigateur.
 
 ---
 
-## 🎼 Contenu Musical
-
-### Salle 1 : L'Académie (Niveau Standard)
-Focalisée sur la reconnaissance fonctionnelle.
-- **Accords :** Maj7, min7, Dom7, m7b5 (Ø), Dim7, minMaj7.
-- **Variations :** État Fondamental, 1er Renversement (65), 2ème Renversement (43), 3ème Renversement (2).
-
-### Salle 2 : Le Club (Maîtrise I)
-Focalisée sur la couleur et la texture Jazz.
-- **Accords :** Maj6, min6, Dom9, Sus7b9, Maj9, min9, Dom13, Alt (7#9b13), Maj7#11.
-- **Voicings (Textures) :**
-  - **Serré (Close) :** Toutes les notes dans une octave.
-  - **Ouvert (Drop 2) :** Voicing aéré typique du piano jazz.
-  - **Shell (Bebop) :** Tonique + Tierce + 7ème (Essentiel).
-  - **Rootless (Bill Evans) :** Sans fondamentale, axé sur les extensions.
-
----
-
-## 🛠️ Stack Technique
-
-- **Core :** Vanilla JavaScript (ES6+).
-- **Audio :** Web Audio API (Context, Gain, Oscillator, Convolver).
-- **Style :** CSS3 (Variables, Flexbox, Grid, Animations).
-- **Data :** LocalStorage pour la persistance des données (sauvegarde automatique).
-
----
-
-## 🔮 Roadmap
-
-- [x] **v3.0 :** Refonte UI & Moteur Audio.
-- [x] **v3.5 :** Ajout des Badges & Coach.
-- [x] **v3.8 :** Système de Maîtrise, Mode Jazz & Voicings.
-- [ ] **v4.0 (Maîtrise II) :** Le Laboratoire (Accords Atonaux, Quartal, Quintal, Clusters).
-- [ ] **v4.5 (Maîtrise III) :** Le Cosmos (Modes de Messiaen, Gammes par tons, Microtonalité).
-
----
-
-## 📝 Crédits
-
-Développé par **Louis Absil**.
-Samples de piano par **Salamander Grand Piano**.
-
----
-
-*Fait avec ❤️ et beaucoup de café.*
+**© 2025 Harmonist Academy** - *Fait par Louis Absil avec ❤️ et beaucoup de café.*

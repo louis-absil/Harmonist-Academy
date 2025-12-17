@@ -4,316 +4,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Harmonist Academy - V3.8.2 (Stable)</title>
-    <style>
-        :root {
-            --bg: #0f172a;
-            --panel: #1e293b;
-            --panel-border: rgba(255,255,255,0.08);
-            --primary: #6366f1;
-            --primary-glow: rgba(99, 102, 241, 0.4);
-            --accent: #d946ef;
-            --success: #10b981;
-            --warning: #f59e0b;
-            --error: #ef4444;
-            --gold: #fbbf24;
-            --text: #f8fafc;
-            --text-dim: #94a3b8;
-            --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
-            --radius: 16px;
-        }
-
-        * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; outline: none; }
-
-        body {
-            background-color: var(--bg);
-            color: var(--text);
-            font-family: var(--font);
-            margin: 0; padding: 0;
-            height: 100dvh; width: 100vw; overflow: hidden;
-            display: flex; justify-content: center;
-            overscroll-behavior: none; 
-            transition: background-color 1s ease;
-        }
-
-        /* VIGNETTE STRESS EFFECT */
-        .vignette-overlay {
-            position: fixed; inset: 0; pointer-events: none; z-index: 80;
-            background: radial-gradient(circle, transparent 50%, rgba(239, 68, 68, 0) 70%);
-            transition: background 0.5s ease;
-        }
-        .vignette-overlay.stress {
-            background: radial-gradient(circle, transparent 40%, rgba(239, 68, 68, 0.4) 90%);
-            animation: heartbeat 1s infinite;
-        }
-
-        /* NOUVEAU BADGE RIBBON (STYLE PILULE GLASS & GOLD) */
-        .badge-ribbon {
-            position: fixed; top: -100px; left: 50%; transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.75);
-            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-            border: 1px solid var(--gold);
-            color: white; padding: 10px 24px; border-radius: 50px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 15px rgba(251, 191, 36, 0.3);
-            z-index: 300;
-            display: flex; align-items: center; gap: 12px; font-weight: 800;
-            font-size: 0.9rem; transition: top 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
-            white-space: nowrap;
-        }
-        .badge-ribbon.show { top: 20px; }
-        .badge-ribbon-icon { font-size: 1.4rem; animation: pulseFire 1.5s infinite; }
-        .badge-txt-gold { color: var(--gold); text-transform: uppercase; letter-spacing: 0.5px; margin-right: 5px; }
-
-        /* CONFETTI */
-        .confetti-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 90; }
-
-        .app-container {
-            width: 100%; max-width: 1200px; height: 100%;
-            display: flex; flex-direction: column;
-            padding: 10px; gap: 8px; position: relative;
-            padding-bottom: max(20px, env(safe-area-inset-bottom));
-            z-index: 85; 
-        }
-
-        /* HEADER */
-        header {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 8px 12px; background: var(--panel); border-radius: var(--radius);
-            border: 1px solid var(--panel-border); flex-shrink: 0; 
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); gap: 10px; min-height: 50px;
-        }
-        .header-left { display: flex; align-items: center; gap: 10px; overflow: hidden; cursor: pointer; transition: opacity 0.2s; }
-        .header-left:active { opacity: 0.7; }
-        .rank-icon { font-size: 1.5rem; flex-shrink: 0; }
-        .rank-text { display: flex; flex-direction: column; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .rank-title { font-weight: 800; color: var(--gold); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; transition: text-shadow 0.3s; }
-        .lvl-pill { font-size: 0.7rem; color: var(--text-dim); background: rgba(0,0,0,0.2); padding: 1px 6px; border-radius: 4px; align-self: flex-start; margin-bottom: 2px; }
-        
-        .mastery-stars { display: flex; gap: 2px; font-size: 0.8rem; margin-left: 6px; filter: drop-shadow(0 0 5px rgba(251, 191, 36, 0.3)); }
-        /* STARS MATERIALS */
-        .star-gold { color: #fbbf24; }
-        .star-plat { color: #fbbf24; filter: hue-rotate(180deg) brightness(2.5) saturate(0.5) drop-shadow(0 0 5px rgba(255,255,255,0.8)); }
-        .star-ruby { color: #fbbf24; filter: hue-rotate(320deg) brightness(1.2) saturate(2) drop-shadow(0 0 5px rgba(255, 0, 85, 0.6)); }
-
-        /* AURA TEXT EFFECTS FOR PROFILE */
-        .aura-text-gold { text-shadow: 0 0 15px rgba(251, 191, 36, 0.6), 0 0 30px rgba(251, 191, 36, 0.2); color: #fff; }
-        .aura-text-plat { text-shadow: 0 0 15px rgba(100, 200, 255, 0.8), 0 0 30px rgba(100, 200, 255, 0.4); color: #f0f9ff; }
-        .aura-text-ruby { text-shadow: 0 0 15px rgba(255, 0, 100, 0.8), 0 0 30px rgba(255, 0, 100, 0.4); color: #fff0f5; animation: pulseAura 3s infinite; }
-        
-        @keyframes pulseAura { 0% { opacity: 0.9; } 50% { opacity: 1; text-shadow: 0 0 25px rgba(255, 0, 100, 1); } 100% { opacity: 0.9; } }
-
-        .xp-container { position: absolute; bottom: 0; left: 0; width: 100%; height: 3px; background: rgba(0,0,0,0.3); }
-        .xp-fill { height: 100%; background: linear-gradient(90deg, var(--primary), var(--accent)); width: 0%; transition: width 0.5s ease-out; }
-
-        .header-right { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
-        .stats-cluster { display: flex; gap: 6px; align-items: center; }
-        .stat-badge { 
-            background: rgba(0,0,0,0.3); border: 1px solid var(--panel-border); 
-            padding: 4px 8px; border-radius: 8px; text-align: center;
-            display: flex; flex-direction: column; justify-content: center;
-            min-width: 40px; position: relative;
-        }
-        .stat-val { font-weight: 800; font-size: 0.85rem; color: white; }
-        .stat-lbl { font-size: 0.45rem; text-transform: uppercase; color: var(--text-dim); letter-spacing: 0.5px; margin-bottom: 2px;}
-        
-        .score-group { display: none; } 
-        .score-group.active { display: flex; flex-direction: column; }
-        .score-main { font-size: 0.9rem; font-weight: 900; color: var(--gold); line-height: 1; }
-        .score-sub { font-size: 0.5rem; color: var(--text-dim); margin-top: 2px; }
-
-        .streak-fire { color: #ef4444; text-shadow: 0 0 10px #ef4444; animation: pulseFire 1s infinite; }
-        .streak-super { color: #d946ef; text-shadow: 0 0 15px #d946ef; animation: pulseFire 0.5s infinite; }
-
-        .header-actions { display: flex; gap: 5px; padding-left: 10px; border-left: 1px solid var(--panel-border); }
-        .icon-btn { background: transparent; border: none; font-size: 1.3rem; cursor: pointer; padding: 5px; border-radius: 8px; transition: background 0.2s; opacity: 0.8; }
-        .icon-btn:hover { background: rgba(255,255,255,0.1); opacity: 1; }
-
-        /* TOOLS */
-        .tools-bar { display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; padding: 0 5px; height: 40px; position: relative; }
-        .mode-selector { background: var(--panel); padding: 3px; border-radius: 20px; display: flex; border: 1px solid var(--panel-border); }
-        .mode-opt { padding: 4px 10px; border-radius: 16px; font-size: 0.7rem; font-weight: 700; color: var(--text-dim); cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 4px; }
-        .mode-opt.active { background: var(--primary); color: white; box-shadow: 0 2px 10px rgba(99, 102, 241, 0.3); }
-        .mode-opt.locked { opacity: 0.5; cursor: not-allowed; filter: grayscale(1); }
-        
-        .vis-container { flex: 1; margin: 0 10px; height: 100%; background: rgba(0,0,0,0.2); border-radius: 10px; position: relative; overflow: hidden; border: 1px solid var(--panel-border); display: flex; align-items: center; justify-content: center; }
-        canvas { width: 100%; height: 100%; opacity: 0.5; position: absolute; top:0; left:0; }
-        
-        .sprint-bar-container { position: absolute; bottom: 0; left: 0; right: 0; height: 6px; background: transparent; overflow: hidden; border-radius: 0 0 10px 10px; display: none; }
-        .sprint-bar-fill { height: 100%; width: 100%; transform-origin: left; transition: transform 0.1s linear, background-color 0.3s; }
-        .sprint-bar-fill.easy { background: #10b981; }
-        .sprint-bar-fill.med { background: #f59e0b; box-shadow: 0 0 10px #f59e0b; }
-        .sprint-bar-fill.hard { background: #ef4444; box-shadow: 0 0 15px #ef4444; }
-        .tools-bar.sprint-active .sprint-bar-container { display: block; }
-
-        .feedback-msg { z-index: 2; font-weight: 800; font-size: 0.9rem; text-shadow: 0 2px 4px rgba(0,0,0,0.8); transition: 0.2s; white-space: nowrap;}
-        .feedback-msg.correct { color: var(--success); animation: pop 0.2s; }
-        .feedback-msg.wrong { color: var(--error); animation: shake 0.3s; }
-        .feedback-msg.warning { color: var(--warning); }
-        .timer-badge { font-variant-numeric: tabular-nums; background: var(--primary); color: white; padding: 4px 10px; border-radius: 8px; font-weight: 800; font-size: 0.9rem; box-shadow: 0 0 10px var(--primary-glow); display: none; white-space: nowrap; }
-        .lives { font-size: 0.8rem; margin-left: 5px; opacity: 0.8; }
-
-        /* GAME AREA */
-        .game-area { flex: 1; min-height: 0; display: grid; grid-template-columns: 1.5fr 1fr; gap: 10px; overflow-y: auto; }
-        .game-area.quiz-mode { grid-template-columns: 1fr; } 
-
-        .panel { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--radius); padding: 8px; display: flex; flex-direction: column; box-shadow: inset 0 0 20px rgba(0,0,0,0.2); transition: opacity 0.3s; height: 100%; }
-        .panel-label { font-size: 0.65rem; text-transform: uppercase; color: var(--text-dim); font-weight: 800; letter-spacing: 1px; margin-bottom: 6px; display: flex; justify-content: space-between; flex-shrink: 0; }
-        .pad-grid { display: grid; gap: 6px; flex: 1; min-height: 0; }
-        .grid-c { grid-template-columns: repeat(3, 1fr); grid-auto-rows: 1fr; }
-        .grid-i { grid-template-columns: repeat(2, 1fr); grid-auto-rows: 1fr; }
-        
-        /* BOUTONS */
-        .pad { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 10px; cursor: pointer; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1); height: 100%; width: 100%; min-height: 40px; }
-        .pad:active { transform: scale(0.96); }
-        .pad:hover { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.1); }
-        .pad.rank-bronze { border-color: #b45309; color: #fdba74; background: linear-gradient(145deg, rgba(180, 83, 9, 0.15), rgba(67, 20, 7, 0.3)); box-shadow: inset 1px 1px 0 rgba(255,255,255,0.15), inset -1px -1px 0 rgba(0,0,0,0.4); }
-        .pad.rank-silver { border-color: #94a3b8; color: #f1f5f9; background: linear-gradient(145deg, rgba(148, 163, 184, 0.15), rgba(30, 41, 59, 0.3)); box-shadow: inset 1px 1px 0 rgba(255,255,255,0.2), inset -1px -1px 0 rgba(0,0,0,0.4); text-shadow: 0 0 5px rgba(255,255,255,0.2); }
-        .pad.rank-gold { border-color: #fbbf24; color: #fbbf24; background: linear-gradient(145deg, rgba(251, 191, 36, 0.15), rgba(120, 53, 15, 0.3)); box-shadow: inset 1px 1px 0 rgba(255,255,255,0.3), inset -1px -1px 0 rgba(0,0,0,0.4), 0 0 10px rgba(251, 191, 36, 0.15); text-shadow: 0 0 10px rgba(251, 191, 36, 0.4); }
-        .pad.selected { background: rgba(99, 102, 241, 0.25) !important; border-color: var(--primary) !important; color: white !important; box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.4) !important; text-shadow: none !important; }
-        .pad.wrong { border-color: var(--error) !important; color: var(--error) !important; background: transparent !important; box-shadow: none !important; opacity: 0.4; }
-        .pad.correct, .pad.correction { border-color: #fcd34d !important; background: rgba(251, 191, 36, 0.3) !important; color: #fff !important; box-shadow: 0 0 0 2px #fbbf24, 0 0 30px rgba(251, 191, 36, 0.6) !important; text-shadow: 0 0 10px rgba(251, 191, 36, 1) !important; animation: pulseCorrection 1.5s infinite; z-index: 10; }
-        .pad.playing, .quiz-btn.playing { transform: scale(0.95) !important; border-color: white !important; background: rgba(255,255,255,0.3) !important; box-shadow: 0 0 20px white !important; color: white !important; transition: 0s !important; }
-        .pad-main { font-size: 1.5rem; font-weight: 900; font-family: monospace; pointer-events: none; letter-spacing: -0.5px; }
-        .pad-sub { font-size: 0.85rem; font-weight: 700; opacity: 0.8; margin-top: 0px; pointer-events: none; }
-
-        /* QUIZ AREA */
-        #quizArea { display: none; flex-direction: column; height: 100%; gap: 10px; }
-        .quiz-card { background: rgba(0,0,0,0.2); border: 1px solid var(--panel-border); border-radius: 16px; padding: 20px; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
-        .quiz-target { font-size: 4.5rem; font-weight: 900; color: white; margin-bottom: 5px; text-shadow: 0 2px 10px rgba(0,0,0,0.5); }
-        .quiz-target span { color: var(--primary); }
-        .quiz-hint-txt { font-size: 1rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
-        .quiz-options { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; height: 120px; flex-shrink: 0;}
-        .quiz-btn { background: var(--panel); border: 2px solid var(--panel-border); border-radius: 16px; font-size: 2rem; font-weight: 900; color: var(--text-dim); cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .quiz-btn:active { transform: scale(0.95); }
-        .quiz-btn.selected { border-color: var(--primary); color: white; background: rgba(99, 102, 241, 0.1); }
-        .quiz-btn.correct { border-color: var(--success); background: var(--success); color: white; text-shadow: 0 2px 5px rgba(0,0,0,0.3); }
-        .quiz-btn.wrong { border-color: var(--error); color: var(--error); opacity: 0.5; }
-        .quiz-btn span.reveal { display: block; font-size: 1.1rem; font-weight: 700; margin-top: 5px; opacity: 1; color: var(--text); }
-        .quiz-btn.correct span.reveal, .quiz-btn.selected span.reveal { color: white; }
-
-        /* COMMANDS */
-        .command-deck { background: var(--panel); padding: 6px; border-radius: 16px; border: 1px solid var(--panel-border); display: flex; gap: 6px; height: 60px; flex-shrink: 0; box-shadow: 0 -5px 20px rgba(0,0,0,0.2); z-index: 10; }
-        .cmd-btn { border: none; border-radius: 12px; cursor: pointer; font-weight: 700; font-family: var(--font); transition: transform 0.1s; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .cmd-btn:active { transform: scale(0.95); }
-        .cmd-btn:disabled { opacity: 0.4; filter: grayscale(1); cursor: not-allowed; }
-        .btn-listen { flex: 1; background: #334155; color: white; font-size: 0.7rem; border: 1px solid rgba(255,255,255,0.1); }
-        .btn-action { flex: 2; background: var(--success); color: white; font-size: 1rem; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); text-transform: uppercase; letter-spacing: 1px; }
-        .btn-action.next { background: var(--primary); box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3); }
-        .icon-lg { font-size: 1.1rem; margin-bottom: 2px; }
-        
-        .app-container.quiz-mode .btn-listen { display: none; }
-        .app-container.quiz-mode .btn-action { flex-grow: 1; }
-        .app-footer { text-align: center; font-size: 0.6rem; color: var(--text-dim); opacity: 0.5; margin-top: 2px; pointer-events: none; }
-
-        /* MODALS */
-        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 100; backdrop-filter: blur(5px); align-items: center; justify-content: center; }
-        .modal-overlay.open { display: flex; animation: fadeIn 0.2s; }
-        .modal { background: #1e293b; padding: 20px; border-radius: 24px; width: 90%; max-width: 400px; border: 1px solid rgba(255,255,255,0.1); text-align: center; box-shadow: 0 25px 50px rgba(0,0,0,0.6); max-height: 85vh; overflow-y: auto; position: relative; }
-        .brand-title { font-size: 1.5rem; font-weight: 900; margin: 0 0 20px 0; letter-spacing: -0.5px; }
-        .brand-primary { color: var(--text); } .brand-accent { color: var(--primary); }
-        .toggle-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
-        .toggle-row:last-child { border: none; }
-        .settings-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 20px; }
-        .setting-chip { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 10px 5px; cursor: pointer; font-size: 0.8rem; font-weight: 700; color: var(--text-dim); transition: all 0.2s; display: flex; flex-direction: column; align-items: center; }
-        .setting-chip.active { background: var(--primary); color: white; border-color: var(--primary); box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3); }
-        .setting-chip:active { transform: scale(0.95); }
-        .setting-chip.locked { opacity: 0.5; cursor: not-allowed; filter: grayscale(1); }
-        .toggle-switch { position: relative; width: 40px; height: 22px; } .toggle-switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; inset: 0; background: #334155; transition: .3s; border-radius: 22px; } .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background: white; transition: .3s; border-radius: 50%; }
-        input:checked + .slider { background: var(--primary); } input:checked + .slider:before { transform: translateX(18px); }
-
-        /* HUD & BADGES GRID */
-        .toast-box { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--panel); border: 1px solid var(--gold); color: var(--gold); padding: 10px 20px; border-radius: 20px; font-weight: 700; font-size: 0.85rem; box-shadow: 0 10px 25px rgba(0,0,0,0.5); z-index: 200; pointer-events: none; opacity: 0; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); text-align: center; white-space: nowrap; }
-        .toast-box.show { transform: translateX(-50%) translateY(0); opacity: 1; }
-        .level-hud { position: fixed; inset: 0; pointer-events: none; z-index: 200; display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; transform: scale(0.8); transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); text-align: center; }
-        .level-hud.active { opacity: 1; transform: scale(1); }
-        .level-hud h1 { font-size: 3rem; margin: 0; color: white; text-shadow: 0 0 30px rgba(251, 191, 36, 0.8), 0 4px 10px black; line-height: 1.2; }
-        
-        .badges-section { margin-top: 25px; }
-        .badges-grid {
-            display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px;
-            background: rgba(0,0,0,0.2); padding: 10px; border-radius: 16px;
-            border: 1px solid rgba(255,255,255,0.05);
-        }
-        .badge-item {
-            aspect-ratio: 1/1; background: rgba(255,255,255,0.03); border-radius: 10px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 1.2rem; filter: grayscale(1) opacity(0.3); transition: all 0.2s;
-            cursor: help; position: relative; border: 1px solid transparent;
-        }
-        .badge-item.unlocked {
-            filter: grayscale(0) opacity(1);
-            background: rgba(255,255,255,0.08);
-            box-shadow: 0 0 10px rgba(0,0,0,0.3);
-            border-color: rgba(255,255,255,0.1);
-        }
-        .badge-item.unlocked:hover { transform: scale(1.1); z-index: 10; background: var(--panel); }
-
-        .combo-popup { position: fixed; top: 40%; left: 50%; transform: translate(-50%, -50%) scale(0); pointer-events: none; z-index: 150; text-align: center; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); opacity: 0; }
-        .combo-popup.show { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-        .combo-popup h2 { font-size: 3rem; margin: 0; color: white; text-shadow: 0 5px 20px rgba(0,0,0,0.5); -webkit-text-stroke: 2px var(--primary); font-weight: 900; font-style: italic; }
-        .combo-popup p { margin: 0; color: var(--gold); font-weight: 800; font-size: 1.2rem; text-transform: uppercase; }
-
-        .coach-box { margin-bottom: 15px; display: flex; flex-direction: column; align-items: center; }
-        .coach-avatar { font-size: 2rem; margin-bottom: 8px; animation: pop 1s infinite alternate; }
-        .coach-bubble { background: #334155; color: white; padding: 12px; border-radius: 16px; position: relative; font-size: 0.85rem; line-height: 1.4; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 4px 10px rgba(0,0,0,0.3); max-width: 100%; }
-        .coach-bubble:after { content: ''; position: absolute; top: -8px; left: 50%; transform: translateX(-50%); border-width: 0 8px 8px; border-style: solid; border-color: #334155 transparent; display: block; width: 0; }
-        .coach-bubble strong { color: var(--gold); font-weight: 800; }
-        .coach-tag { display: inline-block; background: var(--primary); color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.6rem; font-weight: 800; text-transform: uppercase; margin-bottom: 5px; }
-        .history-box { background: rgba(0,0,0,0.2); border-radius: 12px; padding: 10px; margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.05); position: relative; }
-        .chart-limit-line { position: absolute; top: 50%; left: 10px; right: 10px; height: 1px; background: rgba(255,255,255,0.1); border-top: 1px dashed rgba(255,255,255,0.3); pointer-events: none; }
-        .chart-container { display: flex; align-items: flex-end; justify-content: space-between; height: 80px; gap: 6px; z-index: 1; position: relative; }
-        .chart-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; justify-content: flex-end; }
-        .chart-track { width: 100%; flex: 1; background: rgba(255,255,255,0.05); border-radius: 4px; display: flex; align-items: flex-end; overflow: hidden; min-height: 60px; }
-        .chart-bar { width: 100%; transition: height 0.5s ease-out; min-height: 0; }
-        .chart-label { font-size: 0.55rem; color: var(--text-dim); margin-top: 2px;}
-        .stat-item { margin-bottom: 6px; } .stat-header { display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 2px; }
-        .stat-track { height: 5px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; } .stat-fill { height: 100%; }
-
-        /* --- PROFIL & MAÎTRISE --- */
-        .profile-header { text-align: center; margin-bottom: 20px; }
-        .profile-avatar { font-size: 3rem; margin-bottom: 10px; animation: float 3s ease-in-out infinite; display: inline-block; }
-        .profile-title { font-size: 1.5rem; font-weight: 900; color: white; margin: 0; }
-        .profile-subtitle { color: var(--gold); text-transform: uppercase; letter-spacing: 2px; font-size: 0.7rem; font-weight: 800; margin-top: 5px; }
-        
-        .xp-big-container { background: rgba(0,0,0,0.3); height: 20px; border-radius: 10px; margin: 20px 0 5px 0; border: 1px solid rgba(255,255,255,0.1); overflow: hidden; position: relative; }
-        .xp-big-fill { height: 100%; background: linear-gradient(90deg, var(--primary), var(--accent)); width: 0%; transition: width 1s ease-out; }
-        .xp-text { display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-dim); margin-bottom: 20px; }
-        
-        .stat-grid-profile { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 25px; }
-        .stat-card { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 16px; text-align: center; border: 1px solid rgba(255,255,255,0.05); }
-        .stat-card h3 { margin: 0; font-size: 1.5rem; color: white; }
-        .stat-card p { margin: 5px 0 0 0; font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; }
-
-        .btn-prestige {
-            background: linear-gradient(135deg, #fbbf24 0%, #b45309 100%);
-            border: 1px solid #fbbf24; color: white;
-            padding: 15px; width: 100%; border-radius: 16px;
-            font-size: 1.1rem; font-weight: 900; text-transform: uppercase; letter-spacing: 1px;
-            box-shadow: 0 4px 15px rgba(251, 191, 36, 0.4);
-            cursor: pointer; position: relative; overflow: hidden;
-            transition: all 0.3s;
-            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
-        }
-        .btn-prestige:hover { transform: scale(1.02); box-shadow: 0 0 25px rgba(251, 191, 36, 0.6); }
-        .btn-prestige:active { transform: scale(0.98); }
-        .btn-prestige:disabled { background: #334155; border-color: #475569; color: #64748b; box-shadow: none; cursor: not-allowed; filter: grayscale(1); }
-        .btn-prestige .shiny { position: absolute; top: 0; left: -100%; width: 50%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent); transform: skewX(-20deg); animation: shine 3s infinite; }
-
-        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-        @keyframes shine { 0% { left: -100%; } 20% { left: 200%; } 100% { left: 200%; } }
-
-        @keyframes pop { 0% { transform: scale(0.9); } 100% { transform: scale(1.1); } }
-        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
-        @keyframes pulseFire { 0%{transform:scale(1);} 50%{transform:scale(1.1);} 100%{transform:scale(1);} }
-        @keyframes pulseCorrection { 0%{transform:scale(1); box-shadow: 0 0 0 2px #fbbf24, 0 0 20px rgba(251, 191, 36, 0.4);} 50%{transform:scale(1.03); box-shadow: 0 0 0 4px #fbbf24, 0 0 40px rgba(251, 191, 36, 0.8);} 100%{transform:scale(1); box-shadow: 0 0 0 2px #fbbf24, 0 0 20px rgba(251, 191, 36, 0.4);} }
-        @keyframes heartbeat { 0%{opacity:0.3;} 50%{opacity:0.7;} 100%{opacity:0.3;} }
-        @keyframes fadeIn { from{opacity:0} to{opacity:1} }
-
-        @media (min-width: 769px) { .grid-c { grid-template-columns: repeat(3, 1fr); } }
-        @media (max-width: 768px) { .game-area { grid-template-columns: 1fr; grid-template-rows: 1.5fr 1fr; } .header-left { flex: 1; min-width: 0; gap: 8px; } .rank-text { display: flex; min-width: 0; } .lvl-pill { display: none; } .stats-cluster { display: none; } .rank-title { font-size: 0.8rem; } .pad-main { font-size: 0.9rem; } .pad-sub { font-size: 0.5rem; } .level-hud h1 { font-size: 2rem; } .quiz-target { font-size: 3rem; } .quiz-btn { font-size: 1.5rem; } }
-        @media (max-height: 700px) { .app-container { gap: 5px; padding: 5px; } header { padding: 4px 8px; min-height: 40px; } .rank-icon { font-size: 1.2rem; } .tools-bar { height: 32px; } .mode-opt { padding: 2px 8px; font-size: 0.65rem; } .command-deck { height: 50px; padding: 4px; } .icon-lg { font-size: 0.9rem; margin-bottom: 0; } .cmd-btn span { font-size: 0.65rem; } .btn-action { font-size: 0.9rem; } .panel-label { margin-bottom: 4px; } }
-    </style>
+    <title>Harmonist Academy - V5.2 (Challenger)</title>
+    <link rel="stylesheet" href="./styles.css">
+    <!-- Suppression des styles React/Vite inutiles -->
+<link rel="stylesheet" href="/index.css">
+<script type="importmap">
+{
+  "imports": {
+    "path": "https://esm.sh/path@^0.12.7",
+    "vite": "https://esm.sh/vite@^7.2.7"
+  }
+}
+</script>
 </head>
 <body>
 
@@ -371,8 +73,10 @@
                 </div>
             </div>
             <div class="header-actions">
+                <button class="icon-btn" onclick="window.UI.openCodex()">📖</button>
+                <button class="icon-btn" onclick="window.UI.showChallengeHub()" style="color:var(--gold); border:1px solid rgba(251, 191, 36, 0.3);">⚔️</button>
                 <button class="icon-btn" onclick="window.UI.openModal('statsModal')">📊</button>
-                <button class="icon-btn" onclick="window.UI.openModal('settingsModal')">⚙️</button>
+                <button class="icon-btn" id="btnSettings" onclick="window.UI.openModal('settingsModal')">⚙️</button>
             </div>
         </div>
     </header>
@@ -380,17 +84,48 @@
     <div class="tools-bar" id="toolsBar">
         <div class="mode-selector">
             <div class="mode-opt active" id="modeZen" onclick="window.App.setMode('zen')">🧘 Zen</div>
-            <div class="mode-opt" id="modeChrono" onclick="window.App.setMode('chrono')">⚡ Chrono <span style="font-size:0.6em; opacity:0.6; margin-left:3px;" id="lockChrono">🔒</span></div>
-            <div class="mode-opt" id="modeInverse" onclick="window.App.setMode('inverse')">🎧 Inverse <span style="font-size:0.6em; opacity:0.6; margin-left:3px;" id="lockInverse">🔒</span></div>
-            <div class="mode-opt" id="modeSprint" onclick="window.App.setMode('sprint')">🏃 Sprint <span style="font-size:0.6em; opacity:0.6; margin-left:3px;" id="lockSprint">🔒</span></div>
+            <div class="mode-opt" id="modeChrono" onclick="window.App.setMode('chrono')">⚡ Chrono</div>
+            <div class="mode-opt" id="modeSprint" onclick="window.App.setMode('sprint')">🏃 Sprint</div>
+            <div class="mode-opt" id="modeInverse" onclick="window.App.setMode('inverse')">🎧 Inverse</div>
         </div>
         <div class="vis-container">
             <canvas id="visualizer"></canvas>
+            <canvas id="pianoCanvas"></canvas>
             <div class="feedback-msg" id="statusText">Prêt ?</div>
             <div class="sprint-bar-container"><div class="sprint-bar-fill" id="sprintFill"></div></div>
         </div>
         <div class="timer-badge" id="chronoDisplay">
             <span id="timerVal">60</span><span class="lives" id="livesVal">❤️❤️❤️</span>
+        </div>
+    </div>
+
+    <!-- STUDIO PANEL (Phase 2) -->
+    <div id="studioPanel" class="studio-panel" style="display:none;">
+        <div class="studio-controls">
+            <div class="bass-octave-ctrl">
+                <button class="oct-btn" onclick="window.App.adjStudioOct(-12)">-</button>
+                <span class="oct-lbl">OCT</span>
+                <button class="oct-btn" onclick="window.App.adjStudioOct(12)">+</button>
+            </div>
+            <div class="piano-strip">
+                <!-- Do à Si (12 touches) -->
+                <button class="piano-key white" id="pk-0" onclick="window.App.setStudioBass(0)">C</button>
+                <button class="piano-key black" id="pk-1" onclick="window.App.setStudioBass(1)"></button>
+                <button class="piano-key white" id="pk-2" onclick="window.App.setStudioBass(2)">D</button>
+                <button class="piano-key black" id="pk-3" onclick="window.App.setStudioBass(3)"></button>
+                <button class="piano-key white" id="pk-4" onclick="window.App.setStudioBass(4)">E</button>
+                <button class="piano-key white" id="pk-5" onclick="window.App.setStudioBass(5)">F</button>
+                <button class="piano-key black" id="pk-6" onclick="window.App.setStudioBass(6)"></button>
+                <button class="piano-key white" id="pk-7" onclick="window.App.setStudioBass(7)">G</button>
+                <button class="piano-key black" id="pk-8" onclick="window.App.setStudioBass(8)"></button>
+                <button class="piano-key white" id="pk-9" onclick="window.App.setStudioBass(9)">A</button>
+                <button class="piano-key black" id="pk-10" onclick="window.App.setStudioBass(10)"></button>
+                <button class="piano-key white" id="pk-11" onclick="window.App.setStudioBass(11)">B</button>
+            </div>
+            <!-- Bouton Save retiré pour laisser la place au piano -->
+        </div>
+        <div class="studio-timeline" id="studioTimeline">
+            <div class="timeline-placeholder">Timeline vide...</div>
         </div>
     </div>
 
@@ -401,7 +136,7 @@
         </div>
         
         <div class="panel" id="invPanel">
-            <div class="panel-label" id="invLabel"><span>Renversement</span><span>(A Z E R)</span></div>
+            <div class="panel-label"><span id="invPanelLabel">Renversement</span><span>(A Z E R)</span></div>
             <div class="pad-grid grid-i" id="invGrid"></div>
         </div>
         
@@ -426,82 +161,114 @@
             <span class="icon-lg">↺</span><span>Rejouer</span>
         </button>
         <button class="cmd-btn btn-action" id="valBtn" onclick="window.App.handleMain()" disabled>Valider</button>
-        <button class="cmd-btn btn-listen" id="hintBtn" onclick="window.App.hint()" style="flex:0.5; font-size:1.2rem;">🔍</button>
+        <button class="cmd-btn btn-listen" id="hintBtn" onclick="window.App.hint()" disabled style="flex:0.5; font-size:1.2rem;">🔍</button>
     </div>
-    <div class="app-footer">Harmonist Academy © 2025 Louis Absil</div>
+    <div class="app-footer" onclick="window.App.clickTitle()">Harmonist Academy © 2025 Louis Absil</div>
 </div>
 
+<!-- MODALS -->
+
+<!-- SETTINGS -->
 <div class="modal-overlay" id="settingsModal">
     <div class="modal">
         <div style="display:flex; justify-content:flex-end;">
             <span style="cursor:pointer; font-size:1.5rem;" onclick="window.UI.closeModals()">✕</span>
         </div>
-        <div class="brand-title">
+        <div class="brand-title" onclick="window.App.clickTitle()">
             <span class="brand-primary">Harmonist</span> <span class="brand-accent">Academy</span>
         </div>
         
-        <!-- SETS SECTION -->
-        <div id="settingsSetsSection" style="margin-bottom:15px;"></div>
+        <h4 style="text-align:left; color:var(--gold); margin:5px 0 10px 0;">👤 Profil</h4>
+        <div style="display:flex; gap:10px; margin-bottom:15px;">
+             <input type="text" id="usernameInput" placeholder="Votre Pseudo" maxlength="15" 
+                    style="flex:1; background:rgba(0,0,0,0.3); border:1px solid var(--panel-border); color:white; padding:10px; border-radius:8px; font-weight:700;"
+                    onchange="window.App.setUsername(this.value)">
+        </div>
 
-        <div class="toggle-row" id="toggleOpenContainer">
-            <span style="display:flex; align-items:center; gap:5px;">Position Ouverte <span style="font-size:0.7em; color:var(--success); opacity:0.8;">(+Bonus)</span></span>
+        <h4 style="text-align:left; color:var(--primary); margin:15px 0 5px 0;">Chambre (Set)</h4>
+        <div class="settings-grid" style="grid-template-columns:1fr 1fr;">
+            <div class="setting-chip active" id="set-academy" onclick="window.App.loadSet('academy')">🏛️ Académie</div>
+            <div class="setting-chip" id="set-jazz" onclick="window.App.loadSet('jazz')">🎷 Le Club</div>
+        </div>
+        
+        <div class="toggle-row" id="rowToggleOpen">
+            <span>Position Ouverte <span style="font-size:0.6rem; color:var(--gold); border:1px solid var(--gold); border-radius:4px; padding:1px 3px; margin-left:5px;">+50% XP</span></span>
             <label class="toggle-switch">
                 <input type="checkbox" id="toggleOpen"><span class="slider"></span>
             </label>
         </div>
-        <h4 style="text-align:left; color:var(--primary); margin:15px 0 5px 0;">Accords (Max 6)</h4>
+
+        <h4 style="text-align:left; color:var(--primary); margin:15px 0 5px 0;">Accords</h4>
         <div id="settingsChords" class="settings-grid"></div>
-        <h4 style="text-align:left; color:var(--primary); margin:15px 0 5px 0;">Renversements</h4>
+        <h4 style="text-align:left; color:var(--primary); margin:15px 0 5px 0;">Variations</h4>
         <div id="settingsInvs" class="settings-grid"></div>
         <button class="cmd-btn" onclick="window.App.hardReset()" style="width:100%; margin-top:20px; background:rgba(239, 68, 68, 0.2); color:var(--error); padding:10px;">⚠️ Réinitialiser</button>
     </div>
 </div>
 
+<!-- PROFILE -->
 <div class="modal-overlay" id="modalProfile">
     <div class="modal">
-        <div style="display:flex; justify-content:flex-end;">
-            <span style="cursor:pointer; font-size:1.5rem;" onclick="window.UI.closeModals()">✕</span>
-        </div>
-        <div class="profile-header">
-            <div class="profile-avatar" id="profileAvatar">🎓</div>
-            <h2 class="profile-title" id="profileName">Harmoniste</h2>
-            <div class="profile-subtitle" id="profileRank">Niveau 1</div>
-            <div style="color:var(--gold); font-weight:bold; margin-top:5px;" id="profileMasteryName"></div>
-            <div class="mastery-stars" id="profileStars" style="justify-content:center; margin-top:5px; font-size:1.2rem;"></div>
+        <div style="position:absolute; top:15px; right:15px; z-index:50;">
+            <span style="cursor:pointer; font-size:1.5rem; background:rgba(0,0,0,0.5); width:32px; height:32px; display:flex; align-items:center; justify-content:center; border-radius:50%; border:1px solid rgba(255,255,255,0.1);" onclick="window.UI.closeModals()">✕</span>
         </div>
 
-        <div class="xp-big-container">
-            <div class="xp-big-fill" id="profileXpBar"></div>
-        </div>
-        <div class="xp-text">
-            <span id="profileXpVal">0 XP</span>
-            <span id="profileNextVal">100 XP</span>
-        </div>
-
-        <div class="stat-grid-profile">
-            <div class="stat-card">
-                <h3 id="profileTotal">0</h3>
-                <p>Accords Joués</p>
+        <div class="profile-header-compact">
+            <div class="profile-top-row">
+                <div class="profile-avatar-small" id="profileAvatar">🎓</div>
+                <div class="profile-info-compact">
+                    <div style="font-weight:900; font-size:1.1rem; line-height:1.1;" id="profileName">...</div>
+                    <div class="mastery-meta-row">
+                        <div class="mastery-icon-badge" id="masteryIcon">💎</div>
+                        <div id="profileStars" style="display:flex; gap:1px; font-size:0.9rem;"></div>
+                        <span id="masteryLabel">Maîtrise 0</span>
+                    </div>
+                </div>
             </div>
-            <div class="stat-card">
-                <h3 id="profileAcc">0%</h3>
-                <p>Précision Globale</p>
+
+            <div class="profile-xp-track">
+                <div class="profile-xp-fill" id="profileXpBar"></div>
             </div>
+            <div style="display:flex; justify-content:space-between; font-size:0.65rem; color:var(--text-dim); margin-top:-4px; margin-bottom:10px;">
+                <span id="xpCurrent">0 XP</span>
+                <span id="xpNext">100 XP</span>
+            </div>
+
+            <div class="profile-stats-grid">
+                <div class="mini-stat-box">
+                    <div class="mini-stat-icon">📊</div>
+                    <div class="mini-stat-info">
+                        <span class="mini-stat-val" id="profileAcc">0%</span>
+                        <span class="mini-stat-label">Précision</span>
+                    </div>
+                </div>
+                <div class="mini-stat-box">
+                    <div class="mini-stat-icon">🎹</div>
+                    <div class="mini-stat-info">
+                        <span class="mini-stat-val" id="profileTotal">0</span>
+                        <span class="mini-stat-label">Joués</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="timeline-connector-top"></div>
         </div>
 
-        <div id="prestigeSection">
-            <p style="font-size:0.8rem; color:var(--text-dim); margin-bottom:10px; line-height:1.4;">
-                Atteins le <strong>Niveau 20</strong> pour passer un cap de maîtrise et débloquer de nouveaux contenus.
-            </p>
+        <div id="levelTimeline" class="timeline-scroll-area">
+            </div>
+
+        <div class="profile-footer-fixed" id="prestigeSection">
             <button class="btn-prestige" id="btnPrestige" onclick="window.App.passMastery()" disabled>
                 <span class="shiny"></span>
-                <span>✨ Valider la Maîtrise</span>
-                <span style="font-size:0.7rem; font-weight:700; opacity:0.8;" id="btnPrestigeSub">...</span>
+                <span class="prestige-main-txt">✨ Valider la Maîtrise</span>
+                <span class="prestige-sub-txt" id="prestigeNextName">Niveau 20 Requis</span>
             </button>
         </div>
+
     </div>
 </div>
 
+<!-- STATS -->
 <div class="modal-overlay" id="statsModal">
     <div class="modal" style="text-align:left;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
@@ -510,28 +277,50 @@
         </div>
         <div class="coach-box" id="coachDisplay"></div>
         <h4 style="margin:0 0 10px 0; font-size:0.8rem; color:var(--text-dim); text-transform:uppercase;">Historique de Précision</h4>
-        <div class="history-box" id="historyChart">
-            <div class="chart-limit-line"></div>
-        </div>
+        <div class="history-box" id="historyChart"><div class="chart-limit-line"></div></div>
         <h4 style="margin:15px 0 10px 0; font-size:0.8rem; color:var(--text-dim); text-transform:uppercase;">Détails</h4>
         <div id="statsContent"></div>
-        
         <div class="badges-section">
-            <h4 style="margin:0 0 10px 0; font-size:0.8rem; color:var(--text-dim); text-transform:uppercase; display:flex; justify-content:space-between;">
-                <span>Trophées</span> <span id="badgeCount">0/25</span>
-            </h4>
+            <h4 style="margin:0 0 10px 0; font-size:0.8rem; color:var(--text-dim); text-transform:uppercase; display:flex; justify-content:space-between;"><span>Trophées</span> <span id="badgeCount">0/25</span></h4>
             <div class="badges-grid" id="badgesGrid"></div>
             <div id="badgeDetail" style="font-size:0.7rem; color:var(--gold); text-align:center; min-height:20px; margin-top:5px; font-weight:700;"></div>
         </div>
     </div>
 </div>
 
+<!-- CODEX -->
+<div class="modal-overlay" id="modalCodex">
+    <div class="modal" style="width:95%; max-width:500px; height:80vh; display:flex; flex-direction:column; padding:0; background: #0f172a; border-radius: 20px;">
+        <div style="padding:15px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--panel-border);">
+            <h2 style="margin:0; font-size:1.2rem; display:flex; align-items:center; gap:10px; color:var(--text);">📖 Codex</h2>
+            <span style="cursor:pointer; font-size:1.5rem; color:var(--text-dim);" onclick="window.UI.closeModals()">✕</span>
+        </div>
+        <div id="codexGridView" style="flex:1; overflow-y:auto; padding:10px;"><div class="codex-grid" id="codexGrid"></div></div>
+        <div id="codexDetailView" class="codex-detail">
+            <div style="position:absolute; top:10px; left:10px; cursor:pointer; font-size:0.9rem; z-index:20; color:var(--primary); display:flex; align-items:center; gap:5px;" onclick="window.UI.backToCodex()"><span>← Retour</span></div>
+            <div style="position:absolute; top:10px; right:10px; cursor:pointer; font-size:1.2rem; z-index:20; color:var(--text-dim);" onclick="window.UI.closeCodexCard()">✕</div>
+            <div style="padding:20px; padding-top:40px; display:flex; flex-direction:column; height:100%;">
+                <div class="cd-header"><div class="cd-icon" id="cdIcon">🎹</div><div class="cd-title"><h3 id="cdName">...</h3><span id="cdSub">...</span></div><button id="cdPlayBtn" class="btn-gold-play" onclick="window.UI.playCodexSound()">▶</button></div>
+                <div class="cd-vis"><canvas id="codexPianoCanvas" width="300" height="100"></canvas></div>
+                <div class="cd-lore"><div class="cd-flavor" id="cdFlavor">...</div><div class="cd-theory" id="cdTheory"></div><div class="cd-coach"><span>🧠</span> <span id="cdCoach">...</span></div><button class="btn-action-train" onclick="window.UI.startTraining()"><span>🎯 S'entraîner sur cet accord</span></button></div>
+                <div class="cd-nav"><button class="nav-btn-round" id="cdPrevBtn">←</button><button class="nav-btn-round" id="cdNextBtn">→</button></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- GAME OVER (Arcade) -->
 <div class="modal-overlay" id="modalGameOver">
     <div class="modal">
         <div style="font-size:3rem;">🏁</div>
         <h2 style="margin:10px 0;">Terminé !</h2>
         <div style="font-size:3.5rem; font-weight:900; color:var(--gold); line-height:1;" id="endScore">0</div>
         <div style="color:var(--text-dim); margin-bottom:20px;">Record: <span id="endHighScore">0</span></div>
+        
+        <!-- NEW FEEDBACK AREAS -->
+        <div id="inverseFeedbackArea" style="display:none; gap:10px; margin-bottom:20px; justify-content:center;"></div>
+        <div id="miniLeaderboardArea" style="display:none; flex-direction:column; gap:4px; margin-bottom:20px; background:rgba(0,0,0,0.2); padding:8px; border-radius:12px; font-size:0.8rem; text-align:left; max-height:150px; overflow-y:auto;"></div>
+
         <div>
             <button class="cmd-btn btn-action next" style="width:100%; padding:15px;" onclick="window.App.replaySameMode()">Rejouer</button>
             <button class="cmd-btn btn-listen" style="width:100%; margin-top:10px; padding:15px;" onclick="window.App.setMode('zen'); window.UI.closeModals()">Menu Principal</button>
@@ -539,1575 +328,117 @@
     </div>
 </div>
 
-<script>
-    const SPRINT_DURATION = 10; 
-    const MASTERY_NAMES = ["🏛️ L'Académie", "🎷 Le Club", "🧪 Le Laboratoire", "🌌 Le Cosmos"];
+<!-- HUB DEFIS (V5.0 - UNIFIÉ AVEC ARCADE) -->
+<div class="modal-overlay" id="challengeHubModal">
+    <div class="modal" style="height:85vh; display:flex; flex-direction:column;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <h2 style="margin:0; color:var(--primary); display:flex; align-items:center; gap:10px;">⚔️ L'Arène</h2>
+            <span style="cursor:pointer; font-size:1.5rem;" onclick="window.UI.closeModals()">✕</span>
+        </div>
 
-    // --- DB & DATA ---
-    const DB = {
-        sets: {
-            academy: {
-                name: "L'Académie",
-                chords: [
-                    { id: 'maj7', name: 'M7M', sub: 'Maj7', iv: [0,4,7,11] },
-                    { id: 'min7', name: 'm7m', sub: 'min7', iv: [0,3,7,10] },
-                    { id: 'dom7', name: 'M7m', sub: 'Dom7', iv: [0,4,7,10] },
-                    { id: 'hdim7', name: 'dim7m', sub: 'Ø', iv: [0,3,6,10] },
-                    { id: 'dim7', name: 'dim7dim', sub: 'Dim7', iv: [0,3,6,9] },
-                    { id: 'minmaj7', name: 'm7M', sub: 'mM7', iv: [0,3,7,11] }
-                ]
-            },
-            jazz: {
-                name: "Le Club",
-                chords: [
-                    { id: 'maj6', name: 'M6', sub: 'Majeur 6', iv: [0,4,7,9], unlockLvl: 1 },
-                    { id: 'min6', name: 'm6', sub: 'Mineur 6', iv: [0,3,7,9], unlockLvl: 1 },
-                    { id: 'dom9', name: 'Dom9', sub: 'Dom 9', iv: [0,4,7,10,14], unlockLvl: 2 },
-                    { id: 'hdim7', name: 'm7b5', sub: 'Ø', iv: [0,3,6,10], unlockLvl: 4 },
-                    { id: 'dim7', name: 'dim7', sub: 'Dim 7', iv: [0,3,6,9], unlockLvl: 6 },
-                    { id: 'sus4', name: '7sus4', sub: 'Sus7b9', iv: [0,5,7,10,13], unlockLvl: 8 },
-                    { id: 'maj9', name: 'Maj9', sub: 'Majeur 9', iv: [0,4,7,11,14], unlockLvl: 10 },
-                    { id: 'min9', name: 'm9', sub: 'Mineur 9', iv: [0,3,7,10,14], unlockLvl: 12 },
-                    { id: 'dom13', name: 'Dom13', sub: 'Dom 13', iv: [0,4,7,10,21], unlockLvl: 14 },
-                    { id: 'alt', name: 'Alt', sub: '7#9b13', iv: [0,4,10,15,20], unlockLvl: 16 },
-                    { id: 'lyd', name: 'M7#11', sub: 'Lydien', iv: [0,4,7,11,18], unlockLvl: 18 },
-                    { id: 'minmaj7', name: 'mM7', sub: 'minMaj7', iv: [0,3,7,11], unlockLvl: 20 }
-                ]
-            }
-        },
-        chords: [], // Will be populated dynamically
-        // CLASSICAL INVERSIONS
-        invs: [ { id: 0, name: '7', sub: 'Fond.', corr: '7' }, { id: 1, name: '65', sub: '1er', corr: '65' }, { id: 2, name: '43', sub: '2ème', corr: '43' }, { id: 3, name: '2', sub: '3ème', corr: '2' } ],
-        // JAZZ VOICINGS
-        voicings: [ { id: 0, name: 'Serré', sub: 'Close', corr: 'Serré' }, { id: 1, name: 'Ouvert', sub: 'Drop 2', corr: 'Ouvert' }, { id: 2, name: 'Shell', sub: 'Bebop', corr: 'Shell' }, { id: 3, name: 'Sans R.', sub: 'Rootless', corr: 'No Root' } ],
-        
-        ranks: [ {t:"Tourneur de pages enthousiaste",i:"📄"}, {t:"Régisseur distrait",i:"🔦"}, {t:"Déchiffreur du dimanche",i:"👓"}, {t:"Spécialiste des cordes à vide",i:"🎻"}, {t:"Harmoniste en herbe",i:"🌱"}, {t:"Explorateur de Tonalités",i:"🧭"}, {t:"Adepte des mouvements contraires",i:"↔️"}, {t:"Amateur de résolutions heureuses",i:"😌"}, {t:"Expert du Retard",i:"⏳"}, {t:"Premier Prix de Solfège",i:"🥇"}, {t:"Chef de pupitre",i:"🎼"}, {t:"Supersoliste",i:"🌟"}, {t:"Disciple de Rameau",i:"📖"}, {t:"Architecte des Modulations",i:"🏗️"}, {t:"Chef d'orchestre inspiré",i:"🥢"}, {t:"Virtuose de l’oreille relative",i:"👂"}, {t:"Explorateur du chromatisme",i:"🌈"}, {t:"Théoricien Post-Tonal",i:"🌌"}, {t:"Maître des Fonctions harmoniques",i:"🔮"}, {t:"Réincarnation de Bach",i:"👑"} ]
-    };
+        <div class="lb-sub-nav">
+            <!-- Nouvel onglet Arcade (Classements) par défaut -->
+            <button class="lb-period-btn active challenge-tab-btn" onclick="window.UI.switchChallengeTab('arcade')">Classements</button>
+            <button class="lb-period-btn challenge-tab-btn" onclick="window.UI.switchChallengeTab('global')">Défi du Jour</button>
+            <button class="lb-period-btn challenge-tab-btn" onclick="window.UI.switchChallengeTab('join')">Rejoindre</button>
+            <button class="lb-period-btn challenge-tab-btn" onclick="window.UI.switchChallengeTab('create')">Créer</button>
+        </div>
 
-    const checkRankColl = (d, type, limit) => {
-        // Only check Academy for legacy badges
-        // Also ensure we are looking at correct stats group
-        let list, stats;
-        
-        if (type === 'c') {
-            list = DB.sets.academy.chords;
-            stats = d.stats.c;
-        } else {
-            // Type i (inversions) - Classic Mode only
-            list = DB.invs;
-            stats = d.stats.i;
-        }
-        
-        const cleanList = (type==='i') ? list.filter(x => x.id !== 0) : list;
-        return cleanList.every(x => (stats[x.id] && stats[x.id].ok >= limit));
-    };
+        <!-- TAB ARCADE (ANCIEN LEADERBOARD INTEGRÉ) -->
+        <div id="c-tab-arcade" class="challenge-tab-content">
+            <div style="display:flex; gap:5px; margin-bottom:10px; overflow-x:auto; padding-bottom:5px;">
+                <button class="mode-opt active" id="lb-mode-chrono" onclick="window.UI.setLbMode('chrono')" style="flex:1;">⚡ Chrono</button>
+                <button class="mode-opt" id="lb-mode-sprint" onclick="window.UI.setLbMode('sprint')" style="flex:1;">🏃 Sprint</button>
+                <button class="mode-opt" id="lb-mode-inverse" onclick="window.UI.setLbMode('inverse')" style="flex:1;">🎧 Inverse</button>
+            </div>
+            <div class="lb-sub-nav" style="gap:10px; font-size:0.8rem;">
+                <button class="lb-period-btn active" id="lb-period-weekly" onclick="window.UI.setLbPeriod('weekly')">📅 7 Jours</button>
+                <button class="lb-period-btn" id="lb-period-all" onclick="window.UI.setLbPeriod('all')">♾️ Toujours</button>
+            </div>
+            <div id="lb-loader" style="display:none; text-align:center; padding:20px; color:var(--text-dim);">Chargement...</div>
+            <!-- Conteneur cible pour la liste des scores Arcade -->
+            <div id="lb-list" style="flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:8px;"></div>
+        </div>
 
-    const BADGES = [
-        { id: 'b_appr', icon: '👶', title: "L'Apprenti", desc: "Jouer 100 accords au total", check: (d) => d.stats.totalPlayed >= 100 },
-        { id: 'b_achar', icon: '🏋️', title: "L'Acharné", desc: "Jouer 500 accords au total", check: (d) => d.stats.totalPlayed >= 500 },
-        { id: 'b_ency', icon: '📚', title: "L'Encyclopédie", desc: "Valider les 21 combinaisons uniques", check: (d) => d.stats.combos && d.stats.combos.length >= 21 },
-        { id: 'b_init', icon: '🥉', title: "L'Initié", desc: "Rang Bronze min. sur les 6 accords", check: (d) => checkRankColl(d, 'c', 20) },
-        { id: 'b_conf', icon: '🥈', title: "Le Confirmé", desc: "Rang Argent min. sur les 6 accords", check: (d) => checkRankColl(d, 'c', 50) },
-        { id: 'b_virt', icon: '🥇', title: "Le Virtuose", desc: "Rang Or sur les 6 accords", check: (d) => checkRankColl(d, 'c', 100) },
-        { id: 'b_bat', icon: '🔨', title: "Le Bâtisseur", desc: "Rang Bronze min. sur les 4 renversements", check: (d) => checkRankColl(d, 'i', 20) },
-        { id: 'b_ing', icon: '📐', title: "L'Ingénieur", desc: "Rang Argent min. sur les 4 renversements", check: (d) => checkRankColl(d, 'i', 50) },
-        { id: 'b_arch', icon: '🏗️', title: "L'Architecte", desc: "Rang Or sur les 4 renversements", check: (d) => checkRankColl(d, 'i', 100) },
-        
-        // STREAK & PRECISION REBALANCED
-        { id: 'b_reg', icon: '📏', title: "Le Régulier", desc: "Série de 10 sans faute", check: (d, s) => s.streak >= 10 },
-        { id: 'b_snip', icon: '🎯', title: "Le Sniper", desc: "Série de 15 sans faute sans aides", check: (d, s) => s.cleanStreak >= 15 },
-        { id: 'b_inv', icon: '🛡️', title: "L'Invincible", desc: "Série de 30 sans faute", check: (d, s) => s.streak >= 30 },
-        { id: 'b_grand', icon: '🌊', title: "Grand Large", desc: "Série de 15 sans faute en Position Ouverte", check: (d, s) => s.openStreak >= 15 },
-        { id: 'b_pur', icon: '🧐', title: "Le Puriste", desc: "Série de 25 sans faute avec TOUS réglages", check: (d, s) => s.fullConfigStreak >= 25 },
+        <!-- TAB GLOBAL (DAILY) -->
+        <div id="c-tab-global" class="challenge-tab-content" style="display:none;">
+            <div class="daily-card" onclick="window.UI.joinDailyChallenge()">
+                <div style="font-size:0.8rem; color:var(--gold); text-transform:uppercase; letter-spacing:1px; font-weight:700;">🔥 Défi du Jour</div>
+                <h2 style="margin:5px 0; color:white;">Daily <span id="dailyDateStr">...</span></h2>
+                <p style="font-size:0.8rem; opacity:0.8;">20 questions • Config Standard • Classement</p>
+                <button class="cmd-btn btn-action" style="margin-top:10px; width:100%;">Jouer</button>
+            </div>
+            <h4 style="margin:20px 0 10px 0; color:var(--text-dim); font-size:0.8rem; text-transform:uppercase;">Classement du Jour</h4>
+            <div id="dailyLeaderboardList" style="display:flex; flex-direction:column; gap:8px;">
+                <div style="text-align:center; padding:20px; color:var(--text-dim);">Chargement...</div>
+            </div>
+        </div>
 
-        { id: 'b_jazz', icon: '🎩', title: "The Duke", desc: "10 réussites consécutives sur Maj7/min7", check: (d) => d.stats.str_jazz >= 10 },
-        { id: 'b_blue', icon: '🎷', title: "Blue Note", desc: "50 accords Jazz réussis (Le Club)", check: (d) => {
-            let count = 0;
-            DB.sets.jazz.chords.forEach(c => { if(d.stats.c[c.id]) count += d.stats.c[c.id].ok; });
-            return count >= 50;
-        }},
-        { id: 'b_007', icon: '🕵️', title: "Agent 007", desc: "10 réussites consécutives sur MinMaj7", check: (d) => d.stats.str_007 >= 10 },
-        { id: 'b_dem', icon: '💣', title: "Démineur", desc: "10 réussites consécutives sur Dim7", check: (d) => d.stats.str_dim >= 10 },
-        { id: 'b_acro', icon: '🤸', title: "L'Acrobate", desc: "10 réussites consécutives sur Renversements", check: (d) => d.stats.str_inv >= 10 },
-        { id: 'b_expl', icon: '🧭', title: "L'Explorateur", desc: "Finir une partie dans les 4 modes", check: (d) => d.stats.modesPlayed && d.stats.modesPlayed.length >= 4 },
-        
-        // SPEED & SKILL REBALANCED
-        { id: 'b_ecl', icon: '⚡', title: "L'Éclair", desc: "3 réponses < 3.5s d'affilée", check: (d, s) => s.fastStreak >= 3 },
-        { id: 'b_bolt', icon: '🏃', title: "Usain Bolt", desc: "Score 2 000 pts (Sprint)", check: (d, s) => s.mode === 'sprint' && s.score >= 2000 },
-        
-        { id: 'b_metro', icon: '⏱️', title: "Métronome", desc: "10 réponses < 5s d'affilée", check: (d, s) => s.fastStreak >= 10 }, 
-        { id: 'b_abs', icon: '👂', title: "Oreille d'Or", desc: "20 sans faute en mode Inverse", check: (d, s) => s.mode === 'inverse' && s.streak >= 20 },
-
-        { id: 'b_comp', icon: '🎼', title: "Le Compositeur", desc: "Série de 10 sans faute (Inverse)", check: (d, s) => s.mode === 'inverse' && s.streak >= 10 },
-        { id: 'b_pres', icon: '⏲️', title: "Sous Pression", desc: "Survivre 2 minutes (Chrono)", check: (d, s) => s.mode === 'chrono' && (Date.now() - s.startTime) >= 120000 },
-        { id: 'b_phen', icon: '🦅', title: "Le Phénix", desc: "1 vie -> 1 000 pts (Chrono/Sprint)", check: (d, s) => s.lowLifeRecovery && s.score >= 1000 },
-        { id: 'b_leg', icon: '👑', title: "La Légende", desc: "Débloquer tous les autres badges", check: (d) => d.badges.length >= BADGES.length - 1 }
-    ];
-
-    const COACH_DB = {
-        start: [ "Entraîne-toi encore un peu, j'ai besoin de plus de données pour analyser ton oreille.", "Je t'observe... Enchaîne quelques accords pour que je puisse établir ton profil." ],
-        weakness: {
-            maj7: [ {t:"Théorie", m:"Le **M7M (Maj7)** te résiste ? Cherche la *Sensible* (la 7ème note) qui veut monter d'un demi-ton vers la Tonique."}, {t:"Image", m:"Le **M7M (Maj7)** c'est la couleur caractéristique du Jazz : stable, lumineuse, avec une nostalgie planante."}, {t:"Astuce", m:"Pour le **M7M (Maj7)**, arpège les notes dans ta tête : c'est le début de la chanson *'Mr. Sandman'* (1-3-5-7)."} ],
-            min7: [ {t:"Théorie", m:"Le **m7m (min7)** est souvent le **IIe degré** d'une gamme majeure. Imagine qu'il amène une cadence parfaite (II - V - I)."}, {t:"Image", m:"Le **m7m (min7)** est une couleur douce et contemplative. Contrairement aux autres, il a très peu de tension interne."}, {t:"Astuce", m:"Le **m7m (min7)** sonne mineur, mais sans le frottement étrange du **mM7** ni la noirceur du **Ø**."} ],
-            dom7: [ {t:"Théorie", m:"La présence du **Triton** (3 tons) dans le **M7m (Dom7)** crée une forte tension qui appelle une résolution."}, {t:"Image", m:"Le **M7m (Dom7)** est dynamique, 'en mouvement'. Il ne peut pas rester là, il doit aller quelque part."}, {t:"Astuce", m:"Sur le **M7m (Dom7)**, concentre-toi sur ce sentiment d'instabilité. L'accord est 'en suspens' et tire fortement vers la fin."} ],
-            hdim7: [ {t:"Théorie", m:"Le **Ø (m7b5)** est le **IIe degré** de la gamme mineure. Comme le **m7m**, mais avec une quinte bémol qui rajoute de la dissonance."}, {t:"Image", m:"Le **Ø (m7b5)** est plus sombre que le mineur 7, mais moins dramatique que le diminué complet."}, {t:"Astuce", m:"Le **Ø (m7b5)** est l'accord pivot des cadences en mode mineur (II - V - i). Il prépare généralement une Dominante."} ],
-            dim7: [ {t:"Théorie", m:"Le **dim7** est composé uniquement de **tierces mineures** empilées. C'est un enchevêtrement de deux tritons !"}, {t:"Image", m:"Le **dim7** c'est l'accord de l'angoisse ou du 'Jumpscare' au cinéma. Une tension extrême sans direction précise."}, {t:"Astuce", m:"Le **dim7** est un caméléon : chaque note peut devenir la sensible d'une nouvelle tonalité. Il peut aller n'importe où."} ],
-            minmaj7: [ {t:"Théorie", m:"Le **mM7 (minMaj7)** est le plus dissonant des six. Très utilisé comme 'couleur' et tension statique au XXème siècle."}, {t:"Image", m:"Le **mM7 (minMaj7)** est l'accord du mystère, type *James Bond* ou film noir. Une base mineure triste avec une note finale perçante."}, {t:"Astuce", m:"Pour le **mM7 (minMaj7)**, repère le frottement très dur (seconde mineure) entre la 7ème majeure et la Tonique."} ]
-        },
-        bass: [ "Ton oreille capte bien la couleur, mais néglige la fondation. Chante la note la plus grave (la Basse) pour t'orienter.", "Pour les renversements, cherche l'intervalle de **Seconde** (notes voisines). Sa position t'indique la réponse.", "La Seconde est en haut ? C'est un **65**. Au milieu ? Un **43**. En bas ? Un **2**. Aucune seconde ? C'est l'état fondamental (**7**)." ],
-        boost: [ "Tu es particulièrement affûté aujourd'hui ! Profite de cet élan pour battre ton record.", "Belle remontée ! Tu es en train de corriger tes lacunes à vitesse grand V.", "Tu es 'dans la zone'. Fais confiance à ton intuition, elle est juste." ],
-        master: [ "Ton niveau est solide. Essaie maintenant de répondre plus vite, sans réfléchir, à l'instinct.", "C'est presque trop facile ? Tente de faire une série de 20 sans aucune erreur.", "Excellent. Pour le défi ultime, active le mode 'Éclaté' dans les paramètres si ce n'est pas déjà fait." ]
-    };
-
-    const PHYSICAL_MAP = {
-        'Digit1': 0, 'Digit2': 1, 'Digit3': 2, 'Digit4': 3, 'Digit5': 4, 'Digit6': 5,
-        'Numpad1': 0, 'Numpad2': 1, 'Numpad3': 2, 'Numpad4': 3, 'Numpad5': 4, 'Numpad6': 5,
-        'KeyQ': 0, 'KeyW': 1, 'KeyE': 2, 'KeyR': 3, 'KeyT': 4, 'KeyY': 5, 'KeyZ': 5
-    };
-
-    const Audio = {
-        ctx: null, master: null, reverb: null, samples: {}, baseUrl: 'https://tonejs.github.io/audio/salamander/',
-        sampleMap: { 36: 'C2.mp3', 39: 'Ds2.mp3', 42: 'Fs2.mp3', 45: 'A2.mp3', 48: 'C3.mp3', 51: 'Ds3.mp3', 54: 'Fs3.mp3', 57: 'A3.mp3', 60: 'C4.mp3', 63: 'Ds4.mp3', 66: 'Fs4.mp3', 69: 'A4.mp3', 72: 'C5.mp3', 75: 'Ds5.mp3', 78: 'Fs5.mp3', 81: 'A5.mp3', 84: 'C6.mp3' },
-        init() { if (this.ctx) return; const AC = window.AudioContext || window.webkitAudioContext; this.ctx = new AC(); this.master = this.ctx.createGain(); this.master.gain.value = 1.0; this.reverb = this.ctx.createConvolver(); this.reverb.buffer = this.createReverbImpulse(2.0); const revGain = this.ctx.createGain(); revGain.gain.value = 0.3; this.master.connect(this.ctx.destination); this.master.connect(this.reverb); this.reverb.connect(revGain); revGain.connect(this.ctx.destination); this.loop(); this.loadSamples(); },
-        createReverbImpulse(duration) { const rate = this.ctx.sampleRate, length = rate * duration, impulse = this.ctx.createBuffer(2, length, rate), L = impulse.getChannelData(0), R = impulse.getChannelData(1); for (let i = 0; i < length; i++) { const decay = Math.pow(1 - i / length, 3); L[i] = (Math.random() * 2 - 1) * decay; R[i] = (Math.random() * 2 - 1) * decay; } return impulse; },
-        async loadSamples() { window.UI.msg("Chargement Piano...", "correction"); const promises = Object.keys(this.sampleMap).map(async (midi) => { try { const response = await fetch(this.baseUrl + this.sampleMap[midi]); if(!response.ok) throw new Error('Network'); const buff = await response.arrayBuffer(); this.samples[midi] = await this.ctx.decodeAudioData(buff); } catch (e) { } }); await Promise.all(promises); if(Object.keys(this.samples).length > 5) window.UI.msg("Piano Activé", "correct"); else { window.UI.msg("Erreur Réseau", "wrong"); } setTimeout(() => window.UI.msg("Prêt ?"), 2000); },
-        playNote(midi, time, velocity = 0.5) { 
-            if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
-            if (!this.ctx) return; 
-            this.playSampledNote(midi, time, velocity); 
-        },
-        playSampledNote(midi, time, velocity) { 
-            const available = Object.keys(this.samples).map(Number).sort((a,b)=>a-b);
-            if(available.length === 0) return;
-            let closest = available[0], minDiff = Math.abs(midi - closest); for (let n of available) { const diff = Math.abs(midi - n); if (diff < minDiff) { minDiff = diff; closest = n; } } const src = this.ctx.createBufferSource(); src.buffer = this.samples[closest]; src.playbackRate.value = Math.pow(2, (midi - closest) / 12); const g = this.ctx.createGain(); g.gain.setValueAtTime(0, time); g.gain.linearRampToValueAtTime(velocity, time + 0.01); g.gain.exponentialRampToValueAtTime(0.001, time + 4.0); src.connect(g); g.connect(this.master); src.start(time); 
-        },
-        playPureTone(f, t, dur=0.5) { 
-            if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
-            const o = this.ctx.createOscillator(); o.type = 'sine'; o.frequency.value = f; const g = this.ctx.createGain(); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.1, t + 0.05); g.gain.exponentialRampToValueAtTime(0.001, t + dur); o.connect(g); g.connect(this.ctx.destination); o.start(t); o.stop(t + dur + 0.1); 
-        },
-        chord(notes, arp = false) { if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume(); if (!this.ctx) this.init(); const now = this.ctx.currentTime; notes.forEach((n, i) => { const humanize = arp ? 0 : Math.random() * 0.04; const t = now + (arp ? i * 0.12 : humanize); const vel = Math.max(0.4, 0.85 - (n / 140)); this.playNote(n, t, vel); }); },
-        sfx(k) { 
-            if(!this.ctx) return; const now = this.ctx.currentTime;
-            
-            // Helper for nicer tones with Reverb & lower volume
-            // 'sine' with short attack/decay = Marimba/Celesta vibe
-            const tone = (f, t, d, type='sine', vol=0.3) => {
-                const o = this.ctx.createOscillator(); o.type = type; o.frequency.value = f;
-                const g = this.ctx.createGain();
-                g.gain.setValueAtTime(0, t);
-                g.gain.linearRampToValueAtTime(vol, t + 0.01);
-                g.gain.exponentialRampToValueAtTime(0.001, t + d);
-                o.connect(g); g.connect(this.master); 
-                o.start(t); o.stop(t + d + 0.1);
-            };
-
-            if (k === 'win') {
-                // Soft Marimba Chord (C Major)
-                [523.25, 659.25, 783.99].forEach((f, i) => tone(f, now + i*0.02, 0.4, 'sine', 0.25));
-            }
-            else if (k === 'lose') {
-                tone(180, now, 0.4, 'triangle', 0.15);
-                tone(140, now + 0.1, 0.4, 'triangle', 0.15);
-            }
-            else if (k === 'lvl') {
-                // Rising soft chime
-                [523, 659, 783, 1046].forEach((f,i) => tone(f, now + i*0.08, 0.6, 'sine', 0.2));
-            }
-            else if (k === 'max') {
-                // Level 20 reached! Deep resonant gong
-                [130.81, 196.00, 261.63, 392.00].forEach((f, i) => tone(f, now, 3.0, 'triangle', 0.15));
-                tone(523.25, now + 0.1, 2.0, 'sine', 0.2);
-            }
-            else if (k === 'badge') {
-                // "Reward" - Quick major pentatonic run + harmony
-                // C6, D6, E6, G6, C7
-                [1046.5, 1174.7, 1318.5, 1568.0, 2093.0].forEach((f,i) => {
-                    tone(f, now + i*0.05, 0.4, 'triangle', 0.2);
-                });
-                // Harmony underlining the end
-                tone(523.25, now, 0.6, 'sine', 0.3); // Root C5
-            }
-            else if (k === 'prestige') {
-                // Majestic Harp Glissando (Slower, Reverb heavy)
-                const arp = [261.63, 329.63, 392.00, 493.88, 523.25, 659.25, 783.99, 987.77, 1046.50, 1318.51, 1567.98, 2093.00];
-                arp.forEach((f, i) => tone(f, now + i * 0.12, 1.5, 'sine', 0.2));
-                // Final shimmering chord
-                setTimeout(() => {
-                   [523.25, 659.25, 783.99, 1046.50].forEach(f => tone(f, this.ctx.currentTime, 4.0, 'sine', 0.2));
-                }, 1500);
-            }
-        },
-        loop() { const cvs = document.getElementById('visualizer'); const c = cvs.getContext('2d'); const draw = () => { requestAnimationFrame(draw); if(!this.ctx) return; if (cvs.width !== cvs.clientWidth) { cvs.width = cvs.clientWidth; cvs.height = cvs.clientHeight; } c.clearRect(0,0,cvs.width,cvs.height); if(Math.random() > 0.92) { c.fillStyle = `rgba(99, 102, 241, ${Math.random()*0.2})`; const w = Math.random() * cvs.width; const x = Math.random() * cvs.width; c.fillRect(x, 0, w/4, cvs.height); } }; draw(); }
-    };
-
-    window.App = {
-        data: { 
-            xp:0, lvl:1, next:100, mastery:0,
-            bestChrono:0, bestSprint:0, bestInverse:0,
-            currentSet: 'academy',
-            stats:{
-                c:{}, i:{}, v:{}, // Added 'v' for Voicings stats
-                totalPlayed: 0, 
-                combos: [], 
-                modesPlayed: [], 
-                str_jazz: 0, str_007: 0, str_dim: 0, str_inv: 0
-            }, 
-            badges: [], 
-            settings: { activeC: [], activeI: DB.invs.map(i=>i.id) },
-            history: [], tempToday: { date: null, ok: 0, tot: 0 }
-        },
-        session: { 
-            mode:'zen', time:60, lives:3, chord:null, selC:null, selI:null, done:false, 
-            hint:false, score:0, streak:0, globalOk:0, globalTot:0, 
-            quizOptions:[], quizCorrectIdx:0, quizUserChoice:null, 
-            currentSprintTime: 10, roundLocked: false,
-            startTime: 0, cleanStreak: 0, openStreak: 0, fullConfigStreak: 0, fastStreak: 0, lowLifeRecovery: false, lastActionTime: 0
-        },
-        timerRef: null,
-        sprintRef: null,
-        vignetteRef: null,
-
-        init() {
-            let s = {};
-            try {
-                s = JSON.parse(localStorage.getItem('harmonist_v4_final') || '{}');
-            } catch (e) {
-                console.error("Corrupt save, resetting", e);
-                s = {};
-            }
-            
-            // --- SAFE MIGRATION LOGIC ---
-            if(s.xp !== undefined) { 
-                // Basic primitives
-                this.data.xp = s.xp || 0;
-                this.data.lvl = s.lvl || 1;
-                this.data.next = s.next || 100;
-                this.data.mastery = s.mastery || 0;
-                this.data.bestChrono = s.bestChrono || 0;
-                this.data.bestSprint = s.bestSprint || 0;
-                this.data.bestInverse = s.bestInverse || 0;
-                this.data.currentSet = s.currentSet || 'academy';
-
-                if(s.badges) this.data.badges = s.badges;
-                if(s.history) this.data.history = s.history;
+        <!-- TAB JOIN -->
+        <div id="c-tab-join" class="challenge-tab-content" style="display:none;">
+            <div style="text-align:center; margin-bottom:20px;">
+                <p style="color:var(--text-dim); font-size:0.9rem;">Entrez le code d'un défi pour commencer.</p>
+                <input type="text" id="challengeCodeInput" placeholder="EX: LUNDI-123" 
+                       style="background:rgba(0,0,0,0.3); border:1px solid var(--panel-border); color:white; padding:15px; border-radius:12px; font-weight:800; font-size:1.2rem; text-align:center; width:100%; text-transform:uppercase; letter-spacing:2px; margin-top:10px;">
                 
-                // Deep merge stats to preserve old stats AND init new ones
-                if(s.stats) {
-                    this.data.stats.totalPlayed = s.stats.totalPlayed || 0;
-                    this.data.stats.c = { ...this.data.stats.c, ...(s.stats.c || {}) };
-                    this.data.stats.i = { ...this.data.stats.i, ...(s.stats.i || {}) };
-                    this.data.stats.v = { ...this.data.stats.v, ...(s.stats.v || {}) }; // Load voicings stats
-                    
-                    // Init new stats if missing in legacy save
-                    this.data.stats.combos = s.stats.combos || [];
-                    this.data.stats.modesPlayed = s.stats.modesPlayed || [];
-                    this.data.stats.str_jazz = s.stats.str_jazz || 0;
-                    this.data.stats.str_007 = s.stats.str_007 || 0;
-                    this.data.stats.str_dim = s.stats.str_dim || 0;
-                    this.data.stats.str_inv = s.stats.str_inv || 0;
-                }
-                
-                // Settings migration
-                if(s.settings) {
-                    if(s.settings.activeC) this.data.settings.activeC = s.settings.activeC;
-                    if(s.settings.activeI) this.data.settings.activeI = s.settings.activeI;
-                }
-            }
-            // ----------------------------
+                <div style="display:flex; gap:10px; margin-top:15px;">
+                    <button class="cmd-btn btn-action" style="flex:1;" onclick="window.UI.joinChallenge()">JOUER</button>
+                    <button class="cmd-btn btn-listen" style="flex:1;" onclick="window.UI.viewChallengeLeaderboard()">VOIR SCORES</button>
+                </div>
+            </div>
+            <div id="join-lb-results"></div>
+            <div style="border-top:1px solid var(--panel-border); padding-top:15px;">
+                <h4 style="margin:0 0 10px 0; color:var(--text-dim);">Règles d'Examen</h4>
+                <ul style="font-size:0.85rem; color:var(--text-dim); text-align:left; padding-left:20px; line-height:1.6;">
+                    <li>Même séquence d'accords pour tout le monde.</li>
+                    <li>Pas de correction immédiate (Mode Aveugle).</li>
+                    <li>Les erreurs sont définitives.</li>
+                    <li>Score basé sur la justesse et la rapidité.</li>
+                </ul>
+            </div>
+        </div>
 
-            // SET LOADING
-            if(!this.data.currentSet || !DB.sets[this.data.currentSet]) this.data.currentSet = 'academy';
-            this.loadSet(this.data.currentSet);
-
-            // SETTINGS CHECK AFTER LOAD
-            const setIds = DB.chords.map(c => c.id);
-            // In Jazz mode, check constraints
-            if(this.data.currentSet === 'jazz' && this.data.settings.activeC.length > 6) {
-                // Trim to 6 if overflow
-                this.data.settings.activeC = this.data.settings.activeC.slice(0, 6);
-            }
-            const valid = this.data.settings.activeC && this.data.settings.activeC.some(id => setIds.includes(id));
-            if(!valid) { 
-                // Default chords if invalid
-                if(this.data.currentSet === 'jazz') {
-                     // Only unlock unlocked chords
-                     this.data.settings.activeC = DB.chords.filter(c => !c.unlockLvl || c.unlockLvl <= 1).map(c=>c.id).slice(0,6);
-                } else {
-                     this.data.settings.activeC = [...setIds]; 
-                }
-            }
-
-            const todayStr = new Date().toLocaleDateString('fr-FR', {day: 'numeric', month: 'numeric'});
-            if(this.data.tempToday.date !== todayStr) { this.data.tempToday = { date: todayStr, ok: 0, tot: 0 }; }
+        <!-- TAB CREATE (V5.1 - STUDIO LINK) -->
+        <div id="c-tab-create" class="challenge-tab-content" style="display:none; text-align:center; padding-top:20px;">
+            <button class="cmd-btn btn-action" style="width:100%; padding:20px; background:linear-gradient(135deg, #ec4899, #8b5cf6);" onclick="window.App.setMode('studio'); window.UI.closeModals();">
+                <span style="display:block; font-size:2rem; margin-bottom:10px;">🎹</span>
+                <span style="display:block; font-size:1.2rem;">OUVRIR LE STUDIO</span>
+                <span style="display:block; font-size:0.8rem; opacity:0.8; font-weight:400; margin-top:5px;">Composez votre propre dictée</span>
+            </button>
             
-            // Ensure stat containers exist for current set items
-            Object.values(DB.sets).forEach(set => {
-                set.chords.forEach(c => {
-                     if(!this.data.stats.c[c.id]) this.data.stats.c[c.id]={ok:0, tot:0};
-                });
-            });
-            DB.invs.forEach(i=>{ if(!this.data.stats.i[i.id]) this.data.stats.i[i.id]={ok:0, tot:0}; });
-            DB.voicings.forEach(i=>{ if(!this.data.stats.v[i.id]) this.data.stats.v[i.id]={ok:0, tot:0}; });
+            <div style="margin:30px 0; display:flex; align-items:center; gap:10px; color:var(--text-dim);">
+                <div style="height:1px; background:var(--panel-border); flex:1;"></div>
+                <span>OU GÉNÉRER</span>
+                <div style="height:1px; background:var(--panel-border); flex:1;"></div>
+            </div>
+
+            <p style="color:var(--text-dim); font-size:0.8rem; margin-bottom:15px;">Création automatique basée sur vos réglages.</p>
             
-            this.calcGlobalStats(); window.UI.renderBoard(); window.UI.updateHeader();
-            
-            // Initial Mode Lock Check
-            this.updateModeLocks();
-        },
-        
-        updateModeLocks() {
-            // Only update visuals for locks in mastery 0
-            if(this.data.mastery > 0) {
-                 ['lockChrono', 'lockInverse', 'lockSprint'].forEach(id => {
-                     const el = document.getElementById(id);
-                     if(el) el.style.display = 'none';
-                 });
-                 ['modeChrono', 'modeInverse', 'modeSprint'].forEach(id => {
-                     const el = document.getElementById(id);
-                     if(el) el.classList.remove('locked');
-                 });
-                 return;
-            }
-            
-            // Mastery 0 Logic
-            const m = this.data.mastery;
-            const l = this.data.lvl;
-            
-            // Inverse: Lvl 3
-            const invLocked = (m === 0 && l < 3);
-            document.getElementById('lockInverse').style.display = invLocked ? 'inline' : 'none';
-            document.getElementById('modeInverse').classList.toggle('locked', invLocked);
-            
-            // Chrono: Lvl 8
-            const chrLocked = (m === 0 && l < 8);
-            document.getElementById('lockChrono').style.display = chrLocked ? 'inline' : 'none';
-            document.getElementById('modeChrono').classList.toggle('locked', chrLocked);
-
-            // Sprint: Lvl 12
-            const sprLocked = (m === 0 && l < 12);
-            document.getElementById('lockSprint').style.display = sprLocked ? 'inline' : 'none';
-            document.getElementById('modeSprint').classList.toggle('locked', sprLocked);
-        },
-
-        loadSet(key) {
-             const set = DB.sets[key];
-             if(!set) return;
-             this.data.currentSet = key; 
-             DB.chords = [...set.chords]; 
-             // Determine active bottom panel definition
-             if(key === 'jazz') {
-                 // Use voicings for jazz
-                 // Default jazz inv settings if empty
-                 if(!this.data.settings.activeI || this.data.settings.activeI.some(id => id > 3)) {
-                     this.data.settings.activeI = [0,1,2,3];
-                 }
-                 window.UI.showToast("Ambiance : Jazz 🎷");
-             } else {
-                 // Use standard invs
-                 if(!this.data.settings.activeI) this.data.settings.activeI = [0,1,2,3];
-                 window.UI.showToast("Ambiance : Classique 🏛️");
-             }
-        },
-
-        switchSet(key) {
-            if(key === this.data.currentSet) return;
-            this.loadSet(key);
-            
-            // Set default active chords for the new set
-            if(key === 'jazz') {
-                // Jazz default: Level 1 chords only
-                this.data.settings.activeC = DB.chords.filter(c => !c.unlockLvl || c.unlockLvl <= 1).map(c => c.id);
-            } else {
-                this.data.settings.activeC = DB.chords.map(c => c.id);
-            }
-            this.data.settings.activeI = [0,1,2,3];
-
-            this.save();
-            window.UI.renderSettings();
-            window.UI.renderBoard();
-            this.playNew(); 
-        },
-
-        calcGlobalStats() { let ok=0, tot=0; for(let k in this.data.stats.c) { ok+=this.data.stats.c[k].ok; tot+=this.data.stats.c[k].tot; } this.session.globalOk = ok; this.session.globalTot = tot; },
-
-        calcXPMultiplier() {
-            const activeC = this.data.settings.activeC.length;
-            const activeI = this.data.settings.activeI.length;
-            if (activeC === 1 && activeI === 1) return 0;
-            if (activeC === 1) return 0.05; 
-            const ratioC = activeC / 6; // Normalized to 6 slots
-            let iMult = 0.75;
-            if (activeI === 2) iMult = 0.85;
-            if (activeI === 3) iMult = 0.92;
-            if (activeI === 4) iMult = 1.0;
-            return Math.min(1.5, ratioC * iMult); // Cap multiplier
-        },
-
-        isRankedMode() { return this.data.settings.activeC.length >= 2; },
-
-        analyzeCoach() {
-            const tot = this.session.globalTot;
-            const ok = this.session.globalOk;
-            if(tot < 10) return { t: "Débutant", m: COACH_DB.start[Math.floor(Math.random()*COACH_DB.start.length)] };
-            let allPossibleTips = [];
-            let hasWeakness = false; 
-            for(let cid in this.data.stats.c) {
-                const s = this.data.stats.c[cid];
-                if(s.tot >= 5 && (s.ok/s.tot) < 0.50) { 
-                    hasWeakness = true;
-                    if(COACH_DB.weakness[cid]) COACH_DB.weakness[cid].forEach(phrase => allPossibleTips.push({t: phrase.t, m: phrase.m})); 
-                }
-            }
-            if(this.data.currentSet === 'jazz' && !hasWeakness) {
-                 allPossibleTips.push({t: "Jazz", m: "Essaie de repérer la couleur de la 3ème et de la 7ème, ce sont les notes guides."});
-                 allPossibleTips.push({t: "Voicing", m: "Le voicing 'Ouvert' espace les notes. C'est le fameux Drop-2."});
-            }
-            
-            let bassIssue = false;
-            for(let iid in this.data.stats.i) {
-                const s = this.data.stats.i[iid];
-                if(s.tot >= 3 && (s.ok/s.tot) < 0.50) { 
-                    bassIssue = true; hasWeakness = true;
-                }
-            }
-            const accC = ok/tot;
-            let accI = 0, totI = 0;
-            for(let iid in this.data.stats.i) { totI += this.data.stats.i[iid].tot; accI += this.data.stats.i[iid].ok; }
-            const ratioI = totI ? (accI/totI) : 0;
-            if(bassIssue || (totI >= 5 && accC > 0.60 && ratioI < 0.50)) { COACH_DB.bass.forEach(phrase => allPossibleTips.push({t: "Renversements", m: phrase})); }
-            if(allPossibleTips.length > 0) { return allPossibleTips[Math.floor(Math.random() * allPossibleTips.length)]; }
-            if(this.session.streak > 5) return { t: "En Feu 🔥", m: COACH_DB.boost[Math.floor(Math.random()*COACH_DB.boost.length)] };
-            if(!hasWeakness && accC > 0.80 && ratioI > 0.75) { return { t: "Expert", m: COACH_DB.master[Math.floor(Math.random()*COACH_DB.master.length)] }; }
-            return { t: "Conseil", m: "Tu as des bases solides. Pour passer un cap, essaie de faire des séries de 10 sans aucune erreur." };
-        },
-
-        setMode(m) {
-            // MODE LOCK LOGIC
-            const d = this.data;
-            if (d.mastery === 0) {
-                if (m === 'inverse' && d.lvl < 3) { window.UI.showToast("🔒 Débloqué au Niveau 3"); window.UI.vibrate([30,30]); return; }
-                if (m === 'chrono' && d.lvl < 8) { window.UI.showToast("🔒 Débloqué au Niveau 8"); window.UI.vibrate([30,30]); return; }
-                if (m === 'sprint' && d.lvl < 12) { window.UI.showToast("🔒 Débloqué au Niveau 12"); window.UI.vibrate([30,30]); return; }
-            }
-
-            if(Audio.ctx && Audio.ctx.state === 'suspended') Audio.ctx.resume();
-            Audio.init(); this.session.mode = m;
-            
-            document.getElementById('modeZen').className = m==='zen'?'mode-opt active':'mode-opt';
-            
-            const setClass = (id, base) => {
-                 let cls = m===id ? 'mode-opt active' : 'mode-opt';
-                 if(document.getElementById('mode'+id.charAt(0).toUpperCase()+id.slice(1)).classList.contains('locked')) cls += ' locked';
-                 return cls;
-            };
-            
-            document.getElementById('modeChrono').className = setClass('chrono');
-            document.getElementById('modeSprint').className = setClass('sprint');
-            document.getElementById('modeInverse').className = setClass('inverse');
-            
-            // Sprint Timer Visibility Fix
-            const displayChrono = (m==='chrono' || m==='sprint');
-            document.getElementById('chronoDisplay').style.display = displayChrono ?'block':'none';
-            document.getElementById('timerVal').style.display = (m==='sprint') ? 'none' : 'inline'; // Hide number in sprint
-            
-            document.getElementById('toolsBar').className = (m==='sprint') ? 'tools-bar sprint-active' : 'tools-bar';
-            
-            if(m !== 'zen') {
-                document.getElementById('scoreGroup').classList.add('active');
-                let best = 0;
-                if(m === 'chrono') best = this.data.bestChrono;
-                if(m === 'sprint') best = this.data.bestSprint;
-                if(m === 'inverse') best = this.data.bestInverse;
-                document.getElementById('highScoreVal').innerText = best;
-            } else {
-                document.getElementById('scoreGroup').classList.remove('active');
-            }
-
-            const mainArea = document.getElementById('mainArea');
-            const appContainer = document.querySelector('.app-container');
-            
-            if(m === 'inverse') {
-                mainArea.classList.add('quiz-mode');
-                appContainer.classList.add('quiz-mode');
-                document.getElementById('panelChord').style.display = 'none';
-                document.getElementById('invPanel').style.display = 'none';
-                document.getElementById('quizArea').style.display = 'flex';
-            } else {
-                mainArea.classList.remove('quiz-mode');
-                appContainer.classList.remove('quiz-mode');
-                document.getElementById('panelChord').style.display = 'flex';
-                document.getElementById('invPanel').style.display = 'flex';
-                document.getElementById('quizArea').style.display = 'none';
-            }
-
-            this.resetRound(true);
-            if(m === 'inverse') this.playNewQuiz(); else this.playNew();
-        },
-
-        toggleSetting(type, id) {
-            const list = type === 'c' ? this.data.settings.activeC : this.data.settings.activeI;
-            const idx = list.indexOf(id);
-            
-            // Check locked status
-            if(type === 'c' && this.data.currentSet === 'jazz' && this.data.mastery === 1) {
-                const chord = DB.chords.find(c => c.id === id);
-                if(chord && chord.unlockLvl && chord.unlockLvl > this.data.lvl) {
-                    window.UI.showToast(`🔒 Débloqué au niveau ${chord.unlockLvl}`);
-                    window.UI.vibrate([30,30]);
-                    return;
-                }
-            }
-
-            if (idx > -1) { 
-                if(list.length > 1) list.splice(idx, 1); 
-            } else { 
-                // Check max constraint for Jazz
-                if(type === 'c' && this.data.currentSet === 'jazz' && list.length >= 6) {
-                    window.UI.showToast("⚠️ Max 6 accords actifs !");
-                    return;
-                }
-                list.push(id); 
-            }
-            this.save(); window.UI.renderBoard(); window.UI.renderSettings();
-            window.UI.updateHeader(); 
-        },
-
-        closeSettings() { window.UI.closeModals(); this.resetRound(true); if(this.session.mode==='inverse') this.playNewQuiz(); else this.playNew(); },
-
-        resetRound(full=false) {
-            if(this.timerRef) { clearInterval(this.timerRef); this.timerRef = null; }
-            if(this.sprintRef) { clearInterval(this.sprintRef); this.sprintRef = null; }
-            if(this.vignetteRef) { clearTimeout(this.vignetteRef); this.vignetteRef = null; }
-            document.getElementById('vignette').className = 'vignette-overlay';
-            window.UI.updateBackground(0);
-
-            if(full) { 
-                this.session.score=0; this.session.streak=0; 
-                this.session.cleanStreak=0; this.session.openStreak=0; 
-                this.session.fullConfigStreak=0; this.session.fastStreak=0;
-                this.session.lowLifeRecovery = false;
-                this.session.startTime = Date.now(); 
-            }
-            this.session.time = 60; this.session.lives = 3; this.session.done = false; 
-            this.session.roundLocked = false; 
-            this.session.chord = null;
-            this.session.quizUserChoice = null;
-            this.session.lastActionTime = Date.now();
-
-            window.UI.resetVisuals(); window.UI.updateHeader(); window.UI.updateChrono(); window.UI.msg("Prêt ?");
-            document.getElementById('playBtn').innerHTML = "<span class='icon-lg'>▶</span><span>Écouter</span>";
-            document.getElementById('valBtn').innerText = "Valider";
-            document.getElementById('valBtn').classList.remove('next');
-            document.getElementById('valBtn').disabled = true;
-        },
-
-        // --- AUDIO ENGINE UPDATED FOR JAZZ ---
-        getNotes(type, inv, root, open) {
-            // ACADEMY MODE (CLASSICAL)
-            if (this.data.currentSet === 'academy') {
-                let notes = type.iv.map(x => root + x);
-                for(let i=0; i<inv; i++) notes.push(notes.shift() + 12);
-                if(open) {
-                    const b = notes[0]; const r = notes.slice(1);
-                    r[0]+=12; if(Math.random()>0.5) r[1]+=12; r[2]+=12;
-                    notes = [b, ...r];
-                }
-                return notes;
-            } 
-            
-            // JAZZ MODE (VOICINGS)
-            else {
-                // Construct basic full chord (up to 13th)
-                // Notes relative to root: 0(R), 3/4(3rd), 6/7(5th), 9/10/11(7th), 14(9th), 17(11th), 21(13th)
-                let base = type.iv.map(x => root + x);
-                
-                // Identify structure by intervals
-                // Note: type.iv contains absolute semitones from root
-                
-                // Voicing 0: Close (Basic inversion)
-                if (inv === 0) {
-                    let notes = [...base];
-                    // Keep it simple but compact
-                    return notes;
-                }
-                
-                // Voicing 1: Drop 2 (Open)
-                // Take 2nd highest note and drop octave
-                if (inv === 1) {
-                    let notes = [...base].sort((a,b)=>a-b);
-                    if(notes.length >= 4) {
-                        const dropNote = notes[notes.length - 2]; // 2nd from top
-                        notes.splice(notes.length - 2, 1); // remove it
-                        notes.unshift(dropNote - 12); // put it at bottom -1 octave
-                    }
-                    return notes;
-                }
-
-                // Voicing 2: Shell (Essential: Root + 3 + 7)
-                if (inv === 2) {
-                    // Try to filter out 5ths (7 semitones) unless it's flat 5
-                    const intervals = type.iv; // e.g. [0, 4, 7, 10]
-                    const keptIndices = [];
-                    intervals.forEach((iv, idx) => {
-                         // Keep Root(0), 3rd(3,4), 7th(9,10,11)
-                         if(iv===0 || iv===3 || iv===4 || iv===10 || iv===11 || iv===9) keptIndices.push(idx);
-                         // Keep alterations if exist (b5, #5) -> 6, 8
-                         else if(iv===6 || iv===8) keptIndices.push(idx);
-                    });
-                    
-                    // If filtering removed too much, revert to base
-                    if(keptIndices.length < 2) return base;
-                    return keptIndices.map(i => base[i]);
-                }
-
-                // Voicing 3: Rootless (No Root, focus on extensions)
-                if (inv === 3) {
-                    let notes = [...base];
-                    // Remove root (first note usually)
-                    if(notes[0] % 12 === root % 12) notes.shift();
-                    
-                    // Add 9th if not present to keep thickness? 
-                    // (Simplification: just removing root is usually enough for "Rootless" feel in this app context)
-                    return notes;
-                }
-                
-                return base;
-            }
-        },
-
-        startSprintTimer(duration) {
-            if(this.sprintRef) clearTimeout(this.sprintRef);
-            if(this.vignetteRef) clearTimeout(this.vignetteRef);
-            document.getElementById('vignette').className = 'vignette-overlay';
-            
-            const fill = document.getElementById('sprintFill');
-            fill.style.transition = 'none';
-            fill.style.transform = 'scaleX(1)';
-            fill.className = 'sprint-bar-fill';
-            if(duration > 7) fill.classList.add('easy');
-            else if(duration > 5) fill.classList.add('med');
-            else fill.classList.add('hard');
-
-            void fill.offsetWidth;
-            fill.style.transition = `transform ${duration}s linear`;
-            fill.style.transform = 'scaleX(0)';
-
-            const stressTime = duration * 0.7;
-            this.vignetteRef = setTimeout(() => {
-                if(!this.session.done) document.getElementById('vignette').classList.add('stress');
-            }, stressTime * 1000);
-
-            this.sprintRef = setTimeout(() => {
-                if(!this.session.done) {
-                    this.handleSprintFail();
-                }
-            }, duration * 1000);
-        },
-
-        handleSprintFail() {
-            if(this.session.roundLocked) return; 
-            this.session.done = true;
-            this.session.roundLocked = true;
-            this.session.streak = 0;
-            this.session.lives--;
-            window.UI.updateBackground(0);
-            window.UI.updateChrono();
-            Audio.sfx('lose');
-            window.UI.vibrate(300);
-            window.UI.msg("Temps écoulé !", false);
-            document.getElementById('vignette').className = 'vignette-overlay';
-            
-            const c = this.session.chord;
-            const isDim = c.type.id === 'dim7';
-            document.getElementById('c-'+c.type.id).classList.add('correction');
-            if(!isDim) document.getElementById('i-'+c.inv).classList.add('correction');
-
-            if(this.session.lives <= 0) {
-                this.gameOver();
-            } else {
-                document.getElementById('valBtn').innerText = "Suivant";
-                document.getElementById('valBtn').classList.add('next');
-                document.getElementById('valBtn').disabled = false;
-                document.getElementById('playBtn').innerHTML = "<span class='icon-lg'>▶</span><span>Suivant</span>"; 
-                document.getElementById('playBtn').disabled = false;
-            }
-        },
-
-        playNew() {
-            Audio.init();
-            if(this.sprintRef) { clearTimeout(this.sprintRef); this.sprintRef = null; }
-            if(this.vignetteRef) { clearTimeout(this.vignetteRef); this.vignetteRef = null; }
-            document.getElementById('sprintFill').style.transition = 'none';
-            document.getElementById('sprintFill').style.transform = 'scaleX(1)';
-            document.getElementById('vignette').className = 'vignette-overlay';
-
-            if(this.session.mode === 'chrono' && !this.timerRef && !this.session.chord) {
-                this.timerRef = setInterval(() => {
-                    this.session.time--; window.UI.updateChrono();
-                    if(this.session.time <= 0) { clearInterval(this.timerRef); this.timerRef = null; this.gameOver(); }
-                }, 1000);
-            }
-
-            this.session.done = false; 
-            this.session.roundLocked = false; 
-            this.session.selC = null; 
-            this.session.selI = null; 
-            this.session.hint = false; 
-            window.UI.resetVisuals();
-            this.session.lastActionTime = Date.now();
-
-            const ac = DB.chords.filter(c => this.data.settings.activeC.includes(c.id));
-            const ai = (this.data.currentSet === 'jazz' ? DB.voicings : DB.invs).filter(i => this.data.settings.activeI.includes(i.id));
-            
-            if(!ac.length || !ai.length) { 
-                // Reset if empty
-                this.data.settings.activeC = DB.chords.slice(0,6).map(c=>c.id); 
-                this.data.settings.activeI = [0,1,2,3]; 
-                this.playNew(); return; 
-            }
-            
-            const type = ac[Math.floor(Math.random()*ac.length)];
-            let inv = ai[Math.floor(Math.random()*ai.length)];
-            
-            // Fix syntax error here: Use correct arrow function
-            if(type.id === 'dim7' && this.data.currentSet === 'academy') inv = DB.invs.find(i => i.id === 0);
-            
-            const open = document.getElementById('toggleOpen').checked;
-            const root = (open ? 36 : 48) + Math.floor(Math.random()*12);
-            const notes = this.getNotes(type, inv.id, root, open);
-
-            this.session.chord = { type, inv: inv.id, notes, root, open };
-            window.UI.msg("Écoute...", "");
-            document.getElementById('playBtn').disabled = true; document.getElementById('replayBtn').disabled = false; document.getElementById('hintBtn').disabled = false;
-            document.getElementById('valBtn').innerText = "Valider"; document.getElementById('valBtn').className = "cmd-btn btn-action"; document.getElementById('valBtn').disabled = true;
-            
-            document.querySelectorAll('.quiz-btn').forEach(b => {b.className='quiz-btn'; b.querySelector('.reveal').innerText='...';});
-
-            Audio.chord(notes);
-            setTimeout(() => { document.getElementById('playBtn').innerHTML = "<span class='icon-lg'>...</span><span>En cours</span>"; }, 500);
-
-            if(this.session.mode === 'sprint') {
-                const reduction = this.session.streak * 0.25;
-                const duration = Math.max(3.5, 10 - reduction);
-                this.session.currentSprintTime = duration;
-                this.startSprintTimer(duration);
-            }
-        },
-
-        playNewQuiz() {
-            Audio.init();
-            this.session.done = false; 
-            this.session.roundLocked = false;
-            this.session.hint = false; 
-            this.session.quizUserChoice = null;
-            window.UI.resetVisuals();
-            this.session.lastActionTime = Date.now();
-
-            const ac = DB.chords.filter(c => this.data.settings.activeC.includes(c.id));
-            const invPool = (this.data.currentSet === 'jazz' ? DB.voicings : DB.invs);
-            const ai = invPool.filter(i => this.data.settings.activeI.includes(i.id));
-            
-            const poolC = ac.length ? ac : DB.chords;
-            const poolI = ai.length ? ai : invPool;
-
-            const type = poolC[Math.floor(Math.random()*poolC.length)];
-            let inv = poolI[Math.floor(Math.random()*poolI.length)];
-            if(type.id === 'dim7' && this.data.currentSet === 'academy') inv = invPool[0];
-
-            const open = document.getElementById('toggleOpen').checked;
-            const root = (open ? 36 : 48) + Math.floor(Math.random()*12);
-            const notes = this.getNotes(type, inv.id, root, open);
-            const realBass = Math.min(...notes);
-
-            this.session.chord = { type, inv: inv.id, notes, root, open };
-
-            let options = [];
-            options.push({ type, inv: inv.id, notes, correct: true, label: `${type.name} - ${invPool[inv.id].corr}` });
-
-            let attempts = 0;
-            while(options.length < 3 && attempts < 50) {
-                attempts++;
-                let pC = (attempts < 10) ? poolC : (attempts < 20 ? poolC : DB.chords);
-                let pI = (attempts < 10) ? poolI : invPool;
-
-                const cType = pC[Math.floor(Math.random()*pC.length)];
-                let cInv = pI[Math.floor(Math.random()*pI.length)];
-                if(cType.id === 'dim7' && this.data.currentSet === 'academy') cInv = invPool[0];
-
-                const exists = options.find(o => o.type.id === cType.id && o.inv === cInv.id);
-                if(exists) continue;
-
-                const draftNotes = this.getNotes(cType, cInv.id, 60, open);
-                const draftBass = Math.min(...draftNotes);
-                const diff = realBass - draftBass;
-                const finalNotes = draftNotes.map(n => n + diff);
-                
-                options.push({ 
-                    type: cType, inv: cInv.id, notes: finalNotes, correct: false, 
-                    label: `${cType.name} - ${invPool[cInv.id].corr}` 
-                });
-            }
-            options.sort(() => Math.random() - 0.5);
-            this.session.quizOptions = options;
-            this.session.quizCorrectIdx = options.findIndex(o => o.correct);
-
-            document.getElementById('quizTargetLbl').innerHTML = `${type.name} <span style="font-size:0.5em; vertical-align:middle;">${invPool[inv.id].corr}</span>`;
-            document.querySelectorAll('.quiz-btn').forEach((btn, i) => {
-                btn.className = 'quiz-btn';
-                btn.querySelector('.reveal').innerText = '...';
-            });
-
-            window.UI.msg("Trouve le son !", "");
-            document.getElementById('playBtn').disabled = true; 
-            document.getElementById('replayBtn').disabled = true; 
-            document.getElementById('hintBtn').disabled = true;     
-            document.getElementById('valBtn').innerText = "Valider";
-            document.getElementById('valBtn').className = "cmd-btn btn-action";
-            document.getElementById('valBtn').disabled = true;
-        },
-
-        selectQuiz(idx) {
-            if(Audio.ctx && Audio.ctx.state === 'suspended') Audio.ctx.resume();
-            if(!Audio.ctx) Audio.init();
-
-            if(this.session.done) {
-                const opt = this.session.quizOptions[idx];
-                const btn = document.getElementById('qbtn-'+idx);
-                btn.classList.add('playing');
-                setTimeout(() => btn.classList.remove('playing'), 200);
-                Audio.chord(opt.notes);
-                return;
-            }
-            this.session.quizUserChoice = idx;
-            document.querySelectorAll('.quiz-btn').forEach(b => b.classList.remove('selected'));
-            document.getElementById('qbtn-'+idx).classList.add('selected');
-            Audio.chord(this.session.quizOptions[idx].notes);
-            document.getElementById('valBtn').disabled = false;
-        },
-
-        replay() { if(this.session.chord) Audio.chord(this.session.chord.notes); },
-        
-        hint() { 
-            if(this.session.chord) { 
-                if(!this.session.done) { this.session.hint = true; window.UI.msg("Indice utilisé"); }
-                Audio.chord(this.session.chord.notes, true); 
-            } 
-        },
-
-        preview(typeStr, id) {
-            if(!this.session.chord) return;
-            let targetTypeId = (typeStr === 'c') ? id : this.session.chord.type.id;
-            let targetInvId = (typeStr === 'i') ? id : this.session.chord.inv;
-            if(targetTypeId === 'dim7' && this.data.currentSet === 'academy') targetInvId = 0;
-            const targetType = DB.chords.find(c => c.id === targetTypeId);
-            const isOpen = this.session.chord.open;
-            const originalNotes = this.session.chord.notes;
-            const refBass = Math.min(...originalNotes);
-            const draftNotes = this.getNotes(targetType, targetInvId, 60, isOpen);
-            const draftBass = Math.min(...draftNotes);
-            const diff = refBass - draftBass;
-            const finalNotes = draftNotes.map(n => n + diff);
-            Audio.chord(finalNotes);
-            const elId = (typeStr === 'c') ? 'c-' + id : 'i-' + id;
-            const el = document.getElementById(elId);
-            if(el) { el.classList.add('playing'); setTimeout(() => el.classList.remove('playing'), 200); }
-        },
-
-        select(type, id) {
-            window.UI.vibrate(10);
-            if(this.session.done) { this.preview(type, id); return; }
-            if(type === 'c') {
-                this.session.selC = id;
-                const isDim = (id === 'dim7');
-                const p = document.getElementById('invPanel');
-                // Only dim dim7 panel in Academy mode
-                if(this.data.currentSet === 'academy') {
-                    if(p) { p.style.opacity = isDim ? '0.3' : '1'; p.style.pointerEvents = isDim ? 'none' : 'auto'; }
-                    if(isDim) this.session.selI = -1; else if(this.session.selI === -1) this.session.selI = null;
-                } else {
-                    // In Jazz, all chords can have voicings
-                    if(p) { p.style.opacity = '1'; p.style.pointerEvents = 'auto'; }
-                    if(this.session.selI === -1) this.session.selI = null;
-                }
-            } else { this.session.selI = id; }
-            window.UI.renderSel();
-        },
-
-        handleMain() { 
-            if(this.session.done) {
-                if(this.session.mode === 'inverse') this.playNewQuiz();
-                else this.playNew();
-            } else if(!document.getElementById('valBtn').disabled) {
-                if(this.session.mode === 'inverse') this.validateQuiz();
-                else this.validate();
-            }
-        },
-
-        validateQuiz() {
-            if(this.session.roundLocked) return; 
-            this.session.roundLocked = true;
-            this.session.done = true;
-            
-            const userIdx = this.session.quizUserChoice;
-            const correctIdx = this.session.quizCorrectIdx;
-            const win = (userIdx === correctIdx);
-            this.processWin(win);
-
-            document.querySelectorAll('.quiz-btn').forEach((btn, i) => {
-                const o = this.session.quizOptions[i];
-                btn.querySelector('.reveal').innerText = o.label;
-                if(i === correctIdx) btn.classList.add('correct');
-                else if(i === userIdx && !win) btn.classList.add('wrong');
-            });
-        },
-
-        validate() {
-            if(this.session.roundLocked) return; 
-            
-            if(this.sprintRef) { clearTimeout(this.sprintRef); this.sprintRef = null; }
-            if(this.vignetteRef) { clearTimeout(this.vignetteRef); this.vignetteRef = null; }
-            document.getElementById('sprintFill').style.transition = 'none';
-            document.getElementById('vignette').className = 'vignette-overlay';
-
-            const c = this.session.chord;
-            const okC = this.session.selC === c.type.id;
-            const isDim = (c.type.id === 'dim7' && this.data.currentSet === 'academy');
-            const okI = isDim ? true : (this.session.selI === c.inv);
-            
-            this.session.done = true; 
-            this.session.roundLocked = true; 
-
-            const win = (okC && okI);
-            
-            // Check rank (simplified for Jazz: only if Mastery allows)
-            if(win && this.isRankedMode()) {
-                const checkRank = (val, name) => {
-                    if(val === 20) window.UI.showToast(`🥉 Maîtrise du ${name} : Rang Bronze débloqué !`);
-                    if(val === 50) window.UI.showToast(`🥈 Maîtrise du ${name} : Rang Argent débloqué !`);
-                    if(val === 100) window.UI.showToast(`🥇 Maîtrise du ${name} : Rang Or débloqué !`);
-                };
-                
-                // Stat Check
-                if(okC) checkRank(this.data.stats.c[c.type.id].ok + 1, c.type.sub);
-                
-                // For inv, need to check if we are in Jazz mode to check correct stats container
-                if(okI && !isDim) {
-                    const isJazz = (this.data.currentSet === 'jazz');
-                    const statVal = (isJazz ? this.data.stats.v[c.inv].ok : this.data.stats.i[c.inv].ok) + 1;
-                    const name = (isJazz ? DB.voicings[c.inv].corr : DB.invs[c.inv].corr);
-                    checkRank(statVal, name);
-                }
-            }
-
-            this.processWin(win);
-            window.UI.reveal(okC, okI);
-        },
-
-        processWin(win) {
-            const c = this.session.chord;
-            const isDim = (c.type.id === 'dim7' && this.data.currentSet === 'academy');
-            const ranked = this.isRankedMode();
-            const isJazz = (this.data.currentSet === 'jazz');
-            
-            let badgeUnlocked = false;
-            let levelUp = false;
-
-            this.data.stats.c[c.type.id].tot++; if(win) this.data.stats.c[c.type.id].ok++;
-            
-            if(!isDim) { 
-                // Separate stats for Voicings (Jazz) and Inversions (Academy)
-                if(isJazz) {
-                    this.data.stats.v[c.inv].tot++; if(win) this.data.stats.v[c.inv].ok++;
-                } else {
-                    this.data.stats.i[c.inv].tot++; if(win) this.data.stats.i[c.inv].ok++;
-                }
-            }
-            this.data.stats.totalPlayed++; 
-            this.calcGlobalStats();
-            
-            if(win) {
-                const comboID = `${c.type.id}-${c.inv}`;
-                if(!this.data.stats.combos.includes(comboID)) this.data.stats.combos.push(comboID);
-            }
-
-            this.data.tempToday.tot++; if(win) this.data.tempToday.ok++;
-            if(this.data.tempToday.tot >= 5) {
-                const todayStr = this.data.tempToday.date;
-                const lastIdx = this.data.history.length - 1;
-                if(lastIdx >= 0 && this.data.history[lastIdx].date === todayStr) { this.data.history[lastIdx] = { ...this.data.tempToday }; } 
-                else { this.data.history.push({ ...this.data.tempToday }); if(this.data.history.length > 7) this.data.history.shift(); }
-            }
-
-            if(win) {
-                if(ranked) {
-                    let basePts = 50; if(document.getElementById('toggleOpen').checked) basePts = 75;
-                    if(this.session.hint) basePts = 20;
-                    if(this.session.mode === 'sprint') {
-                        const speedMultiplier = 10 / this.session.currentSprintTime; 
-                        basePts = Math.round(basePts * speedMultiplier);
-                    }
-                    const multiplier = this.calcXPMultiplier();
-                    let finalXP = Math.round(basePts * multiplier);
-                    const bonus = this.session.hint ? 0 : (this.session.streak * 10);
-                    this.session.score += (finalXP + bonus);
-                    if(!this.session.hint) { this.session.streak++; window.UI.triggerCombo(this.session.streak); }
-                    
-                    // --- XP LOGIC FIXED FOR LEVEL 20 SOUND & NOTIFICATIONS ---
-                    if (this.data.lvl < 20) {
-                        this.data.xp += (finalXP + bonus);
-                        if(this.data.xp >= this.data.next) {
-                            this.data.xp -= this.data.next; 
-                            this.data.lvl++; 
-                            this.data.next = Math.floor(this.data.next * 1.2);
-                            
-                            const lvl = this.data.lvl;
-                            
-                            // Check if JUST reached max level
-                            if(lvl === 20) {
-                                Audio.sfx('max'); // Trigger MAX sound immediately
-                                levelUp = false; // Prevent standard lvl sound
-                            } else {
-                                levelUp = true; 
-                                window.UI.showLevelUp();
-                            }
-                            
-                            // Unlocks & Notifications (Toast priority handling by delay)
-                            let toastDelay = 1000;
-                            const queueToast = (msg) => {
-                                setTimeout(() => window.UI.showToast(msg), toastDelay);
-                                toastDelay += 3500;
-                            };
-
-                            if(this.data.mastery === 0) {
-                                if(lvl === 3) queueToast("🔓 Mode Inverse Débloqué !");
-                                if(lvl === 8) queueToast("🔓 Mode Chrono Débloqué !");
-                                if(lvl === 12) queueToast("🔓 Mode Sprint Débloqué !");
-                                if(lvl === 15) queueToast("🏆 Niveau 15 : Votre oreille s'affine...");
-                            }
-                            
-                            // Check for unlocks
-                            if(this.data.currentSet === 'jazz') {
-                                const newUnlocks = DB.sets.jazz.chords.filter(c => c.unlockLvl === this.data.lvl);
-                                if(newUnlocks.length > 0) {
-                                    newUnlocks.forEach(u => queueToast(`🔓 Accord débloqué : ${u.name}`));
-                                }
-                            }
-                            // Unlock modes visual update
-                            this.updateModeLocks();
-                        }
-                    } else {
-                        // Max Level Logic (Already 20)
-                        if(this.data.xp < this.data.next) {
-                             this.data.xp = this.data.next;
-                             // Don't play sound here, it was played at transition
-                        }
-                    }
-                    // -----------------------------------------
-
-                    if(!this.session.hint) this.session.cleanStreak++; else this.session.cleanStreak = 0;
-                    if(c.open) this.session.openStreak++; else this.session.openStreak = 0;
-                    const allC = this.data.settings.activeC.length === DB.chords.length;
-                    const allI = this.data.settings.activeI.length === DB.invs.length;
-                    if(allC && allI) this.session.fullConfigStreak++; else this.session.fullConfigStreak = 0;
-                    const reactionTime = (Date.now() - this.session.lastActionTime);
-                    if(reactionTime < 3500) this.session.fastStreak++; else this.session.fastStreak = 0;
-
-                    if(c.type.id === 'maj7' || c.type.id === 'min7') this.data.stats.str_jazz++;
-                    if(c.type.id === 'minmaj7') this.data.stats.str_007++;
-                    if(c.type.id === 'dim7') this.data.stats.str_dim++;
-                    if(!isDim && c.inv !== 0) this.data.stats.str_inv++;
-                    if(this.session.lives === 1) this.session.lowLifeRecovery = true;
-                } else {
-                    window.UI.showToast("⚠️ Mode Entraînement : Pas d'XP/Badges");
-                }
-
-                window.UI.vibrate([50,50,50]); window.UI.confetti(); 
-                window.UI.msg(this.session.streak > 2 ? `SÉRIE x${this.session.streak} !` : "EXCELLENT !", true);
-                if(this.session.mode === 'chrono') this.session.time += 3;
-
-            } else {
-                this.session.streak = 0; 
-                this.session.cleanStreak = 0; this.session.openStreak = 0; 
-                this.session.fullConfigStreak = 0; this.session.fastStreak = 0;
-                
-                if(c.type.id === 'maj7' || c.type.id === 'min7') this.data.stats.str_jazz = 0;
-                if(c.type.id === 'minmaj7') this.data.stats.str_007 = 0;
-                if(c.type.id === 'dim7') this.data.stats.str_dim = 0;
-                if(!isDim && c.inv !== 0) this.data.stats.str_inv = 0;
-
-                Audio.sfx('lose'); window.UI.vibrate(300); window.UI.updateBackground(0);
-                window.UI.msg(`Raté : ${c.type.name} ` + (isDim?"": (this.data.currentSet==='jazz'?DB.voicings[c.inv].corr : DB.invs[c.inv].corr)), false);
-                if(this.session.mode === 'chrono' || this.session.mode === 'sprint') { 
-                    this.session.lives--; 
-                    if(this.session.lives <= 0) return this.gameOver(); 
-                }
-            }
-            
-            if(ranked) badgeUnlocked = this.checkBadges();
-
-            if(badgeUnlocked) Audio.sfx('badge');
-            else if(levelUp) Audio.sfx('lvl');
-            else if(win) Audio.sfx('win');
-
-            window.UI.updateHeader(); window.UI.updateChrono(); this.save();
-            document.getElementById('hintBtn').disabled = false; 
-            const btn = document.getElementById('valBtn'); btn.innerText = "Suivant"; btn.classList.add('next'); btn.disabled = false;
-            const play = document.getElementById('playBtn'); play.innerHTML = "<span class='icon-lg'>▶</span><span>Suivant</span>"; play.disabled = false;
-
-            setTimeout(() => {
-                if(this.session.done) window.UI.msg("🎹 Mode Instrument : Clique pour comparer", "warning");
-            }, 1500);
-        },
-
-        passMastery() {
-            if(this.data.lvl < 20) return;
-            
-            if(confirm("Félicitations ! Vous allez valider ce niveau de Maîtrise.\n\nVotre Niveau reviendra à 1, mais vous gagnerez une Étoile et conserverez vos stats et badges.\n\nContinuer ?")) {
-                this.data.mastery++;
-                this.data.lvl = 1;
-                this.data.xp = 0;
-                this.data.next = 100;
-                
-                this.save();
-                window.UI.closeModals();
-                window.UI.renderSettings(); // Re-render to update locks
-                window.UI.updateHeader();
-                window.App.updateModeLocks(); // Lock modes for new mastery
-                
-                // Effets majestueux
-                Audio.sfx('prestige');
-                window.UI.confetti();
-                setTimeout(() => window.UI.confetti(), 500);
-                setTimeout(() => window.UI.confetti(), 1000);
-                
-                window.UI.showToast(`✨ Maîtrise ${this.data.mastery} atteinte !`);
-                window.UI.showToast("🔓 Nouveau Contenu disponible (Paramètres)");
-                
-                window.UI.openModal('modalProfile'); // Réouvrir pour voir le changement
-                
-                // IMPORTANT: Delay next chord so it doesn't overlap with music
-                setTimeout(() => {
-                    window.App.playNew(); 
-                }, 4500);
-            }
-        },
-
-        checkBadges() {
-            let unlockedSomething = false;
-            BADGES.forEach(b => {
-                if(!this.data.badges.includes(b.id)) {
-                    if(b.check(this.data, this.session)) {
-                        this.data.badges.push(b.id);
-                        window.UI.showBadge(b);
-                        unlockedSomething = true;
-                        this.save();
-                    }
-                }
-            });
-            return unlockedSomething;
-        },
-
-        gameOver() {
-            if(this.isRankedMode() && !this.data.stats.modesPlayed.includes(this.session.mode)) {
-                this.data.stats.modesPlayed.push(this.session.mode);
-            }
-            const badged = this.isRankedMode() ? this.checkBadges() : false;
-            if(badged) Audio.sfx('badge');
-
-            let isBest = false;
-            if(this.isRankedMode()) {
-                if(this.session.mode === 'chrono' && this.session.score > this.data.bestChrono) { this.data.bestChrono = this.session.score; isBest=true; }
-                if(this.session.mode === 'sprint' && this.session.score > this.data.bestSprint) { this.data.bestSprint = this.session.score; isBest=true; }
-                if(this.session.mode === 'inverse' && this.session.score > this.data.bestInverse) { this.data.bestInverse = this.session.score; isBest=true; }
-            }
-            
-            this.save(); 
-            document.getElementById('endScore').innerText = this.session.score;
-            document.getElementById('endHighScore').innerText = (isBest ? "Nouveau Record !" : "Record: " + (this.session.mode==='chrono'?this.data.bestChrono:this.session.mode==='sprint'?this.data.bestSprint:this.data.bestInverse));
-            if(!this.isRankedMode()) document.getElementById('endHighScore').innerText = "Mode Entraînement";
-            window.UI.openModal('modalGameOver', true);
-        },
-        
-        replaySameMode() {
-            window.UI.closeModals();
-            this.setMode(this.session.mode);
-        },
-
-        save() { localStorage.setItem('harmonist_v4_final', JSON.stringify(this.data)); },
-        hardReset() { if(confirm("Sûr ?")) { localStorage.removeItem('harmonist_v4_final'); location.reload(); } }
-    };
-
-    window.UI = {
-        renderBoard() {
-            const getRankClass = (ok) => {
-                if(ok >= 100) return 'rank-gold';
-                if(ok >= 50) return 'rank-silver';
-                if(ok >= 20) return 'rank-bronze';
-                return '';
-            };
-
-            const cg = document.getElementById('chordGrid'); cg.innerHTML='';
-            if(window.App.data.settings && window.App.data.settings.activeC) { 
-                DB.chords.forEach(c => { 
-                    if(!window.App.data.settings.activeC.includes(c.id)) return; 
-                    const ok = window.App.data.stats.c[c.id] ? window.App.data.stats.c[c.id].ok : 0;
-                    cg.innerHTML += `<div class="pad ${getRankClass(ok)}" id="c-${c.id}" onclick="window.App.select('c','${c.id}')"><div class="pad-main">${c.name}</div><div class="pad-sub">${c.sub}</div></div>`; 
-                }); 
-            }
-            
-            const invPool = (window.App.data.currentSet === 'jazz' ? DB.voicings : DB.invs);
-            const ig = document.getElementById('invGrid'); ig.innerHTML='';
-            
-            // Update Label
-            document.getElementById('invLabel').innerHTML = (window.App.data.currentSet === 'jazz') 
-                ? '<span>Voicing</span><span>(Texture)</span>' 
-                : '<span>Renversement</span><span>(A Z E R)</span>';
-
-            if(window.App.data.settings && window.App.data.settings.activeI) { 
-                invPool.forEach(i => { 
-                    if(!window.App.data.settings.activeI.includes(i.id)) return; 
-                    // Use separate stats 'v' for Voicings, 'i' for Inversions
-                    let ok = 0;
-                    if(window.App.data.currentSet === 'jazz') {
-                        ok = window.App.data.stats.v[i.id] ? window.App.data.stats.v[i.id].ok : 0;
-                    } else {
-                        ok = window.App.data.stats.i[i.id] ? window.App.data.stats.i[i.id].ok : 0;
-                    }
-                    
-                    ig.innerHTML += `<div class="pad ${getRankClass(ok)}" id="i-${i.id}" onclick="window.App.select('i',${i.id})"><div class="pad-main">${i.corr}</div><div class="pad-sub">${i.sub}</div></div>`; 
-                }); 
-            }
-        },
-        renderSel() {
-            document.querySelectorAll('.pad').forEach(p => p.classList.remove('selected'));
-            if(window.App.session.selC) document.getElementById('c-'+window.App.session.selC).classList.add('selected');
-            if(window.App.session.selI !== null && window.App.session.selI !== -1) document.getElementById('i-'+window.App.session.selI).classList.add('selected');
-            document.getElementById('valBtn').disabled = !(window.App.session.selC && window.App.session.selI !== null);
-        },
-        reveal(okC, okI) {
-            const c = window.App.session.chord; document.getElementById('c-'+c.type.id).classList.add(okC?'correct':'correction');
-            if(!okC && window.App.session.selC) document.getElementById('c-'+window.App.session.selC).classList.add('wrong');
-            const isDim = (c.type.id === 'dim7' && window.App.data.currentSet === 'academy');
-            if(!isDim) { document.getElementById('i-'+c.inv).classList.add(okI?'correct':'correction'); if(!okI && window.App.session.selI !== null) document.getElementById('i-'+window.App.session.selI).classList.add('wrong'); }
-        },
-        resetVisuals() { 
-            document.querySelectorAll('.pad').forEach(p => p.className='pad'); window.UI.renderBoard(); 
-            const p = document.getElementById('invPanel');
-            if(p) { p.style.opacity = '1'; p.style.pointerEvents = 'auto'; }
-            document.querySelectorAll('.quiz-btn').forEach(b => {b.className='quiz-btn'; b.querySelector('.reveal').innerText='...';});
-        },
-        msg(txt, state) { const el = document.getElementById('statusText'); el.innerText = txt; el.className = "feedback-msg " + (state==='correct'?'correct':state==='warning'?'warning':state===false?'wrong':''); },
-        vibrate(ptr) { if(navigator.vibrate) navigator.vibrate(ptr); },
-        updateHeader() {
-            const d = window.App.data; const r = DB.ranks[Math.min(d.lvl-1, DB.ranks.length-1)];
-            document.getElementById('rankIcon').innerText = r.i; document.getElementById('rankTitle').innerText = r.t; document.getElementById('lvlOverlayName').innerText = r.t;
-            document.getElementById('lvlNum').innerText = d.lvl; 
-            
-            // --- MAJ ÉTOILES (MATERIAL LOGIC) ---
-            let stars = ""; 
-            const m = d.mastery;
-            const starIcon = "⭐"; // Just one icon, styled by CSS
-            let starClass = "star-gold";
-            
-            if(m >= 5 && m < 10) starClass = "star-plat";
-            else if(m >= 10) starClass = "star-ruby";
-            
-            let count = 0;
-            if(m > 0) {
-                if(m < 5) count = m;
-                else if(m < 10) count = 1 + (m-5);
-                else count = 1 + (m-10);
-            }
-            
-            const starHtml = `<span class="${starClass}">${starIcon}</span>`.repeat(count);
-            document.getElementById('headerStars').innerHTML = starHtml;
-            // -------------------
-
-            document.getElementById('xpBar').style.width = (d.xp/d.next)*100 + '%';
-            document.getElementById('streakVal').innerText = window.App.session.streak; 
-            document.getElementById('streakVal').className = window.App.session.streak > 20 ? 'stat-val streak-super' : (window.App.session.streak > 10 ? 'stat-val streak-fire' : 'stat-val');
-            
-            if(document.getElementById('scoreGroup').classList.contains('active')) {
-                const sc = document.getElementById('currentScoreVal');
-                sc.innerText = window.App.session.score;
-                if(!window.App.isRankedMode()) sc.style.color = 'var(--text-dim)'; else sc.style.color = 'var(--gold)';
-            }
-            const pct = window.App.session.globalTot ? Math.round((window.App.session.globalOk / window.App.session.globalTot) * 100) : 0; document.getElementById('precisionVal').innerText = pct + '%';
-        },
-        updateChrono() { 
-            document.getElementById('timerVal').innerText = window.App.session.time; 
-            // Also enforce visibility here as safety
-            document.getElementById('timerVal').style.display = (window.App.session.mode === 'sprint') ? 'none' : 'inline';
-            document.getElementById('livesVal').innerText = '❤️'.repeat(window.App.session.lives); 
-        },
-        updateBackground(streak) {
-            const body = document.body;
-            if(streak >= 20) body.style.backgroundColor = '#370b1b'; 
-            else if(streak >= 10) body.style.backgroundColor = '#1e1b4b'; 
-            else body.style.backgroundColor = '#0f172a'; 
-        },
-        triggerCombo(streak) {
-            this.updateBackground(streak);
-            if(streak > 5) {
-                const sv = document.getElementById('streakVal');
-                sv.style.transform = "scale(1.5)";
-                setTimeout(()=>sv.style.transform="scale(1)", 150);
-            }
-            if(streak > 0 && streak % 10 === 0) {
-                const pop = document.getElementById('comboPopup');
-                document.getElementById('comboTitle').innerText = `COMBO x${streak}`;
-                pop.classList.add('show');
-                Audio.sfx('win');
-                setTimeout(() => pop.classList.remove('show'), 1500);
-            }
-        },
-        confetti() { const c=document.getElementById('confetti'); const x=c.getContext('2d'); c.width=window.innerWidth; c.height=window.innerHeight; let p=[]; for(let i=0;i<60;i++)p.push({x:c.width/2,y:c.height/2,vx:(Math.random()-0.5)*25,vy:(Math.random()-0.5)*25,c:`hsl(${Math.random()*360},100%,50%)`,l:1}); const u=()=>{x.clearRect(0,0,c.width,c.height); let a=false; p.forEach(k=>{if(k.l>0){k.x+=k.vx;k.y+=k.vy;k.vy+=0.6;k.l-=0.02;x.fillStyle=k.c;x.beginPath();x.arc(k.x,k.y,6,0,7);x.fill();a=true;}}); if(a)requestAnimationFrame(u);}; u(); },
-        showLevelUp() { const ov = document.getElementById('levelOverlay'); ov.classList.add('active'); setTimeout(() => { ov.classList.remove('active'); }, 3000); },
-        showToast(msg) { const t = document.getElementById('rankToast'); t.innerText = msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 3000); },
-        showBadge(b) {
-            const el = document.getElementById('badgeRibbon');
-            const tit = document.getElementById('badgeRibbonTitle');
-            tit.innerText = b.title;
-            document.querySelector('.badge-ribbon-icon').innerText = b.icon;
-            el.classList.add('show');
-            setTimeout(() => el.classList.remove('show'), 4000);
-        },
-        
-        openModal(id, locked = false) { 
-            if(id==='settingsModal') window.UI.renderSettings(); 
-            if(id==='statsModal') window.UI.renderStats(); 
-            if(id==='modalProfile') window.UI.renderProfile();
-            const el = document.getElementById(id); 
-            if(el) { 
-                el.classList.add('open'); 
-                el.onclick = (e) => { 
-                    if (locked) return; 
-                    if (e.target === el) window.UI.closeModals(); 
-                };
-            } 
-        },
-        closeModals() { document.querySelectorAll('.modal-overlay').forEach(m=>m.classList.remove('open')); },
-        
-        renderProfile() {
-            const d = window.App.data;
-            const r = DB.ranks[Math.min(d.lvl-1, DB.ranks.length-1)];
-            
-            document.getElementById('profileAvatar').innerText = r.i;
-            const pTitle = document.getElementById('profileName');
-            pTitle.innerText = r.t;
-            
-            // --- AURA DE TITRE (GLOW) ---
-            const m = d.mastery;
-            pTitle.className = 'profile-title'; // reset
-            if(m > 0) {
-                 if(m < 5) pTitle.classList.add('aura-text-gold');
-                 else if(m < 10) pTitle.classList.add('aura-text-plat');
-                 else pTitle.classList.add('aura-text-ruby');
-            }
-            // ---------------------------
-
-            document.getElementById('profileRank').innerText = `Niveau ${d.lvl}`;
-            
-            // --- ÉTOILES PROFIL ---
-            const starIcon = "⭐"; 
-            let starClass = "star-gold";
-            
-            if(m >= 5 && m < 10) starClass = "star-plat";
-            else if(m >= 10) starClass = "star-ruby";
-            
-            let count = 0;
-            if(m > 0) {
-                if(m < 5) count = m;
-                else if(m < 10) count = 1 + (m-5);
-                else count = 1 + (m-10);
-            }
-            
-            const starHtml = `<span class="${starClass}">${starIcon}</span>`.repeat(count);
-            document.getElementById('profileStars').innerHTML = starHtml;
-
-            // Mastery Name
-            const mName = d.mastery > 0 ? `Maîtrise ${d.mastery} - ${MASTERY_NAMES[d.mastery] || '???'}` : MASTERY_NAMES[0];
-            document.getElementById('profileMasteryName').innerText = mName;
-            
-            // XP Bar
-            const pct = Math.min(100, (d.xp / d.next) * 100);
-            document.getElementById('profileXpBar').style.width = pct + "%";
-            document.getElementById('profileXpVal').innerText = Math.floor(d.xp) + " XP";
-            document.getElementById('profileNextVal').innerText = d.lvl >= 20 ? "MAX" : (Math.floor(d.next) + " XP");
-            
-            // Stats
-            document.getElementById('profileTotal').innerText = window.App.session.globalTot;
-            const acc = window.App.session.globalTot ? Math.round((window.App.session.globalOk/window.App.session.globalTot)*100) : 0;
-            document.getElementById('profileAcc').innerText = acc + "%";
-            
-            // Bouton Prestige
-            const btn = document.getElementById('btnPrestige');
-            if(d.lvl >= 20) {
-                btn.disabled = false;
-                const nextM = d.mastery + 1;
-                const nextName = MASTERY_NAMES[nextM] || "Supérieure";
-                btn.innerHTML = `<span class="shiny"></span>✨ Valider la Maîtrise<span style="font-size:0.7rem; font-weight:700; opacity:0.8;">Vers : ${nextName}</span>`;
-            } else {
-                btn.disabled = true;
-                btn.innerHTML = `🔒 Niv. 20 Requis`;
-            }
-        },
-
-        renderSettings() { 
-            const d = window.App.data;
-            
-            // HIDE OPEN MODE TOGGLE IN JAZZ
-            const toggleContainer = document.getElementById('toggleOpenContainer');
-            if(d.currentSet === 'jazz') {
-                toggleContainer.style.display = 'none';
-                document.getElementById('toggleOpen').checked = false; // ensure disable
-            } else {
-                toggleContainer.style.display = 'flex';
-            }
-
-            let setsHtml = '<div class="settings-grid" style="grid-template-columns: 1fr 1fr;">';
-            Object.keys(DB.sets).forEach(key => {
-                const set = DB.sets[key];
-                const locked = (key === 'jazz' && d.mastery < 1);
-                const active = d.currentSet === key;
-                
-                // Fixed onclick quote escaping
-                setsHtml += `<div class="setting-chip ${active?'active':''} ${locked?'locked':''}" 
-                          onclick="${locked ? '' : `window.App.switchSet('${key}')`}">
-                          ${locked ? '🔒' : ''} ${set.name}
-                         </div>`;
-            });
-            setsHtml += '</div>';
-            document.getElementById('settingsSetsSection').innerHTML = '<h4 style="text-align:left; color:var(--primary); margin:0 0 5px 0;">Chambre</h4>' + setsHtml;
-
-            const gen = (arr, type, dest) => { 
-                document.getElementById(dest).innerHTML = arr.map(x => { 
-                    const list = (type==='c'?window.App.data.settings.activeC:window.App.data.settings.activeI);
-                    const act = list.includes(x.id); // Variable Name Fix
-                    
-                    // Logic Lock Display (Fixed: Only lock if Mastery 1)
-                    let locked = false;
-                    let lockedTxt = "";
-                    if(type === 'c' && d.currentSet === 'jazz' && d.mastery === 1 && x.unlockLvl && x.unlockLvl > d.lvl) {
-                        locked = true;
-                        lockedTxt = ` <span style="font-size:0.6rem">Lvl ${x.unlockLvl}</span>`;
-                    }
-                    
-                    // Fixed string interpolation for id parameter
-                    return `<div class="setting-chip ${act?'active':''} ${locked?'locked':''}" onclick="window.App.toggleSetting('${type}', ${typeof x.id==='string'?"'"+x.id+"'":x.id})">${x.name||x.corr}${lockedTxt}</div>`; 
-                }).join(''); 
-            }; 
-            gen(DB.chords, 'c', 'settingsChords');
-            // Use correct pool for settings display
-            gen(d.currentSet === 'jazz' ? DB.voicings : DB.invs, 'i', 'settingsInvs'); 
-        },
-        
-        renderStats() {
-            const advice = window.App.analyzeCoach();
-            let msg = advice.m;
-            msg = msg.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-            msg = msg.replace(/\*(.*?)\*/g, '<em>$1</em>');
-            document.getElementById('coachDisplay').innerHTML = `<div class="coach-avatar">🧠</div><div class="coach-bubble"><span class="coach-tag">${advice.t}</span><br>${msg}</div>`;
-            
-            const histContainer = document.getElementById('historyChart');
-            let histHTML = '<div class="chart-limit-line"></div><div class="chart-container">';
-            const data = window.App.data.history || [];
-            for(let i=0; i<7; i++) {
-                const entry = data[i];
-                if(entry) {
-                    const pct = Math.round((entry.ok / entry.tot) * 100);
-                    let col = '#ef4444'; if(pct >= 50) col = '#f59e0b'; if(pct >= 80) col = '#10b981';
-                    histHTML += `<div class="chart-col"><div class="chart-track"><div class="chart-bar" style="height:${pct}%; background:${col};"></div></div><span class="chart-label">${entry.date}</span></div>`;
-                } else {
-                    histHTML += `<div class="chart-col"><div class="chart-track" style="background:rgba(255,255,255,0.02);"></div><span class="chart-label">-</span></div>`;
-                }
-            }
-            histHTML += '</div>';
-            histContainer.innerHTML = histHTML;
-            
-            const html = (arr, cat) => arr.map(x => {
-                const s = window.App.data.stats[cat][x.id] || {ok:0, tot:0};
-                const p = s.tot?Math.round((s.ok/s.tot)*100):0;
-                const col = p>=80?'var(--success)':p>=50?'var(--warning)':'var(--error)';
-                return `<div class="stat-item"><div class="stat-header"><span>${x.name||x.corr}</span><span>${p}%</span></div><div class="stat-track"><div class="stat-fill" style="width:${p}%;background:${s.tot?col:'transparent'}"></div></div></div>`;
-            }).join('');
-            document.getElementById('statsContent').innerHTML = "<h4>Accords</h4>"+html(DB.chords,'c')+"<br><h4>Renversements</h4>"+html((window.App.data.currentSet==='jazz'?DB.voicings:DB.invs),(window.App.data.currentSet==='jazz'?'v':'i'));
-
-            const grid = document.getElementById('badgesGrid');
-            grid.innerHTML = '';
-            let count = 0;
-            BADGES.forEach(b => {
-                const unlocked = window.App.data.badges.includes(b.id);
-                if(unlocked) count++;
-                const el = document.createElement('div');
-                el.className = `badge-item ${unlocked ? 'unlocked' : ''}`;
-                el.innerHTML = b.icon;
-                el.onclick = () => {
-                    const det = document.getElementById('badgeDetail');
-                    det.innerHTML = `<span style="color:white; text-transform:uppercase;">${b.title}</span><br>${b.desc}`;
-                    if(!unlocked) det.innerHTML += " <span style='color:var(--text-dim)'>(Verrouillé)</span>";
-                };
-                grid.appendChild(el);
-            });
-            document.getElementById('badgeCount').innerText = `${count}/${BADGES.length}`;
-            document.getElementById('badgeDetail').innerText = ""; 
-        }
-    };
-
-    document.addEventListener('keydown', e => {
-        if(e.code === 'Escape') window.UI.closeModals();
-        
-        if(e.code === 'Space') { 
-            e.preventDefault(); 
-            if(!document.getElementById('valBtn').disabled && document.getElementById('valBtn').classList.contains('next')) {
-                window.App.handleMain();
-            }
-            else if(!window.App.session.chord) window.App.playNew(); 
-            else if(!window.App.session.done) window.App.replay(); 
-            return;
-        }
-
-        if(e.code === 'Enter' || e.code === 'NumpadEnter') { 
-            e.preventDefault(); 
-            window.App.handleMain(); 
-            return;
-        }
-
-        if(e.code === 'KeyH') {
-            window.App.hint();
-            return;
-        }
-
-        if(PHYSICAL_MAP[e.code] !== undefined) {
-            const idx = PHYSICAL_MAP[e.code];
-
-            if(window.App.session.mode === 'inverse') {
-                if(idx < window.App.session.quizOptions.length) {
-                    if(!window.App.session.done) window.App.selectQuiz(idx);
-                    else window.App.selectQuiz(idx);
-                }
-            } else {
-                const isDigit = e.code.startsWith('Digit') || e.code.startsWith('Numpad');
-                
-                if(isDigit) {
-                    const ac = DB.chords.filter(c => window.App.data.settings.activeC.includes(c.id));
-                    if(ac[idx]) { 
-                        if(!window.App.session.done) window.App.select('c', ac[idx].id);
-                        else window.App.preview('c', ac[idx].id);
-                    }
-                } else {
-                    const invPool = (window.App.data.currentSet === 'jazz' ? DB.voicings : DB.invs);
-                    const ai = invPool.filter(i => window.App.data.settings.activeI.includes(i.id));
-                    if(ai[idx]) {
-                        if(!window.App.session.done) window.App.select('i', ai[idx].id);
-                        else window.App.preview('i', ai[idx].id);
-                    }
-                }
-            }
-        }
-    });
-
-    window.onload = () => window.App.init();
-</script>
+            <div class="create-form-group">
+                <label>Nom du Défi (Seed)</label>
+                <input type="text" id="createSeedInput" placeholder="Ex: CONTRÔLE-CM2" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--panel-border); background:rgba(0,0,0,0.3); color:white; font-weight:700; text-transform:uppercase;">
+            </div>
+
+            <div class="create-form-group" style="margin-top:15px;">
+                <label>Longueur</label>
+                <div style="display:flex; gap:10px; margin-top:5px;">
+                    <button class="mode-opt active" onclick="window.UI.setCreateLength(10)">10</button>
+                    <button class="mode-opt" onclick="window.UI.setCreateLength(20)">20</button>
+                    <button class="mode-opt" onclick="window.UI.setCreateLength(50)">50</button>
+                </div>
+            </div>
+
+            <button class="cmd-btn btn-action" style="width:100%; margin-top:30px;" onclick="window.UI.createChallengeAction()">Générer le Code</button>
+        </div>
+    </div>
+</div>
+
+<!-- RAPPORT DEFI (V5.0) -->
+<div class="modal-overlay" id="challengeReportModal">
+    <!-- Injected by JS -->
+</div>
+
+<script type="module" src="./main.js"></script>
+<script type="module" src="/index.tsx"></script>
 </body>
 </html>
