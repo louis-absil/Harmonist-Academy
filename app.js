@@ -34,6 +34,7 @@ export const App = {
     },
     session: { 
         mode:'zen', time:60, lives:3, chord:null, selC:null, selI:null, done:false, 
+        zenCounter: 0,
         hint:false, score:0, streak:0, globalOk:0, globalTot:0, 
         quizOptions:[], quizCorrectIdx:0, quizUserChoice:null, 
         currentSprintTime: 10, roundLocked: false,
@@ -59,8 +60,35 @@ export const App = {
     // Wrapper RNG pour permettre l'injection de Seed par ChallengeManager
     rng() { return Math.random(); },
 
+    onUserLogin(user) {
+        // Logique optionnelle au login
+        console.log("User logged in:", user.uid);
+    },
+
     init() {
-        Cloud.init();
+                // Initialisation Cloud avec Callback de mise à jour
+        Cloud.init((user, cloudData) => {
+            // 1. On injecte l'utilisateur dans l'App
+            // App.onUserLogin(user); 
+
+            if (cloudData) {
+                // 2. Si on a des données, on les charge
+                App.syncFromCloud(cloudData);
+
+                // 3. CORRECTIF AFFICHAGE XP :
+                // On utilise updateHeader qui gère l'XP, le Niveau et le Pseudo
+                if (window.UI) {
+                    window.UI.updateHeader(); 
+                    window.UI.renderBadges();
+                }
+            }
+
+            // 4. CORRECTIF MODALE :
+            // Si la modale paramètres est ouverte, on la redessine pour afficher "Certifié"
+            if (window.UI && document.getElementById('settingsModal')?.classList.contains('open')) {
+                window.UI.renderSettings();
+            }
+        });
         ChallengeManager.checkRescue(); 
 
         try {
@@ -128,13 +156,173 @@ export const App = {
                 window.UI.startWalkthrough();
             }, 1000);
         }
+        // --- V6.0 IDENTITY CHECK ---
+        // On attend que Firebase s'initialise (2s) pour vérifier si le pseudo local est valide
+        setTimeout(() => {
+            this.checkIdentity();
+        }, 2000);
+        
+        // --- AJOUT : SENTINELLES DE SAUVEGARDE (Smart Sync) ---
+        // 1. Mobile : Quand l'utilisateur change d'app ou va à l'écran d'accueil
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden') {
+                this.triggerSave("Minimisation App"); // CORRIGÉ (C'était forceCloudSave)
+            }
+        });
+
+        // 2. Desktop : Quand l'utilisateur ferme l'onglet ou le navigateur
+        window.addEventListener('beforeunload', () => {
+            this.triggerSave("Fermeture Onglet"); // CORRIGÉ
+        });
+        
+        // 3. Mobile (Safari iOS) : Sécurité supplémentaire
+        window.addEventListener('pagehide', () => {
+            this.triggerSave("Page Hide"); // CORRIGÉ
+        });
     },
 
-    setUsername(val) {
+        // Dans app.js, ajoutez ceci dans l'objet App :
+    onUserLogin(user) {
+        console.log("Utilisateur connecté :", user.uid);
+        // Vous pouvez ajouter ici des analytics si besoin
+    },
+
+    async setUsername(val) {
         if(!val || val.length < 2) return;
-        this.data.username = val.trim().substring(0, 15);
-        this.save();
-        window.UI.showToast("Pseudo enregistré !");
+        const requestedName = val.trim().substring(0, 15);
+        
+        // --- MODIFICATION ICI : Capture de l'ancien nom ---
+        const oldName = this.data.username; 
+        
+        window.UI.showToast("Vérification du pseudo...");
+        
+        // On passe l'ancien nom à Firebase pour qu'il puisse le supprimer
+        const result = await Cloud.assignUsername(requestedName, oldName);
+
+        // 2. Normalisation du résultat
+        // Cette ligne est LA clé : elle accepte soit un booléen (mon fix), soit un objet (ton ancien système)
+        const isSuccess = (result === true) || (result && result.success === true);
+
+        // 3. Traitement
+        if (isSuccess) {
+            // --- SUCCÈS ---
+            this.data.username = requestedName;
+            this.saveData(); 
+
+            // Gestion des messages spécifiques (Compatibilité future)
+            if (result.status === 'ZOMBIE_CLAIMED') {
+                window.UI.showToast("♻️ Pseudo inactif récupéré !");
+            } else if (result.status === 'OFFLINE_PASS') {
+                window.UI.showToast("⚠️ Hors-ligne : Pseudo temporaire");
+            } else {
+                // Cas standard (le booléen true tombe ici)
+                window.UI.showToast("✅ Pseudo enregistré !");
+            }
+            
+            window.UI.updateHeader(); 
+            
+            // On s'assure que l'input affiche bien la valeur validée
+            const input = document.getElementById('usernameInput');
+            if(input) input.value = requestedName;
+
+        } else {
+            // --- ÉCHEC ---
+            console.error("Erreur setUsername:", result); 
+
+            // Note : firebase.js affiche déjà le Toast d'erreur technique (ex: "Pseudo pris")
+            // Mais on peut gérer les cas spécifiques si l'objet result contient des détails
+            if (result.reason === 'TAKEN_VERIFIED') {
+                window.UI.showToast("⛔ Ce pseudo appartient à un membre certifié.");
+            } else if (result.reason === 'TAKEN_ACTIVE') {
+                window.UI.showToast("⛔ Ce pseudo est déjà pris.");
+            }
+            
+            // ACTION CRITIQUE : On remet l'ancien pseudo dans l'input
+            // car le changement a été refusé.
+            const input = document.getElementById('usernameInput');
+            if(input) {
+                input.value = this.data.username;
+                // Petit feedback visuel rouge sur la bordure
+                input.style.borderColor = "var(--error)";
+                setTimeout(() => input.style.borderColor = "var(--panel-border)", 1000);
+            }
+        }
+    },
+
+// --- V6.0 MÉTHODES D'IDENTITÉ ---
+
+    // Appelé au démarrage pour vérifier les conflits "Legacy"
+    async checkIdentity() {
+        const currentName = this.data.username;
+        if (currentName === "Élève Anonyme") return; // On s'en fiche du par défaut
+
+        // On tente de réserver notre PROPRE nom actuel
+        const result = await Cloud.assignUsername(currentName);
+
+        // Si le serveur dit "Non, c'est pris par quelqu'un d'autre (actif)"
+        // C'est que nous sommes dans un conflit Legacy (un imposteur local)
+        if (!result.success && (result.reason === 'TAKEN_ACTIVE' || result.reason === 'TAKEN_VERIFIED')) {
+            const newName = `${currentName}#${Math.floor(Math.random() * 9999)}`;
+            console.warn(`Conflit de pseudo détecté. Renommage : ${newName}`);
+            
+            this.data.username = newName;
+            this.saveData();
+            window.UI.updateHeader();
+            
+            // Notification explicative
+            setTimeout(() => {
+                alert(`Mise à jour V6.0 Identity :\n\nLe pseudo "${currentName}" est déjà réservé par un autre élève.\n\nVotre pseudo a été ajusté en "${newName}".\nVous pourrez le changer dans les paramètres.`);
+            }, 1000);
+        } 
+        else if (result.success) {
+            console.log("Identité vérifiée :", result.status);
+        }
+    },
+
+    // Appelé par le bouton "Sauvegarder ma progression"
+    async secureAccount() {
+        if (!confirm("Voulez-vous lier ce profil à votre compte Google pour ne jamais perdre votre progression ?")) return;
+
+        const result = await Cloud.linkAccount();
+        
+        if (result.success) {
+            window.UI.showToast("🎉 Compte sécurisé avec succès !");
+            window.UI.showToast(`Bienvenue, ${result.user.displayName || 'Membre Certifié'}`);
+            
+            // On re-confirme le pseudo pour passer le statut à 'verified' dans la base
+            await Cloud.assignUsername(this.data.username);
+            
+            // --- AJOUT CRUCIAL ICI ---
+            // 3. On force la sauvegarde de TOUTES les données locales (XP, lvl...) vers le nouveau compte Cloud
+            // Sinon le compte Cloud reste vide !
+            if (Cloud.saveUser) {
+                await Cloud.saveUser(this.data);
+                console.log("Sauvegarde initiale forcée vers le Cloud.");
+            }
+            // -------------------------
+            
+            // Rafraîchir l'interface des paramètres
+            window.UI.renderSettings();
+        } else {
+            alert("Erreur lors de la liaison : " + result.error);
+        }
+    },
+
+    // Appelé par le bouton "Déjà un compte ?"
+    async signIn() {
+        const confirmMsg = "ATTENTION :\n\nVous allez vous connecter à un compte existant.\nLa progression actuelle (Invité) sera remplacée par celle de votre sauvegarde Cloud.\n\nContinuer ?";
+        
+        if (!confirm(confirmMsg)) return;
+
+        const result = await Cloud.login();
+        
+        if (result.success) {
+            window.UI.showToast(`Bon retour, ${result.user.displayName.split(' ')[0]} !`);
+            // On recharge la page pour être sûr de charger proprement toutes les données du compte
+            setTimeout(() => window.location.reload(), 1000);
+        } else {
+            alert("Erreur de connexion : " + result.error);
+        }
     },
 
     // --- LOGIQUE PROGRESSION ARENE ---
@@ -207,7 +395,7 @@ export const App = {
         if(this.data.settings.activeC.length === 0) { const available = DB.chords.find(c => !this.isLocked(c.id)); if(available) this.data.settings.activeC = [available.id]; }
 
         if(!silent) {
-            this.save(); window.UI.renderBoard(); window.UI.renderSettings(); this.resetRound(true); this.playNew(); window.UI.showToast(`Ambiance : ${DB.sets[setName].name}`);
+            this.saveData(); window.UI.renderBoard(); window.UI.renderSettings(); this.resetRound(true); this.playNew(); window.UI.showToast(`Ambiance : ${DB.sets[setName].name}`);
         }
     },
 
@@ -228,7 +416,7 @@ export const App = {
             this.data.mastery++; this.data.lvl = 1; this.data.xp = 0; this.data.next = 100;
             this.data.settings.activeC = this.data.settings.activeC.filter(id => !this.isLocked(id));
             if(this.data.settings.activeC.length === 0) { const available = DB.chords.find(c => !this.isLocked(c.id)); if(available) this.data.settings.activeC = [available.id]; }
-            this.save(); window.UI.closeModals(); window.UI.renderBoard(); window.UI.updateHeader(); Audio.sfx('prestige'); window.UI.confetti(); setTimeout(() => window.UI.confetti(), 500); setTimeout(() => window.UI.confetti(), 1000); window.UI.showToast(`✨ Maîtrise ${this.data.mastery} atteinte !`); window.UI.showToast(`Nouveau contenu disponible dans les paramètres !`); window.UI.updateModeLocks(); setTimeout(() => { this.playNew(); }, 4000);
+            this.saveData(); window.UI.closeModals(); window.UI.renderBoard(); window.UI.updateHeader(); Audio.sfx('prestige'); window.UI.confetti(); setTimeout(() => window.UI.confetti(), 500); setTimeout(() => window.UI.confetti(), 1000); window.UI.showToast(`✨ Maîtrise ${this.data.mastery} atteinte !`); window.UI.showToast(`Nouveau contenu disponible dans les paramètres !`); window.UI.updateModeLocks(); setTimeout(() => { this.playNew(); }, 4000);
         }
     },
 
@@ -309,13 +497,120 @@ export const App = {
         if(type === 'c' && this.isLocked(id)) { const chord = DB.chords.find(c => c.id === id); window.UI.showToast(`🔒 Débloqué au Niveau ${chord.unlockLvl}`); window.UI.vibrate([50,50]); return; }
         const list = type === 'c' ? this.data.settings.activeC : this.data.settings.activeI;
         const idx = list.indexOf(id);
-        if (idx > -1) { if(list.length > 1) list.splice(idx, 1); } else { if(this.data.currentSet === 'jazz' && list.length >= 6) { window.UI.showToast("⚠️ Max 6 accords actifs"); return; } list.push(id); }
-        this.save(); window.UI.renderBoard(); window.UI.renderSettings(); window.UI.updateHeader(); 
+        if (idx > -1) { 
+            // Sécurité : Empêcher de désactiver le dernier élément
+            if (list.length > 1) {
+                list.splice(idx, 1); 
+            } else {
+                window.UI.showToast("⚠️ Il faut garder au moins 1 choix !");
+                return;
+            }
+        } else { 
+            if(this.data.currentSet === 'jazz' && list.length >= 6) { window.UI.showToast("⚠️ Max 6 accords actifs"); return; } 
+            list.push(id); 
+        }
+        this.saveData(); window.UI.renderBoard(); window.UI.renderSettings(); window.UI.updateHeader(); 
     },
 
     hardReset() { if(confirm("Sûr ?")) { localStorage.removeItem('harmonist_v4_final'); location.reload(); } },
-    save() { localStorage.setItem('harmonist_v4_final', JSON.stringify(this.data)); Cloud.syncUserStats(this.data); },
-    closeSettings() { window.UI.closeModals(); this.resetRound(true); if(this.session.mode==='inverse') this.playNewQuiz(); else if(this.session.mode!=='studio') this.playNew(); },
+
+    // Sauvegarde Locale (Ultra rapide - Appelé à chaque point)
+    saveData() {
+        try {
+            localStorage.setItem('harmonist_v6_data', JSON.stringify(this.data));
+            
+            // DÉCLENCHEMENT SAUVEGARDE CLOUD (Si connecté)
+            if (Cloud.auth && Cloud.auth.currentUser) {
+                this.triggerCloudSave();
+            }
+        } catch(e) {
+            console.warn("Local Save Error", e);
+        }
+    },
+
+    // --- NOUVEAU SYSTÈME DE SAUVEGARDE (Debounce) ---
+    cloudSaveTimer: null,
+
+    // DANS app.js
+
+    triggerCloudSave(immediate = false) {
+        const user = Cloud.auth.currentUser;
+
+        // --- ANTI-POLLUTION (FILTRE CRITIQUE) ---
+        // Si Invité (Anonyme) ou pas connecté :
+        // 1. On sécurise les données en LOCAL (au cas où)
+        // 2. On COUPE l'accès au Cloud (return) pour ne pas polluer la base 'users'
+        if (!user || user.isAnonymous) {
+            console.log("💾 Sauvegarde Locale (Invité)");
+            try {
+                localStorage.setItem('harmonist_v6_data', JSON.stringify(this.data));
+            } catch (e) { console.warn("Erreur quota localStorage", e); }
+            return; 
+        }
+
+        // --- SYNCHRO CLOUD (Membres Uniquement) ---
+        
+        // Cas 1 : Sauvegarde Immédiate (Fermeture, Level Up...)
+        if (immediate) {
+            if (this.cloudSaveTimer) clearTimeout(this.cloudSaveTimer);
+            // On met à jour le timestamp
+            this.data.lastSave = Date.now();
+            // On envoie
+            Cloud.saveUser(this.data); 
+            return;
+        }
+
+        // Cas 2 : Sauvegarde Temporisée (Debounce 5s)
+        if (this.cloudSaveTimer) return;
+
+        this.cloudSaveTimer = setTimeout(() => {
+            this.data.lastSave = Date.now();
+            Cloud.saveUser(this.data);
+            this.cloudSaveTimer = null;
+        }, 5000); 
+    },
+
+    // // Sauvegarde Cloud (Appelé uniquement à la fermeture/minimisation)
+    // forceCloudSave(reason = "Unknown") {
+    //     if (Cloud && Cloud.auth && Cloud.auth.currentUser) {
+    //         // On utilise sendBeacon si possible (plus fiable lors d'une fermeture)
+    //         // Mais comme on passe par Firestore SDK, on fait un appel standard
+    //         console.log(`☁️ Sauvegarde Cloud déclenchée (${reason})...`);
+    //         Cloud.saveUser(this.data).catch(e => console.error("Cloud Fail:", e));
+    //     }
+    // },
+
+    // Nouvelle fonction appelée automatiquement par UI.closeModals()
+    onSettingsClosed() {
+        // 1. Sauvegarde
+        Cloud.syncUserStats(this.data); 
+
+        // 2. LOGIQUE INTELLIGENTE (Accords + Renversements)
+        const currentChord = this.session.chord;
+        
+        if (currentChord) {
+            // A. Vérifie si le TYPE d'accord (ex: 'maj7') est toujours coché
+            const isChordValid = this.data.settings.activeC.includes(currentChord.type.id);
+            
+            // B. Vérifie si le RENVERSEMENT (ex: 0, 1, 2...) est toujours coché
+            // Note : currentChord.inv est l'index du renversement (0, 1, 2, 3)
+            const isInvValid = this.data.settings.activeI.includes(currentChord.inv);
+
+            // CONDITION STRICTE : Les deux doivent être vrais
+            if (isChordValid && isInvValid) {
+                // CAS A : Tout est valide -> On garde le tour en cours
+                window.UI.renderBoard();
+                window.UI.renderSel(); 
+            } else {
+                // CAS B : Soit l'accord, soit le renversement est interdit -> Nouvelle donne
+                this.playNew();
+                window.UI.showToast("Paramètres changés : Nouvelle donne !");
+            }
+        } else {
+            // Pas de session -> on lance
+            this.playNew();
+        }
+    },
 
     resetRound(full=false) {
         if(this.timerRef) { clearInterval(this.timerRef); this.timerRef = null; }
@@ -504,7 +799,7 @@ export const App = {
         if(id) {
             // V5.2 - Increment Challenges Created
             this.data.arenaStats.challengesCreated++;
-            this.save();
+            this.saveData();
             this.checkBadges();
 
             alert(`Défi créé avec succès !\nCode : ${id}`);
@@ -743,6 +1038,24 @@ export const App = {
          }
     },
 
+    // --- SYSTEME DE SAUVEGARDE INTELLIGENT ---
+    async triggerSave(reason = "Auto") {
+        // On ne sauvegarde que si un utilisateur est connecté
+        if (!Cloud.auth.currentUser) return;
+
+        console.log(`💾 Sauvegarde déclenchée : ${reason}`);
+        
+        // On met à jour le timestamp local avant envoi
+        this.data.lastSave = Date.now(); 
+        
+        // Envoi silencieux (on ne bloque pas l'UI)
+        try {
+            await Cloud.saveUser(this.data);
+        } catch (e) {
+            console.warn("Save failed:", e);
+        }
+    },
+
     validate() {
         if(this.session.roundLocked) return; 
         if(this.sprintRef) { clearTimeout(this.sprintRef); this.sprintRef = null; }
@@ -821,7 +1134,7 @@ export const App = {
                 this.data.tempToday.tot++; this.data.tempToday.ok++;
                 if(this.data.tempToday.tot >= 5) { const todayStr = this.data.tempToday.date; const lastIdx = this.data.history.length - 1; if(lastIdx >= 0 && this.data.history[lastIdx].date === todayStr) { this.data.history[lastIdx] = { ...this.data.tempToday }; } else { this.data.history.push({ ...this.data.tempToday }); if(this.data.history.length > 7) this.data.history.shift(); } }
                 if(!this.session.hint) { this.session.streak++; window.UI.triggerCombo(this.session.streak); }
-                if (this.data.lvl < 20) { this.data.xp += totalGain; if(this.data.xp >= this.data.next) { this.data.xp -= this.data.next; this.data.lvl++; this.data.next = Math.floor(this.data.next * 1.2); levelUp = true; window.UI.showLevelUp(); window.UI.updateModeLocks(); if(this.data.mastery === 0) { if(this.data.lvl === 3) setTimeout(()=> window.UI.showToast("🔓 Mode Inverse Débloqué !"), 2000); if(this.data.lvl === 8) setTimeout(()=> window.UI.showToast("🔓 Mode Chrono Débloqué !"), 2000); if(this.data.lvl === 12) setTimeout(()=> window.UI.showToast("🔓 Mode Sprint Débloqué !"), 2000); } } } else { this.data.xp = this.data.next; }
+                if (this.data.lvl < 20) { this.data.xp += totalGain; if(this.data.xp >= this.data.next) { this.data.xp -= this.data.next; this.data.lvl++; this.data.next = Math.floor(this.data.next * 1.2); levelUp = true; window.UI.showLevelUp(); this.triggerCloudSave(true); window.UI.updateModeLocks(); if(this.data.mastery === 0) { if(this.data.lvl === 3) setTimeout(()=> window.UI.showToast("🔓 Mode Inverse Débloqué !"), 2000); if(this.data.lvl === 8) setTimeout(()=> window.UI.showToast("🔓 Mode Chrono Débloqué !"), 2000); if(this.data.lvl === 12) setTimeout(()=> window.UI.showToast("🔓 Mode Sprint Débloqué !"), 2000); } } } else { this.data.xp = this.data.next; }
                 
                 if(!this.session.hint && this.session.mode !== 'inverse') this.session.cleanStreak++; else this.session.cleanStreak = 0; if(c.open) this.session.openStreak++; else this.session.openStreak = 0;
                 const allC = this.data.settings.activeC.length === DB.chords.length; const allI = (this.data.currentSet === 'laboratory') ? true : (this.data.settings.activeI.length === DB.currentInvs.length); if(allC && allI) this.session.fullConfigStreak++; else this.session.fullConfigStreak = 0;
@@ -875,28 +1188,41 @@ export const App = {
                 if(this.session.lives <= 0) return this.gameOver(); 
             }
         }
-        window.UI.updateHeader(); window.UI.updateChrono(); this.save();
+        window.UI.updateHeader(); window.UI.updateChrono(); this.saveData();
         document.getElementById('hintBtn').disabled = false; document.getElementById('hintBtn').style.opacity = '1';
         const btn = document.getElementById('valBtn'); btn.innerText = "Suivant"; btn.classList.add('next'); btn.disabled = false;
         const play = document.getElementById('playBtn'); play.innerHTML = "<span class='icon-lg'>▶</span><span>Suivant</span>"; play.disabled = false;
+
+        // --- AJOUT V6.2 : CHECKPOINT ZEN ---
+            // Sauvegarde tous les 20 accords réussis en mode Zen
+            if (this.session.mode === 'zen') {
+                this.session.zenCounter = (this.session.zenCounter || 0) + 1;
+                if (this.session.zenCounter >= 20) {
+                    this.triggerSave("Zen Checkpoint (20)");
+                    this.session.zenCounter = 0;
+                }
+            }
     },
 
     checkBadges() {
         let unlockedSomething = false;
         BADGES.forEach(b => {
-            if(!this.data.badges.includes(b.id)) { if(b.check(this.data, this.session)) { this.data.badges.push(b.id); window.UI.showBadge(b); unlockedSomething = true; this.save(); } }
+            if(!this.data.badges.includes(b.id)) { if(b.check(this.data, this.session)) { this.data.badges.push(b.id); window.UI.showBadge(b); unlockedSomething = true; this.saveData(); } }
         });
         return unlockedSomething;
     },
 
     async gameOver() {
+        // 1. Sauvegarde Immédiate de la session
+        this.triggerSave("Game Over");
+        
         if(!this.data.stats.modesPlayed.includes(this.session.mode)) { this.data.stats.modesPlayed.push(this.session.mode); }
         const badged = this.checkBadges(); if(badged) Audio.sfx('badge');
         let isBest = false;
         if(this.session.mode === 'chrono' && this.session.score > this.data.bestChrono) { this.data.bestChrono = this.session.score; isBest=true; }
         if(this.session.mode === 'sprint' && this.session.score > this.data.bestSprint) { this.data.bestSprint = this.session.score; isBest=true; }
         if(this.session.mode === 'inverse' && this.session.score > this.data.bestInverse) { this.data.bestInverse = this.session.score; isBest=true; }
-        this.save(); 
+        this.saveData(); 
         
         // ENVOI CLOUD (Pseudo + Mastery)
         if(this.session.score > 0) {
@@ -997,5 +1323,110 @@ export const App = {
         if(sTot > 5 && (s.replayCount / sTot) > 2.5 && sAcc > 0.80) { return { t: "Confiance 🦁", m: rand(COACH_DB.patience) }; }
         if(s.streak >= 12) { return { t: "En Feu 🔥", m: rand(COACH_DB.streak) }; }
         return { t: "Rappel 🧠", m: rand(COACH_DB.theory) };
-    }
+    },
+
+    // Reçoit les données du Cloud au démarrage
+    syncFromCloud(cloudData) {
+        if (!cloudData) return;
+
+        console.log("☁️ Comparaison Cloud vs Local...", cloudData.xp, "vs", this.data.xp);
+
+        // LOGIQUE : Le score le plus élevé l'emporte (Fusion intelligente)
+        if (cloudData.xp > this.data.xp) {
+            console.log("✅ Cloud plus avancé : Mise à jour locale.");
+            
+            // On écrase les données locales avec celles du Cloud
+            this.data = { ...this.data, ...cloudData };
+            this.saveData(); // On met à jour le localStorage immédiatement
+            
+            // UI UPDATE : On utilise updateHeader pour tout rafraîchir d'un coup
+            window.UI.updateHeader();
+            window.UI.renderBadges();
+            
+            // Si la modale Paramètres est ouverte, on la rafraîchit pour virer "Invité"
+            if(document.getElementById('settingsModal').classList.contains('open')) {
+                window.UI.renderSettings();
+            }
+            
+            window.UI.showToast("☁️ Progression récupérée !");
+        } 
+        else if (this.data.xp > cloudData.xp) {
+            console.log("⚠️ Local plus avancé que le Cloud. Sauvegarde forcée.");
+            // Cas où on a joué hors ligne : on met à jour le Cloud tout de suite
+            this.triggerSave("Sync Démarrage (Local > Cloud)"); // CORRIGÉ (C'était forceCloudSave)
+        }
+        else {
+            console.log("🔄 Synchronisation parfaite (Égalité).");
+            // Même si égalité, on rafraîchit l'UI settings pour afficher "Certifié"
+            if(document.getElementById('settingsModal').classList.contains('open')) {
+                window.UI.renderSettings();
+            }
+        }
+    },
+    
+    // --- GESTION DU BOUTON GOOGLE (CORRIGÉ & VALIDÉ) ---
+    async handleGoogleAuth() {
+        const btn = document.getElementById('googleAuthBtn');
+        if(!btn) return;
+
+        const user = Cloud.auth.currentUser;
+
+        // --- CAS 1 : DÉCONNEXION (Si déjà connecté et pas anonyme) ---
+        if (user && !user.isAnonymous) {
+            if(confirm("Se déconnecter du compte Google ?")) {
+                await Cloud.logout();
+                localStorage.removeItem('harmonist_v6_data');
+                window.location.reload(); 
+            }
+            return;
+        }
+
+        // --- CAS 2 : CONNEXION (Migration) ---
+        
+        const oldUid = user ? user.uid : null;
+        const currentName = this.data.username; // On garde le nom en mémoire
+
+        btn.disabled = true;
+        btn.innerHTML = "Connexion...";
+        
+        // A. LE "SUICIDE" DU PSEUDO
+        // On le libère volontairement AVANT la connexion pour que le futur compte Google puisse le prendre.
+        // On ne le fait que si ce n'est pas le pseudo par défaut.
+        let released = false;
+        if (currentName && currentName !== "Élève Anonyme") {
+            // On tente de le supprimer. Si ça marche, released = true.
+            released = await Cloud.releaseUsername(currentName);
+        }
+
+        // B. LA CONNEXION
+        const result = await Cloud.login(this.data, oldUid);
+        
+        if (result.success) {
+            // SUCCÈS : Le pseudo a été repris par la fonction login (qui le réserve pour le compte Google)
+            this.data = result.data;
+            this.saveData(); 
+            
+            window.UI.updateHeader();
+            window.UI.renderBadges();
+            window.UI.renderSettings(); 
+            
+            this.session.done = true; 
+            if(this.data.lvl > 1) window.UI.updateModeLocks();
+
+            window.UI.showToast(`Bienvenue, ${result.user.displayName || 'Harmoniste'} !`);
+            
+        } else {
+            // ÉCHEC / ANNULATION : FILET DE SÉCURITÉ
+            // Si l'utilisateur a annulé la popup Google, il est toujours connecté en Anonyme.
+            // Mais on a supprimé son pseudo à l'étape A ! Il faut le récupérer tout de suite.
+            if (released) {
+                console.log("⚠️ Connexion annulée, récupération immédiate du pseudo...");
+                await Cloud.assignUsername(currentName);
+            }
+
+            window.UI.showToast("Connexion annulée");
+            window.UI.renderSettings(); 
+        }
+    },
+
 };

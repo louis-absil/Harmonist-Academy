@@ -1,7 +1,6 @@
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDoc, collection, addDoc, query, orderBy, limit, getDocs, where, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getAuth, signInAnonymously, signOut, onAuthStateChanged, GoogleAuthProvider, linkWithPopup, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { getFirestore, doc, setDoc, deleteDoc, getDoc, collection, addDoc, query, orderBy, limit, getDocs, where, serverTimestamp, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAMA9hH3hjlkjp-a4lpb3Dg9IusUB-AiMQ",
@@ -12,38 +11,71 @@ const firebaseConfig = {
   appId: "1:1095938878602:web:1ea75d46f3f5d76d921173"
 };
 
-let app, auth, db, userUid = null;
+let app, auth, db, provider, userUid = null;
+let isSyncDone = false; 
 
 export const Cloud = {
     initialized: false,
 
-    init() {
+    // --- 1. INITIALISATION ---
+    async init(onLoginCallback) {
         if (this.initialized) return;
-        try {
-            app = initializeApp(firebaseConfig);
-            auth = getAuth(app);
-            db = getFirestore(app);
 
-            onAuthStateChanged(auth, (user) => {
+        try {
+            if (!app) app = initializeApp(firebaseConfig);
+            if (!auth) auth = getAuth(app);
+            if (!db) db = getFirestore(app);
+            if (!provider) provider = new GoogleAuthProvider();
+
+            this.initialized = true;
+
+            onAuthStateChanged(auth, async (user) => {
+                isSyncDone = false; 
+
                 if (user) {
                     userUid = user.uid;
-                    console.log("🟢 Cloud Connecté:", userUid);
+                    console.log("🔥 Session :", user.isAnonymous ? "Anonyme" : "Google", userUid);
+
+                    let cloudData = null;
+                    if (!user.isAnonymous) {
+                        try {
+                            const docRef = doc(db, "users", userUid);
+                            const docSnap = await getDoc(docRef);
+                            if (docSnap.exists()) cloudData = docSnap.data();
+                        } catch (e) { console.error("Erreur Cloud:", e); }
+                    }
+
+                    if (onLoginCallback) onLoginCallback(user, cloudData);
+
+                    isSyncDone = true; 
+                    console.log("✅ Synchro terminée.");
+
                 } else {
-                    signInAnonymously(auth).catch((e) => console.error("Auth Fail:", e));
+                    signInAnonymously(auth).then(() => { isSyncDone = true; }).catch(console.error);
                 }
             });
-            this.initialized = true;
-        } catch (e) {
-            console.error("Firebase Init Error (Check Config):", e);
-        }
+
+        } catch (e) { console.error("Firebase Init Error:", e); }
     },
 
-    getCurrentUID() {
-        return userUid;
-    },
+    getCurrentUID() { return userUid; },
+    get auth() { return auth; },
 
-    async syncUserStats(appData) {
+    // --- 2. SAUVEGARDE ---
+    async syncUserStats(appData) { return this.saveUser(appData); },
+
+    async saveUser(appData) {
         if (!userUid || !db) return;
+        
+        // ANTI-POLLUTION : Pas de sauvegarde Cloud pour les Anonymes
+        if (!auth.currentUser || auth.currentUser.isAnonymous) return;
+
+        // VERROU SYNCHRO
+        if (!isSyncDone) {
+            console.warn("⏳ Sauvegarde bloquée : En attente de synchro Cloud...");
+            return;
+        }
+
         const payload = {
             username: appData.username || "Anonyme",
             xp: appData.xp,
@@ -53,46 +85,214 @@ export const Cloud = {
             bestChrono: appData.bestChrono,
             bestSprint: appData.bestSprint,
             bestInverse: appData.bestInverse,
-            lastSync: new Date().toISOString()
+            stats: appData.stats, 
+            settings: appData.settings,
+            currentSet: appData.currentSet,
+            arenaStats: appData.arenaStats,
+            lastSync: new Date().toISOString(),
+            updatedAt: serverTimestamp()
         };
+
         try {
             await setDoc(doc(db, "users", userUid), payload, { merge: true });
-        } catch (e) { console.error("Sync Fail:", e); }
+        } catch (e) { console.error("Save Fail:", e); }
     },
 
-    async submitScore(mode, score, username, mastery) {
-        if (!userUid || !db || score <= 0) return;
+    // --- 3. GESTION COMPTE (Login / Logout / Link) ---
+
+    async logout() {
+        if (!auth) return;
+        try {
+            await signOut(auth);
+            userUid = null;
+            isSyncDone = false;
+            console.log("👋 Déconnexion réussie");
+        } catch (e) {
+            console.error("Logout Error:", e);
+        }
+    },
+
+    async linkAccount() {
+        if (!auth.currentUser) return { success: false };
+        try { return { success: true, user: (await linkWithPopup(auth.currentUser, provider)).user }; } 
+        catch (e) { return { success: false, error: e.message }; }
+    },
+
+    // LIBÉRATION DU PSEUDO (Pour la transition Anonyme -> Google)
+    async releaseUsername(username) {
+        if (!username || !db) return;
+        const docId = username.trim().toLowerCase();
         
-        const payload = {
-            uid: userUid,
-            pseudo: username || "Anonyme",
-            score: score,
-            mastery: mastery,
-            timestamp: new Date().toISOString()
-        };
+        try {
+            // On supprime le document 'usernames/pseudo'
+            // Cela fonctionne car on est encore connecté avec le compte qui le possède
+            await deleteDoc(doc(db, "usernames", docId));
+            console.log("🔓 Pseudo libéré avec succès :", username);
+            return true;
+        } catch (e) {
+            console.warn("Impossible de libérer le pseudo (déjà libre ou permission refusée) :", e);
+            return false;
+        }
+    },
+
+    // LE VRAI LOGIN (Unique et complet)
+    async login(localData, oldUid = null) {
+        if (!auth) return { success: false, error: "Auth non init" };
+        localData = localData || {};
 
         try {
-            // FIX: Utilisation de l'UID comme ID de document pour éviter les doublons
+            const result = await signInWithPopup(auth, provider);
+            const user = result.user;
+            const userRef = doc(db, 'users', user.uid);
+
+            const serverSnap = await getDoc(userRef);
+            let cloudData = serverSnap.exists() ? serverSnap.data() : {};
+
+            // FUSION
+            const finalData = {
+                ...localData,
+                ...cloudData,
+                xp: Math.max(localData.xp || 0, cloudData.xp || 0),
+                lvl: Math.max(localData.lvl || 1, cloudData.lvl || 1),
+                mastery: Math.max(localData.mastery || 0, cloudData.mastery || 0),
+                badges: [...new Set([...(localData.badges || []), ...(cloudData.badges || [])])],
+                username: cloudData.username || localData.username
+            };
+
+            // GESTION PSEUDOS (Correctif Transaction Read/Write)
+            const oldUsername = localData.username;
+            const newUsername = finalData.username;
+
+            await runTransaction(db, async (transaction) => {
+                // --- PHASE 1 : TOUTES LES LECTURES D'ABORD ---
+                let oldSnap = null;
+                let oldNameRef = null;
+                
+                // Lecture 1 : Ancien pseudo (si pertinent)
+                if (oldUsername && oldUsername !== "Élève Anonyme" && oldUsername !== newUsername) {
+                    oldNameRef = doc(db, 'usernames', oldUsername.trim().toLowerCase());
+                    oldSnap = await transaction.get(oldNameRef);
+                }
+
+                // Lecture 2 : Nouveau pseudo (si pertinent)
+                let newSnap = null;
+                let newNameRef = null;
+                if (newUsername && newUsername !== "Élève Anonyme") {
+                    newNameRef = doc(db, 'usernames', newUsername.trim().toLowerCase());
+                    newSnap = await transaction.get(newNameRef);
+                }
+
+                // --- PHASE 2 : LOGIQUE & ÉCRITURES ---
+                
+                // A. Suppression de l'ancien (Nettoyage Zombie)
+                if (oldSnap && oldSnap.exists()) {
+                    const info = oldSnap.data();
+                    // On supprime SEULEMENT si ça appartenait à mon ancien UID invité
+                    if (oldUid && info.uid === oldUid) {
+                        transaction.delete(oldNameRef); 
+                    }
+                }
+
+                // B. Réservation du nouveau
+                if (newNameRef) {
+                    let canTake = false;
+                    if (!newSnap || !newSnap.exists()) canTake = true;
+                    else {
+                        const info = newSnap.data();
+                        // C'est à moi (via oldUid ou currentUid) ou c'est périmé
+                        if ((oldUid && info.uid === oldUid) || info.uid === user.uid) canTake = true;
+                        else if (info.expiresAt && info.expiresAt.toDate() < new Date()) canTake = true;
+                    }
+
+                    if (canTake) {
+                        transaction.set(newNameRef, { 
+                            uid: user.uid, 
+                            original: newUsername, 
+                            expiresAt: null, // À vie pour le compte Google
+                            updatedAt: serverTimestamp() 
+                        });
+                    } else {
+                         // Fallback si pris : on force le nom Google dans l'objet final (pas dans la DB usernames)
+                         if (finalData.username === localData.username) {
+                             finalData.username = user.displayName || "Harmoniste";
+                         }
+                    }
+                }
+            });
+
+            // Sauvegarde finale du profil utilisateur
+            await setDoc(userRef, finalData, { merge: true });
+            return { success: true, user: user, data: finalData };
+
+        } catch (error) {
+            console.error("Login Error:", error);
+            return { success: false, error: error.message };
+        }
+    },
+
+    async assignUsername(newUsername, oldUsername = null) {
+        const currentUser = auth.currentUser;
+        if (!currentUser || !db) return false;
+        
+        const uid = currentUser.uid;
+        const cleanNew = newUsername.trim().toLowerCase();
+        const displayNew = newUsername.trim();
+
+        if (oldUsername && cleanNew === oldUsername.trim().toLowerCase()) return true;
+        if (cleanNew.length < 3) return false;
+
+        const newNameRef = doc(db, 'usernames', cleanNew);
+        const userRef = doc(db, 'users', uid);
+        const expirationDate = currentUser.isAnonymous 
+            ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) 
+            : null;
+
+        try {
+            await runTransaction(db, async (transaction) => {
+                const nameSnap = await transaction.get(newNameRef);
+                if (nameSnap.exists()) {
+                    const data = nameSnap.data();
+                    if (data.uid !== uid && (!data.expiresAt || data.expiresAt.toDate() > new Date())) {
+                        throw "Ce pseudo est déjà pris.";
+                    }
+                }
+
+                if (oldUsername && oldUsername !== "Élève Anonyme") {
+                    const cleanOld = oldUsername.trim().toLowerCase();
+                    const oldNameRef = doc(db, 'usernames', cleanOld);
+                    const oldSnap = await transaction.get(oldNameRef);
+                    if (oldSnap.exists() && oldSnap.data().uid === uid) {
+                        transaction.delete(oldNameRef);
+                    }
+                }
+
+                transaction.set(newNameRef, { 
+                    uid: uid, original: displayNew, expiresAt: expirationDate, updatedAt: serverTimestamp()
+                });
+
+                if (!currentUser.isAnonymous) {
+                    transaction.set(userRef, { username: displayNew }, { merge: true });
+                }
+            });
+            return true;
+        } catch (e) {
+            console.error("Erreur Pseudo:", e);
+            window.UI.showToast(typeof e === 'string' ? e : "Erreur technique");
+            return false;
+        }
+    },
+
+    // --- 4. LEADERBOARDS & CHALLENGES (Identique ancien code) ---
+    async submitScore(mode, score, username, mastery) {
+        if (!userUid || !db || score <= 0) return;
+        const payload = { uid: userUid, pseudo: username || "Anonyme", score: score, mastery: mastery, timestamp: new Date().toISOString() };
+        try {
             const scoreRef = doc(db, `leaderboards/${mode}/scores`, userUid);
             const snap = await getDoc(scoreRef);
-
             if (snap.exists()) {
-                const oldData = snap.data();
-                // Si nouveau record, on écrase tout (Score + Pseudo + Mastery)
-                if (score > oldData.score) {
-                    await setDoc(scoreRef, payload);
-                    console.log(`Nouveau Record ${mode}: ${score}`);
-                } 
-                // Sinon, si le pseudo a changé, on met à jour juste le pseudo (sans toucher au score)
-                else if (oldData.pseudo !== payload.pseudo) {
-                    await setDoc(scoreRef, { pseudo: payload.pseudo }, { merge: true });
-                    console.log(`Pseudo mis à jour dans ${mode}`);
-                }
-            } else {
-                // Premier score dans ce mode
-                await setDoc(scoreRef, payload);
-                console.log(`Premier Score ${mode}: ${score}`);
-            }
+                if (score > snap.data().score) await setDoc(scoreRef, payload);
+                else if (snap.data().pseudo !== username) await setDoc(scoreRef, { pseudo: username }, { merge: true });
+            } else { await setDoc(scoreRef, payload); }
         } catch (e) { console.error("Score Submit Fail:", e); }
     },
 
@@ -101,147 +301,67 @@ export const Cloud = {
         try {
             const ref = collection(db, `leaderboards/${mode}/scores`);
             const q = query(ref, orderBy("score", "desc"), limit(50));
-
             const snap = await getDocs(q);
-            const results = [];
-            const seenUsers = new Set(); // Pour filtrer les doublons
-            
+            const results = []; const seenUsers = new Set();
             const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-
             snap.forEach(d => {
-                const data = d.data();
-                // Clé unique : UID (si dispo) ou Pseudo
-                const userKey = data.uid || data.pseudo;
-
-                // Si on a déjà vu ce joueur (qui avait un meilleur score car trié desc), on ignore
-                if (seenUsers.has(userKey)) return;
-
-                if(period === 'weekly') {
-                    const dDate = new Date(data.timestamp);
-                    if(dDate >= sevenDaysAgo) {
-                        results.push(data);
-                        seenUsers.add(userKey);
-                    }
-                } else {
-                    results.push(data);
-                    seenUsers.add(userKey);
-                }
+                const data = d.data(); const key = data.uid || data.pseudo;
+                if (seenUsers.has(key)) return;
+                if(period === 'weekly' && new Date(data.timestamp) < sevenDaysAgo) return;
+                results.push(data); seenUsers.add(key);
             });
-            
             return results.slice(0, 20);
-        } catch (e) {
-            console.error("Leaderboard Read Fail:", e);
-            return [];
-        }
+        } catch (e) { return []; }
     },
-
-    // --- CHALLENGE METHODS (V5) ---
 
     async createChallenge(data) {
         if (!userUid || !db) return null;
         try {
             const docId = data.seed.toUpperCase();
             const docRef = doc(db, "challenges", docId);
-            
-            // Protection doublon : Vérifier si le document existe avant d'écrire
             const docSnap = await getDoc(docRef);
-            if (docSnap.exists()) {
-                console.warn("Create Challenge Aborted: ID already taken.");
-                return null;
-            }
-
-            const payload = {
-                ...data,
-                seed: docId,
-                creatorUid: userUid,
-                created_at: serverTimestamp()
-            };
-            await setDoc(docRef, payload);
+            if (docSnap.exists()) return null;
+            await setDoc(docRef, { ...data, seed: docId, creatorUid: userUid, created_at: serverTimestamp() });
             return docId;
-        } catch (e) {
-            console.error("Create Challenge Fail:", e);
-            return null;
-        }
+        } catch (e) { return null; }
     },
 
     async getChallenge(id) {
         if (!db) return null;
         try {
             const snap = await getDoc(doc(db, "challenges", id.toUpperCase()));
-            if (snap.exists()) return { id: snap.id, ...snap.data() };
-            return null;
-        } catch (e) {
-            console.error("Get Challenge Fail:", e);
-            return null;
-        }
+            return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+        } catch (e) { return null; }
     },
 
     async submitChallengeScore(challengeId, scoreData) {
         if (!userUid || !db) return;
         try {
-            // ID Composite: CHALLENGE-ID_USER-UID pour unicité par joueur
             const docId = `${challengeId.toUpperCase()}_${userUid}`;
             const scoreRef = doc(db, `challenges/${challengeId.toUpperCase()}/scores`, docId);
-
-            // 1. On vérifie s'il existe déjà un score pour ce joueur sur ce défi
             const snap = await getDoc(scoreRef);
-
             if (snap.exists()) {
-                const oldData = snap.data();
-                // Si le nouveau score est strictement meilleur (Note plus haute OU même note et temps plus court)
-                const isBetter = scoreData.note > oldData.note || (scoreData.note === oldData.note && scoreData.time < oldData.time);
-
-                if (isBetter) {
-                    // On remplace tout (Nouveau record + Nouveau pseudo éventuel)
-                    const payload = { uid: userUid, ...scoreData, timestamp: serverTimestamp() };
-                    await setDoc(scoreRef, payload);
-                    console.log("Nouveau Record Challenge enregistré !");
-                } else {
-                    // Le score n'est pas meilleur, mais on met à jour le PSEUDO si changé
-                    if (oldData.pseudo !== scoreData.pseudo) {
-                        await setDoc(scoreRef, { pseudo: scoreData.pseudo }, { merge: true });
-                        console.log("Pseudo mis à jour (Score conservé)");
-                    }
+                const old = snap.data();
+                if (scoreData.note > old.note || (scoreData.note === old.note && scoreData.time < old.time)) {
+                    await setDoc(scoreRef, { uid: userUid, ...scoreData, timestamp: serverTimestamp() });
+                } else if (old.pseudo !== scoreData.pseudo) {
+                    await setDoc(scoreRef, { pseudo: scoreData.pseudo }, { merge: true });
                 }
             } else {
-                // Premier essai : on crée le doc
-                const payload = { uid: userUid, ...scoreData, timestamp: serverTimestamp() };
-                await setDoc(scoreRef, payload);
-                console.log("Premier Score Challenge enregistré !");
+                await setDoc(scoreRef, { uid: userUid, ...scoreData, timestamp: serverTimestamp() });
             }
-        } catch (e) {
-            console.error("Submit Challenge Score Fail:", e);
-        }
+        } catch (e) { console.error("Challenge Submit Fail", e); }
     },
 
     async getChallengeLeaderboard(challengeId) {
         if (!db) return [];
         try {
-            const q = query(
-                collection(db, `challenges/${challengeId.toUpperCase()}/scores`), 
-                orderBy("note", "desc"), 
-                limit(50)
-            );
-            
+            const q = query(collection(db, `challenges/${challengeId.toUpperCase()}/scores`), orderBy("note", "desc"), limit(50));
             const snap = await getDocs(q);
-            const results = [];
-            snap.forEach(d => results.push(d.data()));
-            
-            results.sort((a, b) => {
-                if (b.note !== a.note) return b.note - a.note;
-                return a.time - b.time;
-            });
-
-            return results;
-        } catch (e) {
-            console.error("Challenge Leaderboard Fail:", e);
-            return [];
-        }
+            const results = []; snap.forEach(d => results.push(d.data()));
+            return results.sort((a, b) => (b.note !== a.note) ? b.note - a.note : a.time - b.time);
+        } catch (e) { return []; }
     },
 
-    getDailyChallengeID() {
-        const d = new Date();
-        const dateStr = d.toISOString().split('T')[0]; // YYYY-MM-DD
-        return `DAILY-${dateStr}`;
-    }
+    getDailyChallengeID() { return `DAILY-${new Date().toISOString().split('T')[0]}`; },
 };

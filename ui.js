@@ -90,7 +90,7 @@ export const UI = {
         { 
             target: "hintBtn", 
             title: "L'Indice", 
-            text: "Bloqué ? Le bouton loupe joue les notes une par une (arpège).<br><strong>Attention :</strong> Utiliser l'indice réduit le score du tour." 
+            text: "Bloqué ? Le bouton loupe joue les notes une par une (arpège).<br><strong>Attention :</strong> Utiliser l'indice réduit le score du tour.<br><em>Raccourci clavier : H</em>" 
         },
         { 
             target: "valBtn", 
@@ -105,14 +105,21 @@ export const UI = {
         },
         { 
             target: "usernameInput", 
-            title: "Identité", 
-            text: "Choisissez votre pseudonyme. Il apparaîtra dans les classements mondiaux.",
-            onEnter: () => { window.UI.openModal('settingsModal'); }
+            title: "Votre Identité", 
+            text: "Choisissez un pseudo unique. S'il est libre, il sera réservé pour vous. <br><em>(Les pseudos inactifs sont recyclés après 90 jours).</em>",
+            action: "openSettings" // Ouvre la modale settings
         },
+        // --- REMPLACEMENT DE L'ÉTAPE SAUVEGARDE ---
+        { 
+            target: "googleAuthBtn", // ON CIBLE LE NOUVEAU BOUTON
+            title: "Sécuriser le Compte", 
+            text: "<strong>Très Important :</strong><br>Actuellement, vos données sont stockées uniquement sur cet appareil.<br>Connectez-vous avec Google pour <strong>sauvegarder votre progression dans le Cloud</strong> et éviter de tout perdre en cas de nettoyage du navigateur.",
+        },
+        // -------------------------------------------
         { 
             target: "settingsChords", // Cible stable (toujours visible)
             title: "Cursus & Accords", 
-            text: "Sélectionnez précisément les types d'accords que vous voulez travailler. Plus vous en activez, plus vous gagnez d'XP. En atteignant la <strong>Maîtrise 20</strong>, de nouveaux sets (Jazz, Labo) apparaîtront ici." 
+            text: "Sélectionnez précisément les types d'accords que vous voulez travailler. Plus vous en activez, plus vous gagnez d'XP. En atteignant le <strong>Niveau 20</strong>, validez la <strong>Maîtrise</strong> pour faire apparaître ici de nouveaux sets d'accords." 
         },
         { 
             target: "settingsInvs", 
@@ -203,8 +210,11 @@ export const UI = {
             title: "Classements", 
             text: "Comparez vos scores (Chrono, Sprint et Inverse) avec le monde entier.",
             onEnter: () => { 
-                window.UI.showChallengeHub(); 
-                window.UI.switchChallengeTab('arcade');
+                // CORRECTION : showChallengeHub charge déjà l'onglet 'arcade' par défaut.
+                // On retire l'appel manuel à switchChallengeTab pour éviter le double chargement.
+                if(!document.getElementById('challengeHubModal').classList.contains('open')) {
+                    window.UI.showChallengeHub();
+                }
             }
         },
         { 
@@ -292,98 +302,120 @@ export const UI = {
     },
 
     renderWalkthroughStep() {
+        // Sécurité fin de parcours
+        if (this.wtStep >= this.wtData.length) {
+            this.endWalkthrough();
+            this.showToast("🎓 Bon entraînement !");
+            return;
+        }
+
         const step = this.wtData[this.wtStep];
         if(!step) return;
 
-        // 1. ACTION AUTOMATIQUE (Ouvrir un menu, changer d'onglet...)
+        // --- 1. GESTION DES ACTIONS (FIX: Ouverture des Modales) ---
+        // C'est ici que ça manquait. On traite l'instruction 'action' du wtData.
+        if (step.action === 'openSettings') {
+            this.openModal('settingsModal');
+        } 
+        else if (step.action === 'openArena') {
+            this.showChallengeHub();
+        }
+
+        // Supporte aussi les fonctions personnalisées existantes (onEnter)
         if (step.onEnter) {
             step.onEnter();
         }
 
-        // Petit délai pour laisser le temps au DOM de s'afficher
+        // --- 2. DÉLAI D'ANIMATION (Augmenté à 400ms) ---
+        // On laisse le temps à la modale de s'ouvrir (transition CSS) avant de calculer les positions
         setTimeout(() => {
             const spot = document.getElementById('tour-spotlight');
             const tool = document.getElementById('tour-tooltip');
-            
+            let targetEl = step.target ? document.getElementById(step.target) : null;
+
+            // --- 3. AUTO-SKIP INTELLIGENT (Mis à jour) ---
+            // Si l'étape concerne le bouton Google, on vérifie si l'utilisateur est déjà connecté.
+            if (step.target === 'googleAuthBtn') {
+                const user = Cloud.auth ? Cloud.auth.currentUser : null;
+                // Si l'utilisateur est déjà un membre certifié (NON anonyme), c'est inutile de lui dire de se connecter.
+                // On passe donc à l'étape suivante.
+                if (user && !user.isAnonymous) {
+                    console.log("[Tuto] Utilisateur déjà connecté Google, étape suivante.");
+                    this.nextWalkthroughStep();
+                    return;
+                }
+            }
+
             // Remplissage du contenu
             document.getElementById('tour-title').innerHTML = step.title;
             document.getElementById('tour-desc').innerHTML = step.text;
             document.getElementById('tour-step-count').innerText = `${this.wtStep + 1}/${this.wtData.length}`;
             
             // --- LOGIQUE DE POSITIONNEMENT ---
-            if (!step.target) {
-                // CAS 1 : Pas de cible (Centré au milieu de l'écran)
+            if (!targetEl) {
+                // CAS 1 : Pas de cible (Centré)
                 spot.style.width = '0px'; spot.style.height = '0px';
                 spot.style.top = '50%'; spot.style.left = '50%';
-                
                 tool.style.top = '50%'; tool.style.left = '50%';
-                tool.style.transform = 'translate(-50%, -50%)'; // On utilise transform pour centrer parfaitement
-                
+                tool.style.transform = 'translate(-50%, -50%)';
                 const arrow = document.getElementById('tour-arrow');
                 if(arrow) arrow.style.display = 'none';
 
             } else {
-                // CAS 2 : Une cible est définie dans l'étape
-                const targetEl = document.getElementById(step.target);
+                // CAS 2 : Cible trouvée
+                
+                // --- 4. SCROLL AUTOMATIQUE (FIX: Élément visible) ---
+                // Force le navigateur à scroller l'élément au centre de la vue (crucial pour les modales)
+                // On remplace 'smooth' par 'auto' pour éviter le décalage pendant l'animation
+                targetEl.scrollIntoView({ behavior: 'auto', block: 'center', inline: 'center' });
 
-                // SÉCURITÉ : On vérifie si l'élément existe ET s'il est visible (hauteur > 0)
-                if (targetEl && targetEl.offsetParent !== null && targetEl.getBoundingClientRect().height > 0) { 
-                    
-                    // --- POSITIONNEMENT SUR LA CIBLE ---
-                    const rect = targetEl.getBoundingClientRect();
-                    const margin = 15;
-                    
-                    // Le projecteur (Spotlight)
-                    spot.style.width = (rect.width + 8) + 'px';
-                    spot.style.height = (rect.height + 8) + 'px';
-                    spot.style.top = (rect.top - 4) + 'px';
-                    spot.style.left = (rect.left - 4) + 'px';
-                    spot.style.borderRadius = getComputedStyle(targetEl).borderRadius;
+                const rect = targetEl.getBoundingClientRect();
+                const margin = 15;
+                
+                // Le projecteur (Spotlight)
+                spot.style.width = (rect.width + 8) + 'px';
+                spot.style.height = (rect.height + 8) + 'px';
+                spot.style.top = (rect.top - 4) + 'px';
+                spot.style.left = (rect.left - 4) + 'px';
+                
+                // Récupère l'arrondi de l'élément ciblé pour que ce soit joli
+                const style = window.getComputedStyle(targetEl);
+                spot.style.borderRadius = style.borderRadius !== '0px' ? style.borderRadius : '8px';
 
-                    // La bulle d'aide (Tooltip)
-                    const toolH = tool.offsetHeight || 200;
-                    const toolW = tool.offsetWidth || 320;
-                    
-                    // Par défaut en dessous
-                    let top = rect.bottom + margin;
-                    let left = rect.left + (rect.width/2) - (toolW/2);
-                    
-                    // Si dépasse en bas de l'écran, on met au dessus
-                    if (top + toolH > window.innerHeight - 10) {
-                        top = rect.top - toolH - margin;
-                    }
-                    
-                    // Garde-fous pour ne pas sortir de l'écran
-                    if (top < 10) top = 10;
-                    if(left < 10) left = 10;
-                    if(left + toolW > window.innerWidth) left = window.innerWidth - toolW - 10;
-
-                    tool.style.top = top + 'px';
-                    tool.style.left = left + 'px';
-                    tool.style.transform = ''; // Important : on enlève le transform du mode centré
-
-                    // La flèche de la bulle
-                    const arrow = document.getElementById('tour-arrow');
-                    if(arrow) {
-                        let arrowLeft = (rect.left + rect.width/2) - left - 8;
-                        arrowLeft = Math.max(10, Math.min(toolW - 26, arrowLeft));
-                        arrow.style.left = arrowLeft + 'px';
-                        arrow.style.top = (rect.bottom + margin === top) ? '-8px' : 'auto';
-                        arrow.style.bottom = (rect.bottom + margin !== top) ? '-8px' : 'auto';
-                        arrow.style.display = 'block';
-                    }
-
-                } else {
-                    // FALLBACK : Cible introuvable ou cachée -> On centre par sécurité
-                    spot.style.width = '0'; spot.style.height = '0';
-                    tool.style.top = '50%'; tool.style.left = '50%';
-                    tool.style.transform = 'translate(-50%, -50%)';
-                    
-                    const arrow = document.getElementById('tour-arrow');
-                    if(arrow) arrow.style.display = 'none';
+                // La bulle d'aide (Tooltip)
+                const toolH = tool.offsetHeight || 200;
+                const toolW = tool.offsetWidth || 320;
+                
+                // Par défaut en dessous
+                let top = rect.bottom + margin;
+                let left = rect.left + (rect.width/2) - (toolW/2);
+                
+                // Si dépasse en bas de l'écran, on met au dessus
+                if (top + toolH > window.innerHeight - 10) {
+                    top = rect.top - toolH - margin;
                 }
-            } // Fin du else (step.target existe)
-        }, 150); // Fin du setTimeout
+                
+                // Garde-fous écrans
+                if (top < 10) top = 10;
+                if (left < 10) left = 10;
+                if (left + toolW > window.innerWidth) left = window.innerWidth - toolW - 10;
+
+                tool.style.top = top + 'px';
+                tool.style.left = left + 'px';
+                tool.style.transform = ''; 
+
+                // La flèche
+                const arrow = document.getElementById('tour-arrow');
+                if(arrow) {
+                    let arrowLeft = (rect.left + rect.width/2) - left - 8;
+                    arrowLeft = Math.max(10, Math.min(toolW - 26, arrowLeft));
+                    arrow.style.left = arrowLeft + 'px';
+                    arrow.style.top = (rect.bottom + margin === top) ? '-8px' : 'auto';
+                    arrow.style.bottom = (rect.bottom + margin !== top) ? '-8px' : 'auto';
+                    arrow.style.display = 'block';
+                }
+            } 
+        }, 400); // Délai suffisant pour l'ouverture de la modale
     },
     
     // Garder cette fonction pour le bouton "Guide" du menu
@@ -1774,16 +1806,72 @@ export const UI = {
         window.UI.closeModals(); window.UI.renderSettings(); window.UI.renderBoard(); window.App.playNew();
     },
 
-    closeModals() { document.querySelectorAll('.modal-overlay').forEach(m=>m.classList.remove('open')); },
+    closeModals() { 
+        const settingsEl = document.getElementById('settingsModal');
+        // On regarde si les paramètres sont ouverts AVANT de tout fermer
+        const wasSettingsOpen = settingsEl && settingsEl.classList.contains('open');
+
+        document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('open'));
+        
+        // Si on vient de fermer les paramètres, on déclenche la logique de mise à jour dans App
+        if (wasSettingsOpen && window.App && window.App.onSettingsClosed) {
+            window.App.onSettingsClosed();
+        }
+    },
     
     renderSettings() { 
         const d = window.App.data;
         
-        // INPUT USERNAME
+        // --- MODIFICATION : IDENTITÉ & GOOGLE AUTH ---
         const nameInput = document.getElementById('usernameInput');
         if(nameInput) {
             nameInput.value = d.username || "";
+            
+            // 1. Nettoyage
+            const parent = nameInput.parentElement;
+            ['identityBadge', 'btnSecureAccount', 'btnLoginExisting', 'googleAuthBtn'].forEach(id => {
+                const el = document.getElementById(id);
+                if(el) el.remove();
+            });
+
+            // 2. Détection de l'état Auth (CORRECTION ICI)
+            const user = Cloud.auth ? Cloud.auth.currentUser : null;
+            // On considère "Connecté" seulement si l'utilisateur n'est PAS anonyme
+            const isAuth = user && !user.isAnonymous;
+
+            // 3. Création du Bouton
+            const authBtn = document.createElement('button');
+            authBtn.id = 'googleAuthBtn';
+            authBtn.className = 'cmd-btn';
+            
+            const btnColor = isAuth ? "rgba(239, 68, 68, 0.2)" : "#4285F4"; 
+            const btnBorder = isAuth ? "var(--error)" : "#4285F4";
+            const btnTextColor = isAuth ? "var(--error)" : "white";
+            const btnText = isAuth ? `Déconnexion (${user.displayName || 'Google'})` : "Connexion Google (Sauvegarde Cloud)";
+            const icon = isAuth ? '🚪' : '☁️';
+
+            authBtn.style.cssText = `width:100%; margin-top:10px; margin-bottom:20px; padding:12px; background:${btnColor}; border:1px solid ${btnBorder}; color:${btnTextColor}; font-weight:700; transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer;`;
+            authBtn.innerHTML = `<span>${icon}</span> ${btnText}`;
+            
+            authBtn.onclick = () => {
+                if(window.App.handleGoogleAuth) window.App.handleGoogleAuth();
+            };
+
+            parent.insertAdjacentElement('afterend', authBtn);
+
+            // 4. Gestion Input Pseudo
+            let typeTimeout;
+            nameInput.oninput = (e) => {
+                const val = e.target.value;
+                authBtn.innerHTML = `<span style="opacity:0.7">⏳ Mise à jour...</span>`;
+                clearTimeout(typeTimeout);
+                typeTimeout = setTimeout(() => { 
+                    window.App.setUsername(val); 
+                    authBtn.innerHTML = `<span>${icon}</span> ${btnText}`;
+                }, 1000); 
+            };
         }
+        // --- FIN MODIFICATION ---
 
         const grids = document.querySelectorAll('.settings-grid');
         const setContainer = grids[0];
@@ -1920,6 +2008,23 @@ export const UI = {
         const unlockedCount = unlockedIDs.length; 
         document.getElementById('badgeCount').innerText = `${unlockedCount}/${totalVisible}`;
         
+        // APPEL DE LA NOUVELLE FONCTION
+        this.renderBadges();
+    },
+
+    // --- NOUVELLE FONCTION AJOUTÉE ---
+    renderBadges() {
+        const grid = document.getElementById('badgesGrid'); 
+        if(!grid) return; // Sécurité si la modale n'est pas dans le DOM
+        grid.innerHTML = ''; 
+        
+        const unlockedIDs = window.App.data.badges; 
+        const totalVisible = BADGES.filter(b => !b.secret || unlockedIDs.includes(b.id)).length; 
+        const unlockedCount = unlockedIDs.length; 
+        
+        const countEl = document.getElementById('badgeCount');
+        if(countEl) countEl.innerText = `${unlockedCount}/${totalVisible}`;
+        
         const renderBadge = (b) => { 
             const unlocked = unlockedIDs.includes(b.id); 
             const el = document.createElement('div'); 
@@ -1957,5 +2062,3 @@ export const UI = {
         const oldDetail = document.getElementById('badgeDetail'); if(oldDetail) oldDetail.style.display = 'none';
     }
 };
-
-

@@ -1,13 +1,85 @@
 
-# 🎼 Harmonist Academy V5.1 (Studio Update)
+# 🎼 Harmonist Academy V7.0 : Connected Identity
 
-> **L'application ultime d'entraînement auditif pour l'harmonie, le jazz et l'acoustique.**
+> **L'application ultime d'entraînement auditif pour la reconnaissance d'accords de 7èmes.**
 
-![Version](https://img.shields.io/badge/version-5.1.0-studio.svg)
+![Version](https://img.shields.io/badge/version-7.0-studio.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![Tech](https://img.shields.io/badge/Made%20With-Vanilla%20JS-yellow.svg)
 
 Harmonist Academy est une **Single Page Application (SPA)** gamifiée conçue pour aider les musiciens à reconnaître les accords, les renversements, les voicings jazz et les structures harmoniques complexes à l'oreille.
+
+---
+
+## 🎹 Harmonist Academy V7.0 : Connected Identity
+
+**Mise à jour majeure - Décembre 2025**
+
+Cette version marque un tournant dans l'architecture de l'application, introduisant une synchronisation Cloud robuste et une gestion intelligente des identités pour garantir que plus aucun élève ne perde sa progression.
+
+### ✨ Nouveautés Principales
+
+* **☁️ Synchronisation Cloud Hybride :**
+    * Transition fluide du mode "Invité" (Local) vers le mode "Membre Certifié" (Google).
+    * Fusion intelligente des scores : on garde toujours le meilleur de vos deux profils (Local vs Cloud).
+    * **Smart Save :** Sauvegarde automatique déclenchée lors de la minimisation de l'app ou du changement d'onglet.
+
+* **🆔 Gestion Dynamique des Identités (Anti-Zombie) :**
+    * Nouveau système de "Bail" (Leasing) pour les pseudos.
+    * Mécanisme de libération automatique du pseudo invité lors de la connexion Google pour éviter les doublons et nettoyer la base de données.
+    * Attribution garantie : Si la connexion échoue, le pseudo est immédiatement récupéré.
+
+* **🎓 Tutoriel Interactif V8 :**
+    * Mise à jour complète du guide de bienvenue.
+    * Détection automatique de l'état de connexion pour adapter les conseils (Invité vs Connecté).
+
+### 🛠️ Correctifs & Optimisations
+
+* **Stabilité UI :** Correction des crashs d'affichage lors de la connexion (`updateXP` / `renderBadges`).
+* **Firebase Transaction :** Réécriture de la logique de Login pour respecter strictement l'ordre Lecture/Écriture de Firestore.
+* **Performance :** Optimisation des appels réseaux et suppression des écritures inutiles pour les utilisateurs non connectés.
+
+---
+
+## v6.0 - Update "Identity" (Sauvegarde & Profils) ☁️
+
+Cette mise à jour majeure introduit la persistance des données et la protection de votre identité de musicien.
+
+### ✨ Nouveautés
+* **Système d'Identité Unique :** Chaque pseudo est désormais unique. Premier arrivé, premier servi !
+* **Sauvegarde Cloud (Google) :** Vous pouvez désormais lier votre compte pour ne jamais perdre votre progression (XP, Badges, Scores), même en changeant de téléphone.
+* **Protection Anti-Zombie :** Les pseudos réservés par des comptes "Invités" inactifs depuis plus de 90 jours sont automatiquement libérés pour les nouveaux élèves.
+* **Gestion des Conflits :** Résolution automatique des doublons de pseudos existants lors de la migration.
+
+---
+
+## v5.4 - Update "Pocket Academy" (Mobile & PWA) 📱
+
+Cette mise à jour majeure transforme Harmonist Academy en une application installable (PWA) et améliore considérablement l'expérience mobile.
+
+### ✨ Nouveautés
+* **Application Mobile (PWA) :** Vous pouvez désormais installer l'app sur votre écran d'accueil (iOS/Android).
+    * *Fonctionnement hors-ligne (Offline-ready).*
+    * *Mode plein écran immersif (plus de barre de navigateur).*
+    * *Chargement instantané grâce au nouveau système de cache.*
+* **Smart Settings (Paramètres Intelligents) :** Modifier la difficulté (ajouter/retirer des accords) ne réinitialise plus systématiquement votre série de victoires (Streak). Le jeu s'adapte dynamiquement.
+
+### 🎨 Interface & UX
+* **Optimisation Mobile de l'Arène :** Refonte complète de la barre de navigation de l'Arène pour les petits écrans (Grille tactile).
+* **Scrollbars Modernes :** Suppression des barres de défilement disgracieuses. Navigation fluide et invisible sur mobile, minimaliste sur Desktop.
+* **Correctifs Tuto :** Amélioration de la stabilité du tutoriel d'accueil.
+
+---
+
+## v5.3 - Update "Orientation Day" (Interactive Tuto) 🎓
+
+Cette mise à jour s'est concentrée sur l'expérience utilisateur (UX) et l'accueil des nouveaux élèves, rendant l'interface riche de l'Académie plus accessible.
+
+### ✨ Nouveautés
+* **Tutoriel Interactif (Walkthrough Engine) :** Implémentation d'un système de visite guidée dynamique.
+    * *Spotlight System :* Un projecteur met en surbrillance les éléments actifs de l'interface (Zone d'écoute, Contrôles, Arène).
+    * *Bulle Contextuelle :* Des explications précises s'affichent à côté de chaque élément, s'adaptant intelligemment à la position de l'écran.
+* **Navigation Guidée :** Le tutoriel prend le contrôle de la navigation pour ouvrir les menus (Paramètres, Arène) et montrer à l'utilisateur où se trouvent les fonctionnalités clés sans qu'il se perde.
 
 ---
 
