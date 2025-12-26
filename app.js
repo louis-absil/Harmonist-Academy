@@ -7,6 +7,7 @@ import { Cloud } from './firebase.js';
 import { ChallengeManager } from './challenges.js';
 
 export const App = {
+    isResetting: false,
     data: { 
         username: "Élève Anonyme", 
         xp:0, lvl:1, next:100, mastery:0, currentSet: 'academy',
@@ -44,6 +45,7 @@ export const App = {
         audioStartTime: 0, lastReactionTime: Infinity, hasReplayed: false, pureStreak: 0, razorTriggered: false,
         titleClicks: 0, lastChordType: null, jackpotStreak: 0, collectedRoots: null,
         isChallenge: false,
+        isNavigating: false,
         // ÉTAT CHALLENGE TEMPORAIRE (Pour Badges de Rang Passifs)
         challengeRank: null, challengeTotalPlayers: 0, challengeNetTime: 0,
         // ÉTAT STUDIO (V5.1)
@@ -185,6 +187,17 @@ export const App = {
     onUserLogin(user) {
         console.log("Utilisateur connecté :", user.uid);
         // Vous pouvez ajouter ici des analytics si besoin
+    },
+
+    saveUser() {
+        if (!this.data) return;
+        const saveData = {
+            data: this.data,
+            settings: this.session.settings
+            // Ajoute d'autres propriétés si nécessaire selon ta structure
+        };
+        localStorage.setItem('harmonist_save', JSON.stringify(saveData));
+        console.log('💾 Sauvegarde effectuée');
     },
 
     async setUsername(val) {
@@ -382,7 +395,7 @@ export const App = {
         
         if(DB.sets[setName].mode === 'jazz') { DB.currentInvs = DB.voicings; document.getElementById('invPanelLabel').innerText = "Voicing (Texture)"; } 
         else if (DB.sets[setName].mode === 'lab') { DB.currentInvs = []; document.getElementById('invPanelLabel').innerText = "Configuration"; } 
-        else { DB.currentInvs = DB.invs; document.getElementById('invPanelLabel').innerText = "Renversement (A Z E R)"; }
+        else { DB.currentInvs = DB.invs; document.getElementById('invPanelLabel').innerText = "Renversement"; }
         
         const validIds = DB.chords.map(c => c.id);
         const hasInvalid = this.data.settings.activeC.some(id => !validIds.includes(id));
@@ -416,28 +429,64 @@ export const App = {
             this.data.mastery++; this.data.lvl = 1; this.data.xp = 0; this.data.next = 100;
             this.data.settings.activeC = this.data.settings.activeC.filter(id => !this.isLocked(id));
             if(this.data.settings.activeC.length === 0) { const available = DB.chords.find(c => !this.isLocked(c.id)); if(available) this.data.settings.activeC = [available.id]; }
-            this.saveData(); window.UI.closeModals(); window.UI.renderBoard(); window.UI.updateHeader(); Audio.sfx('prestige'); window.UI.confetti(); setTimeout(() => window.UI.confetti(), 500); setTimeout(() => window.UI.confetti(), 1000); window.UI.showToast(`✨ Maîtrise ${this.data.mastery} atteinte !`); window.UI.showToast(`Nouveau contenu disponible dans les paramètres !`); window.UI.updateModeLocks(); setTimeout(() => { this.playNew(); }, 4000);
+            this.saveData(); window.UI.closeModals(); window.UI.renderBoard(); window.UI.updateHeader(); Audio.sfx('prestige'); window.UI.confetti(); setTimeout(() => window.UI.confetti(), 500); setTimeout(() => window.UI.confetti(), 1000); window.UI.showToast(`✨ Maîtrise ${this.data.mastery} atteinte !`); window.UI.showToast(`Nouveau contenu disponible dans les paramètres !`); window.UI.updateModeLocks(); 
+            
+            // Hook : Vérifier si un tutoriel de maîtrise doit s'afficher
+            setTimeout(() => {
+                const moduleId = window.UI.checkTutorialTriggers({ type: 'masteryUnlock' });
+                if (moduleId) {
+                    window.UI.startTutorialModule(moduleId);
+                }
+            }, 2000);
+            
+            setTimeout(() => { this.playNew(); }, 4000);
         }
     },
 
     setMode(m) {
-        if(this.session.isChallenge && m !== 'zen' && m !== 'studio') return; 
+        if(this.session.isChallenge && m !== 'zen' && m !== 'studio') {
+            return;
+        } 
 
         if(this.data.mastery === 0) {
             if(m === 'inverse' && this.data.lvl < 3) { window.UI.showToast("🔒 Débloqué au Niveau 3"); window.UI.vibrate([50,50]); return; }
             if(m === 'chrono' && this.data.lvl < 8) { window.UI.showToast("🔒 Débloqué au Niveau 8"); window.UI.vibrate([50,50]); return; }
             if(m === 'sprint' && this.data.lvl < 12) { window.UI.showToast("🔒 Débloqué au Niveau 12"); window.UI.vibrate([50,50]); return; }
         }
+        
+        // Hook : Vérifier si un mode vient d'être débloqué pour la première fois
+        if (m !== 'zen' && m !== 'studio') {
+            // Vérifier si c'est la première fois qu'on utilise ce mode après déblocage
+            const modeKey = `tuto_mode_${m}_used`;
+            const wasUsed = localStorage.getItem(modeKey) === 'true';
+            if (!wasUsed) {
+                localStorage.setItem(modeKey, 'true');
+                setTimeout(() => {
+                    const moduleId = window.UI.checkTutorialTriggers({ type: 'modeUnlock', mode: m });
+                    if (moduleId) {
+                        window.UI.startTutorialModule(moduleId);
+                    }
+                }, 500);
+            }
+        }
+        
         if(Audio.ctx && Audio.ctx.state === 'suspended') Audio.ctx.resume();
-        Audio.init(); this.session.mode = m;
+        Audio.init();
+        // Ne pas jouer de son pour les modes chrono et sprint qui perturbent l'écoute
+        if (m !== 'chrono' && m !== 'sprint') {
+            Audio.sfx('mode_switch');
+        }
+        this.session.mode = m;
         document.getElementById('modeZen').className = m==='zen'?'mode-opt active':'mode-opt';
         document.getElementById('modeChrono').className = m==='chrono'?'mode-opt active':'mode-opt';
         document.getElementById('modeSprint').className = m==='sprint'?'mode-opt active':'mode-opt';
         document.getElementById('modeInverse').className = m==='inverse'?'mode-opt active':'mode-opt';
         window.UI.updateModeLocks();
         
-        document.getElementById('chronoDisplay').style.display = (m==='chrono' || m==='sprint') ?'block':'none';
-        if(m === 'sprint') { document.getElementById('timerVal').style.display = 'none'; } else { document.getElementById('timerVal').style.display = 'inline'; }
+        const chronoDisplay = document.getElementById('chronoDisplay');
+        if (chronoDisplay) chronoDisplay.style.display = (m==='chrono' || m==='sprint') ?'block':'none';
+        const timerVal = document.getElementById('timerVal');
+        if (timerVal) timerVal.style.display = (m === 'sprint') ? 'none' : 'inline';
         document.getElementById('toolsBar').className = (m==='sprint') ? 'tools-bar sprint-active' : 'tools-bar';
         
         // Mode Studio UI Toggle
@@ -447,9 +496,11 @@ export const App = {
         const valBtn = document.getElementById('valBtn');
 
         if(m === 'studio') {
-            studioPanel.style.display = 'flex';
-            document.getElementById('chronoDisplay').style.display = 'none';
-            document.getElementById('scoreGroup').classList.remove('active');
+            if (studioPanel) studioPanel.style.display = 'flex';
+            const chronoDisplay = document.getElementById('chronoDisplay');
+            if (chronoDisplay) chronoDisplay.style.display = 'none';
+            const scoreGroup = document.getElementById('scoreGroup');
+            if (scoreGroup) scoreGroup.classList.remove('active');
             
             // REAFFECTATION DES BOUTONS POUR LE STUDIO
             valBtn.innerText = "+ Ajouter";
@@ -486,7 +537,25 @@ export const App = {
         if(m !== 'zen' && m !== 'studio' && !this.session.isChallenge) { document.getElementById('scoreGroup').classList.add('active'); let best = 0; if(m === 'chrono') best = this.data.bestChrono; if(m === 'sprint') best = this.data.bestSprint; if(m === 'inverse') best = this.data.bestInverse; document.getElementById('highScoreVal').innerText = best; } else { if (!this.session.isChallenge) document.getElementById('scoreGroup').classList.remove('active'); }
         
         const mainArea = document.getElementById('mainArea'); const appContainer = document.querySelector('.app-container');
-        if(m === 'inverse') { mainArea.classList.add('quiz-mode'); appContainer.classList.add('quiz-mode'); document.getElementById('panelChord').style.display = 'none'; document.getElementById('invPanel').style.display = 'none'; document.getElementById('quizArea').style.display = 'flex'; } else { mainArea.classList.remove('quiz-mode'); appContainer.classList.remove('quiz-mode'); document.getElementById('panelChord').style.display = 'flex'; document.getElementById('invPanel').style.display = 'flex'; document.getElementById('quizArea').style.display = 'none'; }
+        if(m === 'inverse') { 
+            if (mainArea) mainArea.classList.add('quiz-mode'); 
+            if (appContainer) appContainer.classList.add('quiz-mode'); 
+            const panelChord = document.getElementById('panelChord');
+            const invPanel = document.getElementById('invPanel');
+            const quizArea = document.getElementById('quizArea');
+            if (panelChord) panelChord.style.display = 'none'; 
+            if (invPanel) invPanel.style.display = 'none'; 
+            if (quizArea) quizArea.style.display = 'flex'; 
+        } else { 
+            if (mainArea) mainArea.classList.remove('quiz-mode'); 
+            if (appContainer) appContainer.classList.remove('quiz-mode'); 
+            const panelChord = document.getElementById('panelChord');
+            const invPanel = document.getElementById('invPanel');
+            const quizArea = document.getElementById('quizArea');
+            if (panelChord) panelChord.style.display = 'flex'; 
+            if (invPanel) invPanel.style.display = 'flex'; 
+            if (quizArea) quizArea.style.display = 'none'; 
+        }
         this.resetRound(true);
         if(m === 'inverse') this.playNewQuiz(); else if (m !== 'studio') this.playNew();
     },
@@ -512,10 +581,83 @@ export const App = {
         this.saveData(); window.UI.renderBoard(); window.UI.renderSettings(); window.UI.updateHeader(); 
     },
 
-    hardReset() { if(confirm("Sûr ?")) { localStorage.removeItem('harmonist_v4_final'); location.reload(); } },
+    async hardReset() { 
+        if(!confirm("☢️ RESET D'USINE ☢️\n\nCela va :\n1. Supprimer votre pseudo du Cloud\n2. Effacer les données locales\n3. Vous déconnecter\n\nL'application redémarrera à zéro.")) return;
+
+        // 1. ON ACTIVE LE BOUCLIER (Anti-sauvegarde)
+        this.isResetting = true; 
+
+        // On tue les timers
+        if (this.cloudSaveTimer) { clearTimeout(this.cloudSaveTimer); this.cloudSaveTimer = null; }
+        if (this.timerRef) clearInterval(this.timerRef);
+
+        console.log("💀 Démarrage du nettoyage...");
+        window.UI.showToast("♻️ Libération du pseudo et nettoyage...");
+
+        // --- AJOUT : 2. LIBÉRATION DU PSEUDO (Pendant qu'on est encore connecté) ---
+        // On ne le fait que si on a un vrai pseudo et qu'on est connecté
+        if (typeof Cloud !== 'undefined' && Cloud.auth.currentUser) {
+            const currentName = this.data.username;
+            if (currentName && currentName !== "Élève Anonyme") {
+                try {
+                    console.log(`🗑️ Libération du pseudo : ${currentName}`);
+                    await Cloud.releaseUsername(currentName);
+                } catch (e) {
+                    console.warn("Erreur libération pseudo (peut-être déjà libre) :", e);
+                }
+            }
+        }
+        // ---------------------------------------------------------------------------
+
+        // 3. DÉCONNEXION FIREBASE
+        if (typeof Cloud !== 'undefined' && Cloud.auth) {
+            try { await Cloud.logout(); } catch (e) { console.warn(e); }
+        }
+
+        // 4. VIDAGE COMPLET DONNÉES
+        localStorage.clear(); 
+
+        // 5. SUPPRESSION INDEXEDDB (Persistence Firebase)
+        if (window.indexedDB && window.indexedDB.databases) {
+            try {
+                const dbs = await window.indexedDB.databases();
+                for (const db of dbs) {
+                    window.indexedDB.deleteDatabase(db.name);
+                }
+            } catch (e) {}
+        }
+
+        // 6. SUPPRESSION CACHE & SERVICE WORKER
+        if ('caches' in window) {
+            try {
+                const keys = await caches.keys();
+                await Promise.all(keys.map(key => caches.delete(key)));
+            } catch (e) {}
+        }
+        if ('serviceWorker' in navigator) {
+            const registrations = await navigator.serviceWorker.getRegistrations();
+            for (let registration of registrations) {
+                await registration.unregister();
+            }
+        }
+
+        // 7. LA RUSE DU CHANGEMENT D'URL (Pour éviter le cache zombie)
+        setTimeout(() => {
+            window.location.replace(window.location.pathname + '?reset_t=' + Date.now());
+        }, 500);
+    },
+
 
     // Sauvegarde Locale (Ultra rapide - Appelé à chaque point)
     saveData() {
+        // --- BLOCAGE DE SÉCURITÉ ---
+        // Si on est en train de reset, INTERDICTION d'écrire quoi que ce soit !
+        if (this.isResetting) {
+            console.log("🛑 Sauvegarde bloquée (Reset en cours)");
+            return;
+        }
+        // ---------------------------
+        if(!this.data) return;
         try {
             localStorage.setItem('harmonist_v6_data', JSON.stringify(this.data));
             
@@ -534,6 +676,14 @@ export const App = {
     // DANS app.js
 
     triggerCloudSave(immediate = false) {
+        // --- AJOUT SÉCURITÉ CRITIQUE ---
+        // Si on est en train de reset, on annule TOUT (même les timers en cours)
+        if (this.isResetting) {
+            if (this.cloudSaveTimer) clearTimeout(this.cloudSaveTimer);
+            return;
+        }
+        // -------------------------------
+
         const user = Cloud.auth.currentUser;
 
         // --- ANTI-POLLUTION (FILTRE CRITIQUE) ---
@@ -641,9 +791,20 @@ export const App = {
         
         if (this.session.mode !== 'studio') {
             window.UI.msg("Prêt ?");
-            document.getElementById('playBtn').innerHTML = "<span class='icon-lg'>▶</span><span>Écouter</span>";
-            document.getElementById('valBtn').innerText = "Valider"; document.getElementById('valBtn').classList.remove('next'); document.getElementById('valBtn').disabled = true;
-            document.getElementById('hintBtn').disabled = false; document.getElementById('hintBtn').style.opacity = '1';
+            const playBtn = document.getElementById('playBtn');
+            const valBtn = document.getElementById('valBtn');
+            const hintBtn = document.getElementById('hintBtn');
+            if (playBtn) playBtn.innerHTML = "<span class='icon-lg'>▶</span><span>Écouter</span>";
+            if (valBtn) {
+                // FIX: Utiliser innerHTML pour être cohérent avec handleAnswer() qui utilise innerHTML
+                valBtn.innerHTML = "Valider"; 
+                valBtn.classList.remove('next'); 
+                valBtn.disabled = true;
+            }
+            if (hintBtn) {
+                hintBtn.disabled = false; 
+                hintBtn.style.opacity = '1';
+            }
         } else {
              window.UI.msg("Mode Studio");
              // En mode studio, on ne reset pas les boutons car setMode l'a fait
@@ -884,7 +1045,10 @@ export const App = {
         const correctIdx = Math.floor(this.rng() * opts.length);
         this.session.quizCorrectIdx = correctIdx;
         const target = this.session.quizOptions[correctIdx];
-        if (!target) { this.playNewQuiz(); return; }
+        if (!target) { 
+            this.playNewQuiz(); 
+            return; 
+        }
         this.session.chord = { ...target, root: fixedBass }; 
         window.UI.renderQuizOptions(this.session.quizOptions, target); window.UI.msg("Quel est ce son ?", "");
         document.getElementById('playBtn').disabled = true; document.getElementById('replayBtn').disabled = true; document.getElementById('hintBtn').disabled = false;
@@ -912,7 +1076,19 @@ export const App = {
             this.timerRef = setInterval(() => { this.session.time--; window.UI.updateChrono(); if(this.session.time <= 0) { clearInterval(this.timerRef); this.timerRef = null; this.gameOver(); } }, 1000);
         }
         this.session.done = false; this.session.roundLocked = false; this.session.selC = null; this.session.selI = null; this.session.hint = false; 
-        window.UI.resetVisuals(); this.session.lastActionTime = Date.now(); this.session.replayCount = 0; this.session.djClickTimes = []; this.session.selectionHistory = []; this.session.hasReplayed = false;
+        window.UI.resetVisuals(); 
+        // FIX: Réinitialiser visuellement les sélections pour éviter qu'elles restent affichées
+        window.UI.renderSel();
+        this.session.lastActionTime = Date.now(); this.session.replayCount = 0; this.session.djClickTimes = []; this.session.selectionHistory = []; this.session.hasReplayed = false;
+
+        // --- CORRECTIF : AFFICHER LA BARRE EN MODE DÉFI ---
+        if (this.session.isChallenge && window.UI && ChallengeManager.active) {
+            // if(window.UI.updateChallengeProgress) {
+            //     // On met à jour la barre immédiatement (Step 0 pour la Q1, etc.)
+            //     window.UI.updateChallengeProgress(ChallengeManager.state.step, ChallengeManager.config.length);
+            // }
+        }
+        // --------------------------------------------------
 
         // --- CUSTOM CHALLENGE SEQUENCE OVERRIDE ---
         if(this.session.isChallenge && ChallengeManager.config.sequence) {
@@ -981,8 +1157,32 @@ export const App = {
     },
 
     hint() { if(this.session.chord) { Audio.chord(this.session.chord.notes, true); if(!this.session.done) { this.session.hint = true; window.UI.msg("Indice utilisé"); } else { if(Piano) Piano.visualize(this.session.chord.notes); } } },
-    replay() { if(this.session.chord) { this.session.replayCount++; this.session.hasReplayed = true; const now = Date.now(); this.session.djClickTimes.push(now); this.session.djClickTimes = this.session.djClickTimes.filter(t => now - t <= 5000); Audio.chord(this.session.chord.notes); if(this.session.done && Piano) Piano.visualize(this.session.chord.notes); } },
     
+    replay() { 
+        if(this.session.chord) { 
+            // 1. Logique existante (Stats & Badge DJ)
+            this.session.replayCount++; 
+            this.session.hasReplayed = true; 
+            const now = Date.now(); 
+            this.session.djClickTimes.push(now); 
+            this.session.djClickTimes = this.session.djClickTimes.filter(t => now - t <= 5000); 
+            
+            // 2. Jouer le son (Code existant)
+            Audio.chord(this.session.chord.notes); 
+
+            // --- 3. AJOUT : RAPPEL VISUEL EN MODE DÉFI ---
+            if (this.session.isChallenge && window.ChallengeManager && window.UI && window.UI.showToast) {
+                const cm = window.ChallengeManager;
+                // Affiche "Rappel : Question 2 / 20"
+                window.UI.showToast(`Rappel : Question ${cm.state.step + 1} / ${cm.config.length}`);
+            }
+            // ---------------------------------------------
+
+            // 4. Visualisation (Code existant)
+            if(this.session.done && window.Piano) Piano.visualize(this.session.chord.notes); 
+        } 
+    },
+
     preview(typeStr, id) {
         if(!this.session.chord) return;
         let targetTypeId = (typeStr === 'c') ? id : this.session.chord.type.id;
@@ -1019,27 +1219,47 @@ export const App = {
         window.UI.renderSel();
     },
 
-    handleMain() { 
+    async handleMain() { 
          if(this.session.done) { 
-             // FIX: En mode challenge, la progression est gérée par le ChallengeManager (timer)
-             // On empêche le double déclenchement manuel.
-             if(this.session.isChallenge) return;
              
+             // --- FIX 4 & 7 : NAVIGATION DÉFI & DEBOUNCE ---
+             if (this.session.isChallenge) {
+                 // Si on est déjà en train de changer de question, on ne fait rien (Anti-Spam)
+                 if (this.session.isNavigating) return;
+                 this.session.isNavigating = true;
+                 
+                 // 2. Logique Suivante (Charge le son, change l'index)
+                 ChallengeManager.nextStep();
+                 
+                 // 3. On déverrouille
+                 this.session.isNavigating = false;
+                 return;
+             }
+
+             // FIX: Si on n'est plus en mode défi mais que done est encore true, on réinitialise
+             // Cela peut arriver si restore() n'a pas complètement réinitialisé l'état
+             if (!this.session.chord) {
+                 this.session.done = false;
+                 this.resetRound(true);
+             }
+
              if(this.session.mode === 'inverse') this.playNewQuiz(); 
              else this.playNew(); 
          } 
          else if(!document.getElementById('valBtn').disabled) { 
+             // ... le reste de la validation normale ...
              if(this.session.mode === 'inverse') this.validateQuiz(); 
-             // STUDIO V5.1 : Logique d'ajout à la timeline
-             else if(this.session.mode === 'studio') { 
-                 this.addToTimeline();
-             }
+             else if(this.session.mode === 'studio') this.addToTimeline();
              else this.validate(); 
          }
     },
 
     // --- SYSTEME DE SAUVEGARDE INTELLIGENT ---
     async triggerSave(reason = "Auto") {
+        // --- AJOUT SÉCURITÉ ---
+        if (this.isResetting) return;
+        // ----------------------
+
         // On ne sauvegarde que si un utilisateur est connecté
         if (!Cloud.auth.currentUser) return;
 
@@ -1061,7 +1281,13 @@ export const App = {
         if(this.sprintRef) { clearTimeout(this.sprintRef); this.sprintRef = null; }
         if(this.vignetteRef) { clearTimeout(this.vignetteRef); this.vignetteRef = null; }
         document.getElementById('sprintFill').style.transition = 'none'; document.getElementById('vignette').className = 'vignette-overlay';
-        const c = this.session.chord; const okC = this.session.selC === c.type.id; const isDim = c.type.id === 'dim7' && this.data.currentSet !== 'jazz'; const okI = isDim ? true : (this.session.selI === c.inv);
+        const c = this.session.chord;
+        // FIX: Vérifier que chord existe avant d'accéder à ses propriétés
+        if (!c || !c.type) {
+            console.warn("validate() called but chord is null or invalid");
+            return;
+        }
+        const okC = this.session.selC === c.type.id; const isDim = c.type.id === 'dim7' && this.data.currentSet !== 'jazz'; const okI = isDim ? true : (this.session.selI === c.inv);
         
         // HOOK POUR LE MODE DÉFI (V5.0)
         if(this.session.isChallenge) {
@@ -1075,6 +1301,29 @@ export const App = {
 
         this.session.done = true; this.session.roundLocked = true; 
         this.processWin(okC, okI); window.UI.reveal(okC, okI);
+        
+        // Hook : Vérifier si c'est la première réponse correcte ou erreur
+        if (okC && okI) {
+            // Première réponse correcte
+            if (!localStorage.getItem('tuto_module_first_correct_seen')) {
+                setTimeout(() => {
+                    const moduleId = window.UI.checkTutorialTriggers({ type: 'firstCorrect' });
+                    if (moduleId) {
+                        window.UI.startTutorialModule(moduleId);
+                    }
+                }, 1000);
+            }
+        } else {
+            // Première erreur
+            if (!localStorage.getItem('tuto_module_first_error_seen')) {
+                setTimeout(() => {
+                    const moduleId = window.UI.checkTutorialTriggers({ type: 'firstError' });
+                    if (moduleId) {
+                        window.UI.startTutorialModule(moduleId);
+                    }
+                }, 1000);
+            }
+        }
     },
     
     validateQuiz() {
@@ -1206,9 +1455,23 @@ export const App = {
 
     checkBadges() {
         let unlockedSomething = false;
+        const hadBadges = this.data.badges.length > 0;
         BADGES.forEach(b => {
-            if(!this.data.badges.includes(b.id)) { if(b.check(this.data, this.session)) { this.data.badges.push(b.id); window.UI.showBadge(b); unlockedSomething = true; this.saveData(); } }
+            if(!this.data.badges.includes(b.id)) {
+                if(b.check(this.data, this.session)) { this.data.badges.push(b.id); window.UI.showBadge(b); unlockedSomething = true; this.saveData(); }
+            }
         });
+        
+        // Hook : Vérifier si c'est le premier badge débloqué
+        if (unlockedSomething && !hadBadges) {
+            setTimeout(() => {
+                const moduleId = window.UI.checkTutorialTriggers({ type: 'firstBadge' });
+                if (moduleId) {
+                    window.UI.startTutorialModule(moduleId);
+                }
+            }, 2000); // Délai pour laisser l'animation du badge se terminer
+        }
+        
         return unlockedSomething;
     },
 
@@ -1237,6 +1500,14 @@ export const App = {
         await window.UI.populateGameOver(this.session, this.session.mode);
 
         window.UI.openModal('modalGameOver', true);
+        
+        // Hook : Vérifier si un tutoriel de fin de partie doit s'afficher
+        setTimeout(() => {
+            const moduleId = window.UI.checkTutorialTriggers({ type: 'gameOver' });
+            if (moduleId) {
+                window.UI.startTutorialModule(moduleId);
+            }
+        }, 500);
     },
     
     replaySameMode() { window.UI.closeModals(); this.setMode(this.session.mode); },
@@ -1245,11 +1516,16 @@ export const App = {
         const s = this.session; const d = this.data; const rand = (arr) => arr[Math.floor(this.rng() * arr.length)];
         const sTot = s.globalTot; const sOk = s.globalOk; const sAcc = sTot > 0 ? (sOk / sTot) : 0;
         let gOk = 0, gTot = 0; for(let k in d.stats.c) { gOk += d.stats.c[k].ok; gTot += d.stats.c[k].tot; } const gAcc = gTot > 0 ? (gOk / gTot) : 0;
-        if(sTot < 5 && gTot < 20) { return { t: "Débutant", m: rand(COACH_DB.start) }; }
-        if(gAcc > 0.70 && sTot > 10 && sAcc < 0.50) { return { t: "Santé ☕", m: rand(COACH_DB.critical) }; }
+        
+        // --- PRIORITÉ 1: DÉBUTANT (toujours en premier) ---
+        if(sTot < 5 && gTot < 20) { 
+            return { t: "Débutant", m: rand(COACH_DB.start) }; 
+        }
+        
+        // --- PRIORITÉ 2: CONSEILS CIBLÉS (avant les autres génériques) ---
         // --- NOUVELLE LOGIQUE COACH (ACCORDS + RENVERSEMENTS) ---
         let candidates = [];
-        const THRESHOLD = 0.45; // Seuil de faiblesse (< 45% de réussite)
+        const THRESHOLD = 0.60; // Seuil de faiblesse (< 60% de réussite) - Augmenté pour détecter plus de faiblesses
         const MIN_PLAYED = 5;   // Minimum d'essais pour être jugé
 
         // 1. Analyse des Accords
@@ -1257,8 +1533,13 @@ export const App = {
             for(let cid in d.stats.c) {
                 const st = d.stats.c[cid];
                 // On vérifie le score ET si on a une phrase dans la DB pour cet accord
-                if(st && st.tot >= MIN_PLAYED && (st.ok / st.tot) < THRESHOLD) {
-                    if(COACH_DB.weakness[cid]) { candidates.push(cid); }
+                if(st && st.tot >= MIN_PLAYED) {
+                    const acc = st.tot > 0 ? (st.ok / st.tot) : 0;
+                    if(acc < THRESHOLD) {
+                        if(COACH_DB.weakness[cid]) { 
+                            candidates.push(cid); 
+                        }
+                    }
                 }
             }
         }
@@ -1274,8 +1555,13 @@ export const App = {
                     const st = invStats[iid];
                     const dbKey = prefix + iid; // ex: "inv_0" ou "voc_2"
                     
-                    if(st && st.tot >= MIN_PLAYED && (st.ok / st.tot) < THRESHOLD) {
-                        if(COACH_DB.weakness[dbKey]) { candidates.push(dbKey); }
+                    if(st && st.tot >= MIN_PLAYED) {
+                        const acc = st.tot > 0 ? (st.ok / st.tot) : 0;
+                        if(acc < THRESHOLD) {
+                            if(COACH_DB.weakness[dbKey]) { 
+                                candidates.push(dbKey); 
+                            }
+                        }
                     }
                 }
             }
@@ -1317,11 +1603,29 @@ export const App = {
             return { t: tip.t, m: tip.m, target: prettyName };
         }
         // -------------------------------------------------------
-        if(s.fastStreak > 3 && sAcc < 0.60) { return { t: "Vitesse ⚠️", m: rand(COACH_DB.speed_warn) }; }
-        if(gAcc < 0.60 && s.streak >= 8) { return { t: "Déclic 💡", m: rand(COACH_DB.breakthrough) }; }
-        if(sTot > 40 && sAcc < 0.50) { return { t: "Persévérance 💪", m: rand(COACH_DB.effort) }; }
-        if(sTot > 5 && (s.replayCount / sTot) > 2.5 && sAcc > 0.80) { return { t: "Confiance 🦁", m: rand(COACH_DB.patience) }; }
-        if(s.streak >= 12) { return { t: "En Feu 🔥", m: rand(COACH_DB.streak) }; }
+        
+        // --- PRIORITÉ 3: CONDITIONS GÉNÉRIQUES (seulement si pas de conseils ciblés) ---
+        
+        // Fatigue (déplacé après les conseils ciblés)
+        if(gAcc > 0.70 && sTot > 10 && sAcc < 0.50) { 
+            return { t: "Santé ☕", m: rand(COACH_DB.critical) }; 
+        }
+        
+        if(s.fastStreak > 3 && sAcc < 0.60) { 
+            return { t: "Vitesse ⚠️", m: rand(COACH_DB.speed_warn) }; 
+        }
+        if(gAcc < 0.60 && s.streak >= 8) { 
+            return { t: "Déclic 💡", m: rand(COACH_DB.breakthrough) }; 
+        }
+        if(sTot > 40 && sAcc < 0.50) { 
+            return { t: "Persévérance 💪", m: rand(COACH_DB.effort) }; 
+        }
+        if(sTot > 5 && (s.replayCount / sTot) > 2.5 && sAcc > 0.80) { 
+            return { t: "Confiance 🦁", m: rand(COACH_DB.patience) }; 
+        }
+        if(s.streak >= 12) { 
+            return { t: "En Feu 🔥", m: rand(COACH_DB.streak) }; 
+        }
         return { t: "Rappel 🧠", m: rand(COACH_DB.theory) };
     },
 
